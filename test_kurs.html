@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Google Sheets Connection Test</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #222; color: #0f0; }
+        .log { margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .error { color: #f55; }
+        .success { color: #5f5; font-weight: bold; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+</head>
+<body>
+    <h2>📡 ТЕСТ СВЯЗИ С GOOGLE SHEETS</h2>
+    <div id="console"></div>
+
+    <script>
+        // Ваша прямая ссылка на таблицу (Publish to Web)
+        const GOOGLE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=185046132&single=true&output=csv';
+
+        function log(msg, type = '') {
+            const div = document.getElementById('console');
+            div.innerHTML += `<div class="log ${type}">${msg}</div>`;
+        }
+
+        log("1. Начинаем попытку скачать данные напрямую с Google...");
+        
+        Papa.parse(GOOGLE_URL, {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                console.log(results);
+                if (results.data && results.data.length > 0) {
+                    const firstRow = results.data[0];
+                    const rate = firstRow['Current_Rate']; // Имя колонки из вашего файла
+                    
+                    log(`2. ✅ УСПЕХ! Файл скачан.`, 'success');
+                    log(`3. Найдено строк: ${results.data.length}`);
+                    log(`4. 💰 КУРС В ЯЧЕЙКЕ Current_Rate: <b>${rate}</b>`, 'success');
+                    
+                    if (rate && rate.length > 6) {
+                         log(`⚠️ Внимание: похоже, это не число, а ошибка формулы? Проверьте консоль.`);
+                    }
+                } else {
+                    log("2. ⚠️ Файл скачан, но он пустой!", 'error');
+                }
+            },
+            error: (err) => {
+                console.error(err);
+                log(`2. ❌ ОШИБКА ДОСТУПА (CORS или Сеть):`, 'error');
+                log(`${err.message}`, 'error');
+                log(`Вывод: Google блокирует прямой доступ. Нужно использовать db.csv + внешний API для курса.`);
+            }
+        });
+    </script>
+</body>
+</html>
