@@ -433,6 +433,7 @@
     // ==========================================
     // ⚙️ НАСТРОЙКИ
     // ==========================================
+    const APP_VERSION = 'v11.3'; 
     const KURS_REZERV = 100; 
     
     // Файлы
@@ -454,7 +455,7 @@
     let filters = { search: '', manuf: null, subst: null, subst_ru: null, dosage: null, size: null, cat: 'ALL', subcat: null, onlyFree: false, form: null };
     const searchFields = ['PZN', 'Name_DE', 'Name_RU', 'Hersteller', 'Substance', 'Substance_RU', 'Dosage', 'Size', 'Category', 'Form'];
 
-    // --- UTILS ---
+    // --- ИНТЕРФЕЙС (FAQ) ---
     function toggleFaq() {
         const body = document.getElementById('faqBody');
         const arrow = document.getElementById('faqArrow');
@@ -470,7 +471,7 @@
         if (wrap && !wrap.contains(event.target) && body && body.classList.contains('show')) { toggleFaq(); }
     });
 
-    // --- INIT ---
+    // --- ЗАПУСК (INIT) ---
     function init() {
         const d = new Date();
         document.getElementById('topDate').innerText = d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -478,10 +479,28 @@
         const saved = localStorage.getItem('de_cart'); 
         if (saved) cart = JSON.parse(saved);
 
+        // --- НОВЫЙ ДИЗАЙН ШАПКИ (v11.3 - Ratio 1:2) ---
         const isLocal = window.location.hostname === '' || window.location.hostname === 'localhost';
-        document.getElementById('appTitle').innerHTML = `🇩🇪 DE Реестр <span class="version-badge ${isLocal ? 'local' : 'global'}">${isLocal ? 'Local DB' : 'Online DB'}</span>`;
+        
+        document.getElementById('appTitle').innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                <div style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; display:flex; align-items:baseline; line-height: 1;">
+                    <span style="color:#d32f2f">Rx</span>
+                    <span style="color:#1976d2; font-size:0.5em; margin-left:2px; font-weight:700;">DE.online</span>
+                    <span class="version-badge ${isLocal ? 'local' : 'global'}" style="margin-left:8px; font-size:0.35em; opacity:0.6; align-self:center;">${APP_VERSION}</span>
+                </div>
+                <div style="font-size: 0.65rem; color: #444; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <span style="color:#1976d2">✓</span> Немецкое качество с доставкой на дом
+                </div>
+            </div>
+        `;
 
-        console.log("🚀 Загрузка...");
+        const upsellDesc = document.querySelector('.upsell-desc');
+        if(upsellDesc) upsellDesc.innerText = 'Добавим новые позиции? Выход из корзины';
+        const upsellBox = document.querySelector('.upsell-box');
+        if(upsellBox) upsellBox.onclick = exitCartWithHighlight;
+
+        console.log(`🚀 Загрузка системы ${APP_VERSION}...`);
         Promise.all([fetchLocalDB(), fetchCbrRate(), fetchGoogleSettings()]).then(() => {
             console.log("🏁 Данные получены.");
             finalizeAppStart();
@@ -507,13 +526,14 @@
     function fetchGoogleSettings() {
         return new Promise((resolve) => {
             Papa.parse(GOOGLE_SETTINGS_URL, { 
-                download: true, header: true, skipEmptyLines: true, 
+                download: true, header: true, skipEmptyLines: true,
                 complete: (res) => { if(res.data && res.data.length > 0) googleSettings = res.data[0]; resolve(); },
                 error: (err) => { console.warn("Google недоступен"); resolve(); }
             });
         });
     }
 
+    // --- МОЗГ: РАСЧЕТ КУРСА ---
     function finalizeAppStart() {
         if (!db || db.length === 0) { showError("База товаров пуста (db.csv)."); return; }
 
@@ -524,30 +544,40 @@
             shipEurGlobal = parseFloat(googleSettings.Mail_EURO?.replace(',', '.') || 0);
         }
 
-        let baseRate = 0, sourceName = "", colorStyle = "color: #999";
+        let baseRate = 0, sourceName = "", colorStyle = "color: #888"; 
 
+        // ЛОГИКА 10%
         if (!googleRate || googleRate === 100) {
-            if (cbrRateData) { baseRate = cbrRateData; sourceName = "Курс (ЦБ РФ)"; } 
-            else { baseRate = KURS_REZERV; sourceName = "Курс (Резерв)"; colorStyle = "color: #d32f2f; font-weight:bold"; showError("Нет связи с банками. Резервный курс."); }
+            if (cbrRateData) { baseRate = cbrRateData; sourceName = "(ЦБ РФ)"; } 
+            else { baseRate = KURS_REZERV; sourceName = "(Резерв)"; colorStyle = "color: #d32f2f"; showError("Нет связи с банками."); }
         } 
         else if (cbrRateData) {
             const diff = Math.abs((googleRate - cbrRateData) / cbrRateData) * 100;
             if (diff > 10) {
-                if (googleRate > cbrRateData) { baseRate = googleRate; sourceName = "Курс (Биржа)"; } 
-                else { baseRate = cbrRateData; sourceName = "Курс (ЦБ РФ)"; }
-                colorStyle = "color: #e65100; font-weight:bold"; 
-            } else { baseRate = googleRate; sourceName = "Курс (Биржа)"; colorStyle = "color: #2e7d32"; }
-        } else { baseRate = googleRate; sourceName = "Курс (Биржа)"; }
+                if (googleRate > cbrRateData) { baseRate = googleRate; sourceName = "(Биржа)"; } 
+                else { baseRate = cbrRateData; sourceName = "(ЦБ РФ)"; }
+                colorStyle = "color: #e65100"; 
+            } else { baseRate = googleRate; sourceName = "(Биржа)"; colorStyle = "color: #2e7d32"; } 
+        } else { baseRate = googleRate; sourceName = "(Биржа)"; }
 
         rateCalc = baseRate + bankMargin;
-        document.getElementById('cbRate').innerHTML = `${baseRate.toFixed(2)} <span style="font-size:0.7em; ${colorStyle}"><br>${sourceName}</span>`;
+        
+        document.getElementById('cbRate').innerHTML = `
+            ${baseRate.toFixed(2)}
+            <span style="font-size:0.75rem; font-weight:normal; ${colorStyle}">
+                ${sourceName}
+            </span>`;
+            
         document.getElementById('finalRate').innerText = rateCalc.toFixed(2) + ' ₽';
         document.getElementById('errorBox').style.display = 'none';
         
-        updateBar(); render(); renderPreview(); restoreOrderFromUrl();
+        restoreOrderFromUrl();
+        updateBar(); 
+        render(); 
+        renderPreview();
     }
 
-    // --- SEARCH ---
+    // --- ПОИСК И ФИЛЬТРЫ ---
     function levenshtein(a, b) {
         if(a.length === 0) return b.length; 
         if(b.length === 0) return a.length;
@@ -570,8 +600,8 @@
         filters.search = input.value; 
         document.getElementById('clearBtn').style.display = input.value ? 'block' : 'none';
 
-        if (input.value.length > 0 && (filters.cat !== 'ALL' || filters.manuf)) {
-             filters.cat = 'ALL'; filters.subcat = null; filters.manuf = null;
+        if (input.value.length > 0) {
+             filters.cat = 'ALL'; filters.subcat = null; filters.manuf = null; filters.onlyFree = false;
              renderCats(); 
         }
         
@@ -678,6 +708,8 @@
                 const checkLink = (r.Price_chek) ? `<a href="${r.Price_chek}" target="_blank" class="check-btn">🔗 Check</a>` : '';
                 const imgH = r.Image ? `<div class="cam-wrap">📷<img class="preview-img" src="img/${r.Image}"></div>` : '';
                 
+                const priceDisplay = Math.round(parseFloat(r.Price.toString().replace(',','.')));
+
                 list.innerHTML += `<div class="card ${q>0?'selected-item':''}">
                     <div style="flex:1">
                         <div style="line-height:1.4; display:flex; align-items:flex-start;">
@@ -697,7 +729,7 @@
                         </div>
                     </div>
                     <div style="text-align:right; min-width:95px;">
-                        <div style="font-weight:900; font-size:1.2rem; color:#000;">${r.Price} €</div>
+                        <div style="font-weight:900; font-size:1.2rem; color:#000;">${priceDisplay} €</div>
                         <div style="font-size:0.85rem; font-weight:600; color:var(--p); margin-top:2px;">≈ ${rub.toLocaleString()} ₽</div>
                         <div class="qty-wrap" style="margin-top:8px;">
                             <button class="btn-qty" onclick="modQty('${r.PZN}',-1)">−</button>
@@ -739,13 +771,16 @@
             d.appendChild(btn);
         });
 
+        // 🟢 КНОПКА "БЕЗ РЕЦЕПТА"
         const freeBtn = document.createElement('div');
+        freeBtn.id = 'btnFreeRecipe';
         freeBtn.innerText = '☘️ Без рецепта';
         freeBtn.className = `cat-btn free-filter ${filters.onlyFree ? 'active' : ''}`;
         freeBtn.onclick = () => { filters.onlyFree = !filters.onlyFree; if (filters.onlyFree) { filters.cat = 'ALL'; filters.subcat = null; } document.getElementById('search').value = ''; handleInput(); };
         d.appendChild(freeBtn);
 
         const sd = document.getElementById('subCatChips'); sd.innerHTML = ''; sd.style.display = 'none';
+        
         if (filters.cat !== 'ALL' && subcategories.size > 0) {
             sd.style.display = 'flex'; 
             Array.from(subcategories).sort().forEach(sc => {
@@ -764,7 +799,24 @@
         }
     }
 
-    // --- CART (ВЕРНУЛИ СТАРУЮ ВЕРСИЮ!) ---
+    // --- КОРЗИНА И УТИЛИТЫ ---
+    
+    function exitCartWithHighlight() {
+        closeModal();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        const btn = document.getElementById('btnFreeRecipe');
+        if(btn) {
+            let count = 0;
+            const flash = setInterval(() => {
+                btn.style.boxShadow = (count % 2 === 0) ? '0 0 15px #4caf50' : 'none'; 
+                btn.style.transform = (count % 2 === 0) ? 'scale(1.05)' : 'scale(1)';
+                count++;
+                if(count >= 6) { clearInterval(flash); btn.style.boxShadow = ''; btn.style.transform = ''; }
+            }, 300);
+        }
+    }
+
     function setSearch(val) { document.getElementById('search').value = val; handleInput(); }
     function setHardFilter(t, v) { filters[t] = (filters[t] === v) ? null : v; document.getElementById('search').value = ''; filters.search = ''; render(); }
     function modQty(pzn, d) {
@@ -773,9 +825,14 @@
         localStorage.setItem('de_cart', JSON.stringify(cart)); updateBar(); render(); renderCartItems(); renderPreview();
     }
     
+    // --- VISUAL FIX: КРУПНЫЙ ШРИФТ ПОЧТЫ В СИНЕЙ ТАБЛЕТКЕ ---
     function updateBar() {
         let totalEur = 0, count = 0; 
-        db.forEach(r => { if(cart[r.PZN]) { totalEur += parseFloat(r.Price.toString().replace(',','.'))*cart[r.PZN]; count += cart[r.PZN]; }});
+        db.forEach(r => { if(cart[r.PZN]) { 
+            const safePrice = parseFloat(r.Price.toString().replace(',','.'));
+            totalEur += safePrice * cart[r.PZN]; 
+            count += cart[r.PZN]; 
+        }});
         const totalRub = getRubPrice(totalEur);
         const floatBar = document.getElementById('floatBar');
         if (!floatBar) return; 
@@ -784,10 +841,10 @@
             document.getElementById('barTotal').innerHTML = `
                 <div style="line-height:1.2; text-align:left;">
                     <div style="display:flex; align-items:baseline; gap:7px;">
-                        <span id="animEur" style="font-size:1.1rem; font-weight:900;">${lastBarEur.toFixed(2)} €</span>
+                        <span id="animEur" style="font-size:1.1rem; font-weight:900;">${Math.round(lastBarEur)} €</span>
                         <span id="animRub" style="font-size:0.8rem; opacity:0.9;">≈ ${Math.round(lastBarRub).toLocaleString()} ₽</span>
                     </div>
-                    <div style="font-size:0.6rem; opacity:0.8;">+ почта ${shipEurGlobal}€</div>
+                    <div style="font-size:0.9rem; font-weight:bold; color:#fff; margin-top:2px;">+ почта ${shipEurGlobal} €</div>
                 </div>`;
             setTimeout(() => {
                 animateValue("animEur", lastBarEur, totalEur, 500, true); 
@@ -800,22 +857,21 @@
     function animateValue(id, start, end, duration, isFloat) {
         const obj = document.getElementById(id);
         if (!obj) return;
-        if (start === end) { obj.innerHTML = isFloat ? end.toFixed(2) + " €" : "≈ " + Math.round(end).toLocaleString() + " ₽"; return; }
+        if (start === end) { obj.innerHTML = isFloat ? end.toFixed(0) + " €" : "≈ " + Math.round(end).toLocaleString() + " ₽"; return; }
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             const currentVal = start + (end - start) * progress;
-            obj.innerHTML = isFloat ? currentVal.toFixed(2) + " €" : "≈ " + Math.round(currentVal).toLocaleString() + " ₽";
+            obj.innerHTML = isFloat ? currentVal.toFixed(0) + " €" : "≈ " + Math.round(currentVal).toLocaleString() + " ₽";
             if (progress < 1) window.requestAnimationFrame(step);
-            else obj.innerHTML = isFloat ? end.toFixed(2) + " €" : "≈ " + Math.round(end).toLocaleString() + " ₽";
+            else obj.innerHTML = isFloat ? end.toFixed(0) + " €" : "≈ " + Math.round(end).toLocaleString() + " ₽";
         };
         window.requestAnimationFrame(step);
     }
 
     function getRubPrice(eur) { return Math.floor((parseFloat(eur) * rateCalc) / 100) * 100; }
     
-    // ВЕРНУЛИ СТАРЫЙ РЕНДЕР КОРЗИНЫ (PREVIEW)
     function renderPreview() {
         const div = document.getElementById('cartPreview'); 
         let html = '<div style="font-weight:900; font-size:0.85rem; border-bottom:1px solid var(--p); padding-bottom:4px; margin-bottom:8px; color:var(--p)">СОСТАВ ЗАКАЗА:</div>';
@@ -837,7 +893,6 @@
         } else div.innerHTML = '<div style="text-align:center; color:#999; font-size:0.8rem">Корзина пуста</div>';
     }
     
-    // ВЕРНУЛИ СТАРЫЙ РЕНДЕР КОРЗИНЫ (MODAL)
     function renderCartItems() {
         const div = document.getElementById('cartItems'); div.innerHTML = ''; 
         const uArea = document.getElementById('undoArea'); uArea.innerHTML = '';
@@ -871,39 +926,54 @@
         if (Object.keys(cart).length === 0 && !customText) return;
         
         let totalEur = 0; let count = 0; 
-        let orderCodeParts = []; 
         const now = new Date();
+        const dateStr = now.toLocaleString('ru-RU');
         
-        let text = `З А К А З   R X D E\n==========================\nСайт: rxde.online\nДата: ${now.toLocaleString()}\nКурс конвертации: ${rateCalc.toFixed(2)} RUB/EUR\n--------------------------\n\n`;
+        let text = "Сайт: rxde.online\n";
+        text += "Дата: " + dateStr + "\n";
+        text += "Курс конвертации: " + rateCalc.toFixed(2) + " RUB/EUR\n";
+        text += "--------------------------\n\n";
 
         if(!customText) {
             db.forEach(r => { 
                 if(cart[r.PZN]) {
                     count++;
                     const qty = cart[r.PZN];
-                    const priceEur = parseFloat(r.Price.toString().replace(',','.'));
+                    const priceEur = parseFloat(r.Price.toString().replace(',', '.'));
                     const lineSumEur = Math.round(priceEur * qty); 
                     totalEur += lineSumEur;
-                    orderCodeParts.push(`${r.PZN}*${qty}`);
-                    text += `${count}. ${r.Name_DE}\nПроизводитель: ${r.Hersteller}\nPZN: ${r.PZN} ... ${Math.round(priceEur)} EUR × ${qty} pack = ${lineSumEur} EUR\n\n`;
+                    
+                    text += count + ". " + r.Name_DE + "\n";
+                    text += "Производитель: " + (r.Hersteller || "-") + "\n";
+                    text += "PZN: " + r.PZN + " ... " + Math.round(priceEur) + " € x " + qty + " pack = " + lineSumEur + " €\n\n";
                 } 
             }); 
             
             const goodsEur = Math.round(totalEur);
             const finalEur = goodsEur + shipEurGlobal;
             const finalRub = Math.floor((finalEur * rateCalc) / 100) * 100;
-            const fullOrderId = orderCodeParts.join('-');
-            const orderLink = `https://rxde.online/#order=${fullOrderId}`;
+            
+            const dLink = now.getDate().toString().padStart(2,'0') + (now.getMonth()+1).toString().padStart(2,'0') + now.getFullYear();
+            
+            const orderLinkPart = Object.entries(cart).map(([p,q]) => p+"*"+q).join("-");
+            const orderLink = "https://rxde.online/#order=" + orderLinkPart + "-d" + dLink;
 
-            text += `--------------------------\nТовары: ${goodsEur} EUR\nЛогистика (Deutsche Post): ${shipEurGlobal} EUR\n==========================\nИТОГО (EUR): ${goodsEur} + ${shipEurGlobal} = ${finalEur} EUR\nК ОПЛАТЕ (RUB): ${finalEur} × ${rateCalc.toFixed(2)} = ${finalRub.toLocaleString()} RUB\n==========================\n🔗 Ссылка на заказ:\n${orderLink}`;
+            text += "--------------------------\n";
+            text += "Товары: " + goodsEur + " €\n";
+            text += `Тариф почты из Германии до 5кг....${shipEurGlobal}€ (12..25 дней)\n`;
+            text += "==========================\n";
+            text += `ИТОГО К ОПЛАТЕ: ${finalEur} € x ${rateCalc.toFixed(2)} = ${finalRub.toLocaleString()} ₽\n`;
+            text += "==========================\n";
+            text += "🔗 Ссылка на заказ:\n" + orderLink;
 
         } else { text += customText; }
         
-        if (app === 'tg') window.open(`https://t.me/${TG_USER}?text=${encodeURIComponent(text)}`);
-        if (app === 'wa') window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(text)}`);
+        const encoded = encodeURIComponent(text);
+        
+        if (app === 'tg') window.open("https://t.me/" + TG_USER + "?text=" + encoded);
+        if (app === 'wa') window.open("https://wa.me/" + WA_PHONE + "?text=" + encoded);
         if (app === 'email') {
-            const emailBody = text.replace(/\n/g, '%0D%0A'); 
-            window.location.href = `mailto:med.zakaz.de@gmail.com?subject=ЗАКАЗ RXDE&body=${emailBody}`;
+            window.location.href = "mailto:med.zakaz.de@gmail.com?subject=ЗАКАЗ RXDE&body=" + encoded.replace(/%0A/g, '%0D%0A');
         }
     }
     
@@ -911,12 +981,41 @@
     function openCart() { document.getElementById('modal').style.display = 'flex'; renderCartItems(); }
     function closeModal() { document.getElementById('modal').style.display = 'none'; }
     function clearSearch() { document.getElementById('search').value = ''; handleInput(); }
+    
     function restoreOrderFromUrl() {
         const hash = window.location.hash;
-        if(hash.startsWith('#order=')) {
-            const items = hash.replace('#order=','').split('-');
-            items.forEach(i => { const p = i.split('*'); if(p.length===2) cart[p[0]] = parseInt(p[1]); });
-            render(); updateBar();
+        if(!hash || !hash.includes('#order=')) return;
+
+        let dateStr = "неизвестную дату";
+        const dateMatch = hash.match(/-d(\d{8})/);
+        if(dateMatch) {
+            const raw = dateMatch[1];
+            dateStr = `${raw.slice(0,2)}.${raw.slice(2,4)}.${raw.slice(4)}`;
+        }
+
+        let cleanHash = hash.replace('#order=', '').replace(/-d\d{8}/, '');
+        const items = cleanHash.split('-');
+        let newCart = {};
+        let uniqueCount = 0; 
+
+        items.forEach(i => {
+            const [pzn, qty] = i.split('*');
+            if(pzn && qty) {
+                newCart[pzn] = parseInt(qty);
+                uniqueCount++;
+            }
+        });
+
+        if(uniqueCount > 0) {
+            if(confirm(`Найдена ссылка на заказ от ${dateStr}.\nВ списке ${uniqueCount} позиций.\n\nЗагрузить этот заказ? (Текущая корзина заменится)`)) {
+                cart = newCart;
+                localStorage.setItem('de_cart', JSON.stringify(cart));
+                updateBar();
+                render();
+                renderCartItems(); 
+                openCart(); 
+                history.replaceState(null, null, ' ');
+            }
         }
     }
 
