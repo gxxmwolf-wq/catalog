@@ -2,7 +2,7 @@ name: Update Exchange Rate
 
 on:
   schedule:
-    cron: '0 9,16,21 * * *'
+    - cron: '0 9,16,21 * * *'
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch Rate
         run: |
@@ -24,5 +24,5 @@ jobs:
           git config --global user.name 'RateBot'
           git config --global user.email 'bot@rxde.online'
           git add rate.json
-          git commit -m "Update rate" || exit 0
+          git commit -m "Update rate: $(date)" || exit 0
           git push
