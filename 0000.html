@@ -1,91 +1,393 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RXDE.online — Аптека Германии</title>
     
-    <link rel="stylesheet" href="style.css">
+    <title>RXDE — Лекарства из Германии. Реестр v100.56-</title>
+    <meta name="description" content="Поиск и заказ лекарств из аптек Мюнхена. Актуальный реестр, цены в рублях и евро. Доставка в РФ 12-25 дней. Витамины, редкие препараты, без рецепта.">
+    <meta name="keywords" content="лекарства из германии, аптека мюнхен, витамины из европы, доставка лекарств, ospolot, сультиам, заказ медикаментов">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    <meta name="theme-color" content="#005691">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://rxde.online/">
-    <meta property="og:title" content="RXDE.online — Аптека Германии">
-    <meta property="og:description" content="С первого вопроса — всегда на связи. Аптека Германии ближе, чем когда либо. Проверьте цены и наличие!">
+    <meta property="og:title" content="🇩🇪 RXDE — Аптека Мюнхена">
+    <meta property="og:description" content="Реестр лекарств с ценами. Прямой заказ, доставка в РФ. Проверьте наличие!">
     <meta property="og:image" content="https://rxde.online/favicon.png">
 
-    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <style>
+        :root { --p: #005691; --bg: #f4f6f8; --w: #fff; --txt: #333; --gr: #666; --accent: #e3f2fd; --rx: #d32f2f; --otc: #2e7d32; --active: #4caf50; --old: #f57f17; --info-bg: #e1f5fe; --info-txt: #0277bd; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding-bottom: 120px; -webkit-tap-highlight-color: transparent; }
+        .cont { max-width: 600px; margin: 0 auto; padding: 10px; }
+        
+        header { background: var(--w); padding: 12px 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        
+        .head-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; flex-wrap: wrap; gap: 10px; }
+        
+        h1 { margin: 0; font-size: 0.9rem; color: var(--p); text-transform: uppercase; font-weight: 800; display: flex; align-items: center; gap: 6px; }
+        .version-badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: normal; text-transform: none; letter-spacing: 0.5px; border: 1px solid transparent; }
+        .version-badge.local { background: #e3f2fd; color: #1565c0; border-color: #90caf9; } 
+        .version-badge.global { background: #e8f5e9; color: #2e7d32; border-color: #c8e6c9; }
+
+        .top-date { font-size: 0.75rem; color: #888; font-weight: 500; }
+
+        .info-msg { background: var(--info-bg); color: var(--info-txt); font-size: 0.7rem; padding: 8px 10px; border-radius: 8px; margin-bottom: 8px; line-height: 1.35; border: 1px solid #b3e5fc; }
+
+        .trust-line { background: #fff; padding: 6px 10px; border-radius: 8px; font-size: 0.7rem; border: 1px solid #e0e6ed; color: #555; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px; }
+
+        #errorBox { display: none; background: #ffebee; color: #c62828; border: 1px solid #e57373; padding: 15px; border-radius: 10px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; word-break: break-word; }
+
+        .sticky { position: sticky; top: 0; background: var(--bg); padding: 5px 0; z-index: 90; }
+        .inp-wrap { position: relative; height: 50px; background: #fff; border-radius: 10px; border: 1px solid #ccc; overflow: hidden; display: flex; align-items: center; }
+        
+      /* 1. Поле ввода возвращаем НАВЕРХ, чтобы курсор и текст были четкими */
+        .search-input { 
+            width: 100%; 
+            padding: 10px 15px; 
+            border-radius: 10px; 
+            font-size: 16px; 
+            box-sizing: border-box; 
+            border: none; 
+            outline: none; 
+            font-family: inherit; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            height: 100%; 
+            background: transparent; /* Прозрачный фон, чтобы видеть призрака */
+            line-height: 1.5; 
+            z-index: 2; /* ГЛАВНЫЙ СЛОЙ */
+            color: #000; 
+        }
+        
+        /* 2. Призрак уходит НАЗАД */
+        #ghostInput { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 100%; 
+            height: 100%; 
+            color: #bbb; 
+            z-index: 1; /* ФОНОВЫЙ СЛОЙ */
+            white-space: pre; 
+            display: none; 
+            align-items: center; 
+            padding-left: 15px; 
+            font-size: 16px; 
+            font-family: inherit; 
+        }
+        #ghostInput.visible { display: flex; }
+        
+        /* 3. Кнопка-подсказка: ЛЕЖИТ ПОВЕРХ ВСЕГО */
+        /* УМНАЯ КНОПКА-ПОДСКАЗКА */
+        /* УМНАЯ КНОПКА (Стиль "Т9") */
+        .hint-text { 
+            position: absolute;
+            right: 45px; 
+            top: 10px; 
+            z-index: 20; 
+            
+            display: none;
+            align-items: center;
+            height: 30px;
+            
+            background: #e8f5e9; 
+            border: 1px solid #c8e6c9; 
+            border-radius: 6px;
+            padding: 0 10px;
+            
+            color: #2e7d32; 
+            font-family: inherit; /* Шрифт как у основного сайта */
+            font-weight: 700;     /* Жирный */
+            font-size: 0.85rem; 
+            
+            cursor: pointer; 
+            pointer-events: auto; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            max-width: 50%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Добавляем стрелочку автоматически перед словом */
+        .hint-text::before {
+            content: "➔ ";
+            opacity: 0.5;
+            margin-right: 4px;
+            font-weight: 400;
+        }
+        
+        .hint-text.show { display: flex; }
+        
+        /* Жирная часть (то, что добавится) */
+        .hint-text .bold { 
+            font-weight: 900; 
+            text-decoration: none; /* Убрали подчеркивание */
+            font-size: 1em; /* Нормальный размер */
+        }
+        
+        /* Дополнительно: убедимся, что крестик (X) тоже доступен */
+        .cls-btn { z-index: 11; }
+
+        .cls-btn { position: absolute; right: 12px; top: 14px; color: #999; cursor: pointer; z-index: 3; font-size: 1.2rem; }
+        
+        .filter-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 5px; }
+        .chip { background: var(--active); color: #fff; padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; display: flex; align-items: center; font-weight: 600; }
+        .chip b { margin-left: 6px; cursor: pointer; font-size: 1rem; }
+        
+        .cat-nav-wrap { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+        #catChips, #subCatChips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding: 2px 0; }
+        #catChips::-webkit-scrollbar, #subCatChips::-webkit-scrollbar { display: none; }
+        
+        .cat-btn { padding: 6px 14px; border-radius: 20px; background: #fff; color: #333; font-size: 0.75rem; cursor: pointer; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid transparent; transition: 0.2s; font-weight: 500; }
+        .cat-btn.active { background: #333; color: #fff; }
+        .cat-btn.free-filter.active { background: var(--otc); color: #fff; border-color: var(--otc); }
+        
+        .sub-cat-btn { padding: 5px 12px; border-radius: 12px; background: #fff; color: var(--p); font-size: 0.7rem; cursor: pointer; white-space: nowrap; border: 1px solid var(--p); transition: all 0.2s ease; font-weight: 500; }
+        .sub-cat-btn.active { background: var(--p); color: #fff; }
+
+        .man-bar { display: none; justify-content: space-between; align-items: center; background: #fff8e1; padding: 8px 12px; border-radius: 8px; margin: 10px 0; font-size: 0.8rem; color: #f57f17; border: 1px solid #ffe082; }
+
+        .empty-state { background: #fff; border-radius: 15px; padding: 30px 20px; text-align: center; border: 1px dashed #ccc; margin-top: 20px; }
+        .empty-state h3 { color: var(--p); margin-top: 0; font-size: 1.1rem; }
+        .empty-state p { font-size: 0.85rem; color: #666; line-height: 1.4; margin-bottom: 20px; }
+        
+        .did-you-mean { background: #e3f2fd; color: var(--p); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; cursor: pointer; border: 1px solid #bbdefb; display: block; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .did-you-mean:hover { background: #bbdefb; }
+
+        .empty-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .eb-btn { padding: 12px; border-radius: 10px; border: none; font-weight: bold; color: #fff; cursor: pointer; font-size: 0.8rem; }
+
+        .card { background: var(--w); border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.3s; border: 1px solid transparent; }
+        .card.selected-item { background: #e3f2fd; border: 1px solid #bbdefb; }
+        .c-tit-line { font-weight: 700; font-size: 0.95rem; color: #000; line-height: 1.35; display: inline; } 
+        
+        .badge { font-size: 0.6rem; padding: 1px 3px; border-radius: 4px; font-weight: 900; text-transform: uppercase; border: 1px solid; display: inline-block; vertical-align: middle; margin: 0 2px; position: relative; top: -1px; }
+        .badge.rx { color: var(--rx); border-color: var(--rx); background: #fff1f1; }
+        .badge.free { color: var(--otc); border-color: var(--otc); background: #f1fff1; }
+
+        .check-btn { font-size: 0.6rem; text-decoration: none; background: #f0f0f0; color: #555; padding: 1px 5px; border-radius: 4px; border: 1px solid #ccc; display: inline-flex; align-items: center; gap: 3px; font-weight: 500; transition: 0.2s; white-space: nowrap; vertical-align: middle; margin-left: 2px; position: relative; top: -1px; }
+        .check-btn:hover { background: #e0e0e0; color: #000; }
+
+        .cam-wrap { position: relative; display: inline-block; cursor: pointer; color: var(--p); font-size: 1rem; }
+        .preview-img { display: none; position: absolute; bottom: 25px; left: 0; z-index: 150; border: 3px solid var(--p); border-radius: 12px; background: #fff; width: 220px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+        .cam-wrap:hover .preview-img { display: block; }
+
+        .t-lnk { color: var(--p); cursor: pointer; border-bottom: 1px dashed #bbb; font-size: 0.7rem; padding: 0 3px; transition: 0.2s; white-space: nowrap; margin-bottom: 2px; display: inline-block; }
+        .t-lnk.active-f { background: var(--active); color: #fff; border-bottom: none; border-radius: 4px; }
+
+        .qty-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; justify-content: flex-end; }
+        .btn-qty { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #ddd; background: #fff; color: var(--p); font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-qty.add { background: var(--p); color: #fff; border-color: var(--p); }
+
+        .cart-wrapper { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; z-index: 100; }
+        .float-bar { width: 100%; height: 50px; background: var(--p); color: white; padding: 0 20px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 25px rgba(0,86,145,0.4); cursor: pointer; box-sizing: border-box; }
+        .float-bar.empty { opacity: 0.5; filter: grayscale(1); }
+        
+        .cart-preview { display: none; position: absolute; bottom: 60px; left: 0; width: 100%; background: white; border-radius: 15px; box-shadow: 0 -5px 30px rgba(0,0,0,0.2); padding: 15px; border: 1px solid #ccc; max-height: 400px; overflow-y: auto; box-sizing: border-box; }
+        .cart-wrapper:hover .cart-preview { display: block; }
+        .prev-row { display: flex; align-items: baseline; font-size: 0.75rem; margin-bottom: 6px; color: #444; }
+        .prev-dots { flex-grow: 1; border-bottom: 1px dotted #ccc; margin: 0 6px; position: relative; top: -3px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; align-items: flex-end; }
+        .m-box { background: #fff; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
+        
+        .cart-row { padding: 8px 0; border-bottom: 1px solid #eee; }
+        .cart-row-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2px; }
+        .cart-row-bot { display: flex; justify-content: space-between; align-items: flex-end; }
+        .cart-title { font-weight: 700; font-size: 0.85rem; line-height: 1.2; padding-right: 8px; color: #222; }
+        .cart-total-wrap { text-align: right; }
+        .cart-total-rub { font-weight: 900; font-size: 0.95rem; color: var(--p); white-space: nowrap; }
+        .cart-total-eur { font-weight: 400; font-size: 0.7rem; color: #999; }
+        .cart-meta { font-size: 0.7rem; color: #888; line-height: 1.3; }
+        
+        .forgot-link { color: var(--p); text-align: center; padding: 20px 0; cursor: pointer; text-decoration: underline; font-size: 0.9rem; font-weight: 600; display: block; line-height: 1.4; }
+        .undo-box { background: #fff8e1; color: #f57f17; border: 1px dashed #f57f17; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        
+        .upsell-box { background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%); border: 1px solid #c8e6c9; border-radius: 12px; padding: 12px 15px; margin: 10px 0; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .upsell-box:active { transform: scale(0.98); }
+        .upsell-icon { font-size: 1.4rem; margin-right: 12px; }
+        .upsell-tit { font-weight: bold; color: var(--otc); font-size: 0.85rem; }
+        .upsell-desc { font-size: 0.7rem; color: #555; margin-top: 1px; }
+        .upsell-arr { margin-left: auto; color: var(--otc); font-size: 1.1rem; opacity: 0.5; }
+
+        .email-link { color: #555; text-decoration: underline; font-weight: 700; font-size: 0.9rem; }
+
+    /* --- CLINICAL MINIMALISM (Строгий медицинский стиль) --- */
+/* --- FAQ STYLES (Final) --- */
+        .faq-wrapper {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            position: relative; /* Для правильного позиционирования */
+        }
+
+        .faq-toggle {
+            background: #fff; 
+            color: #000;
+            padding: 12px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .faq-toggle:hover { background-color: #f5f5f5; }
+
+        .faq-content { 
+            display: none; 
+            padding: 20px 15px; 
+            border-top: 1px solid #ccc; 
+            color: #333;
+        }
+        .faq-content.show { display: block; }
+
+        .qa-block { margin-bottom: 15px; }
+        .qa-block:last-child { margin-bottom: 0; }
+
+        /* Вопрос: Теперь ЧЕРНЫЙ, как вы просили */
+        .qa-question {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #000; /* <-- Черный цвет */
+            margin-bottom: 5px;
+        }
+
+        .qa-answer {
+            font-size: 0.9rem;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        /* --- UNIVERSAL BUTTONS & GRID (Справка + Корзина) --- */
+        .contact-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-top: 15px; 
+            padding-top: 15px;
+            border-top: 1px dotted #ccc;
+        }
+        
+        /* Единый стиль для кнопок и ссылок */
+        .c-btn {
+            border: none;
+            padding: 12px;
+            color: #fff !important; /* Всегда белый текст */
+            font-family: -apple-system, sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s, transform 0.1s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .c-btn:hover { opacity: 0.9; }
+        .c-btn:active { transform: scale(0.98); }
+        
+        /* Цвета брендов */
+        .c-btn.tg { background: #229ED9; }
+        .c-btn.wa { background: #25D366; }
+        .c-btn.em { 
+            background: #555; 
+            grid-column: 1 / -1; /* Растянуть на всю ширину */
+        }
+
+    </style>
 </head>
 <body onclick="closeModal()">
 
 <div class="cont">
-    
     <header onclick="event.stopPropagation()">
-        <div class="head-row">
-            <div class="logo-block">
-                <div class="logo-line">
-                    <span class="rx-style">RX</span>
-                    <span class="de-style">DE</span>
-                    <span class="online-style">.online</span>
-                </div>
-                <div class="slogan-style">
-                    С первого вопроса — всегда на связи.<br>
-                    Немецкая аптека ближе, чем когда-либо.
-                </div>
-            </div>
-
-            <div class="info-block">
-                <div class="info-text">
-                    ЦБ: <span id="cbRate">...</span> | Расчетный курс: <span id="finalRate">...</span>
-                </div>
-                <div id="topDate" class="info-text"></div>
-            </div>
+        <div class="head-top">
+            <h1 id="appTitle">🇩🇪 DE Реестр <span class="version-badge global">Online (G-Sheets)</span></h1>
+            <span id="topDate" class="top-date"></span>
         </div>
-
+        
         <div id="errorBox"></div>
 
-        <div class="contact-grid" style="margin-top:12px; border:none; padding-top:0;">
-            <a href="https://t.me/remed01?text=Здравствуйте%20RxDe,%20у%20меня%20вопрос:" target="_blank" class="c-btn tg">Telegram</a>
-            <a href="https://wa.me/79650302556?text=Здравствуйте%20RxDe,%20у%20меня%20вопрос:" target="_blank" class="c-btn wa">WhatsApp</a>
-            <a href="mailto:med.zakaz.de@gmail.com?subject=Здравствуйте RxDe, у меня вопрос:" class="c-btn em">Email</a>
-        </div>
-
-        <div id="faqWrap" class="faq-wrapper" style="margin-top:10px; margin-bottom:0; border:none; border-top:1px solid #eee;">
-            <div class="faq-toggle" onclick="toggleFaq()" style="padding: 6px 0; font-size: 0.75rem; color:#777; justify-content: center; gap: 5px;">
-                <span>ℹ️ Условия доставки и оплаты</span>
-                <span id="faqArrow">▼</span>
+        <div id="faqWrap" class="faq-wrapper">
+            <div class="faq-toggle" onclick="toggleFaq()">
+                <span>Справка и условия заказа</span>
+                <span id="faqArrow" style="color:#999; font-size:0.8rem;">▼</span>
             </div>
+
             <div id="faqBody" class="faq-content">
                 <div class="qa-block">
                     <div class="qa-question">О сервисе</div>
-                    <div class="qa-answer">Сервис прямой доставки оригинальных медикаментов из аптеки Мюнхена.</div>
+                    <div class="qa-answer">Сервис прямой доставки из Мюнхена. Закупаем лично в лицензированных аптеках. Чеки предоставляем.</div>
                 </div>
                 <div class="qa-block">
-                    <div class="qa-question">Оплата</div>
-                    <div class="qa-answer">В рублях на карту РФ. Курс фиксируется в момент заказа.</div>
+                    <div class="qa-question">Происхождение</div>
+                    <div class="qa-answer">Только оригинал для рынка Германии (PZN). Реэкспорт исключен.</div>
                 </div>
                 <div class="qa-block">
                     <div class="qa-question">Логистика</div>
-                    <div class="qa-answer">Почта (12–25 дней). Трек-номер предоставляем. Фотоотчет Вашей сборки.</div>
+                    <div class="qa-answer">Отбор максимальных сроков годности. Доставка Почтой (12–25 дней). Трек-номер предоставляется.</div>
+                </div>
+                <div class="qa-block">
+                    <div class="qa-question">Оплата</div>
+                    <div class="qa-answer">В рублях на карту банка РФ. Курс фиксируется в момент заказа.</div>
+                </div>
+
+                <div class="contact-grid">
+                    <a href="https://t.me/remed01?text=Здравствуйте%20RxDe,%20у%20меня%20вопрос:" target="_blank" class="c-btn tg">Telegram</a>
+                    <a href="https://wa.me/79650302556?text=Здравствуйте%20RxDe,%20у%20меня%20вопрос:" target="_blank" class="c-btn wa">WhatsApp</a>
+                    <a href="mailto:med.zakaz.de@gmail.com?subject=Здравствуйте RxDe, у меня вопрос:" class="c-btn em">Написать на Email</a>
                 </div>
             </div>
+        </div>
+
+        <div class="trust-line">
+            <span style="opacity:0.7">Биржа: <b id="cbRate">...</b></span>
+            
+            <span>Курс конвертации: <b id="finalRate" style="color:var(--p)">... ₽</b></span>
         </div>
     </header>
 
     <div class="sticky" onclick="event.stopPropagation()">
         <div class="inp-wrap">
             <div id="enterHint" class="hint-text" onclick="completeSearch()"></div>
-            <input type="text" id="search" class="search-input" placeholder="Название, вещество, производитель..." oninput="handleInput()" onkeydown="handleKeys(event)" autocomplete="off">
+
+            <input type="text" id="search" class="search-input" 
+                   placeholder="Название, вещество, производитель..." 
+                   oninput="handleInput()" 
+                   onkeydown="handleKeys(event)" 
+                   autocomplete="off">
+                   
             <span class="cls-btn" id="clearBtn" onclick="clearSearch()" style="display:none">✕</span>
         </div>
+        
         <div class="filter-tags" id="chipBar"></div>
+        
         <div class="cat-nav-wrap">
             <div id="catChips"></div>
             <div id="subCatChips"></div>
         </div>
+        
         <div id="manBar" class="man-bar">
             <span>Найдено: <b id="cnt">0</b></span>
-            <span style="text-decoration:underline; font-weight:bold; cursor:pointer;" onclick="copyVisibleItems()">📄 Копировать</span>
+            <span style="text-decoration:underline; font-weight:bold; cursor:pointer;" onclick="copyVisibleItems()">📄 Копировать из текущего фильтра</span>
         </div>
     </div>
     
@@ -104,15 +406,22 @@
     <div class="m-box" onclick="event.stopPropagation()">
         <h3 style="margin:0 0 15px 0; border-bottom: 2px solid #333; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
             <span>Заказ</span>
-            <span onclick="closeModal()" style="cursor:pointer; font-size:1.5rem; line-height:1;">✕</span>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <span onclick="closeModal()" style="cursor:pointer; font-size:1.5rem; line-height:1;">✕</span>
+            </div>
         </h3>
+
         <div id="undoArea"></div>
         <div id="cartItems"></div>
+        
         <div class="upsell-box" onclick="activateFreeFilter()">
-            <div><div class="upsell-desc">Добавим в посылку безрецептурные?</div></div>
+            <div><div class="upsell-desc">Добавим в посылку безрецепурные?</div></div>
             <div class="upsell-arr">➝</div>
         </div>
-        <div id="summaryBox" style="background:#f4f6f8; padding:15px; border-radius:10px; margin-top:10px;"></div>
+
+        <div id="summaryBox" style="background:#f4f6f8; padding:15px; border-radius:10px; margin-top:10px;">
+            </div>
+
         <div class="contact-grid" style="border:none; margin-top:15px; padding-top:0;">
             <button onclick="doShare('tg')" class="c-btn tg">Заказ в Telegram</button>
             <button onclick="doShare('wa')" class="c-btn wa">Заказ в WhatsApp</button>
@@ -125,11 +434,15 @@
     // ==========================================
     // ⚙️ НАСТРОЙКИ
     // ==========================================
-    const APP_VERSION = 'v11.6'; 
+    const APP_VERSION = 'v11.3'; 
     const KURS_REZERV = 100; 
+    
+    // Файлы
     const LOCAL_DB_URL = 'db.csv'; 
     const GOOGLE_SETTINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=185046132&single=true&output=csv';
     const CBR_API_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
+    
+    // Контакты
     const TG_USER = 'remed01';
     const WA_PHONE = '79650302556';
     // ==========================================
@@ -143,7 +456,7 @@
     let filters = { search: '', manuf: null, subst: null, subst_ru: null, dosage: null, size: null, cat: 'ALL', subcat: null, onlyFree: false, form: null };
     const searchFields = ['PZN', 'Name_DE', 'Name_RU', 'Hersteller', 'Substance', 'Substance_RU', 'Dosage', 'Size', 'Category', 'Form'];
 
-    // --- FAQ ---
+    // --- ИНТЕРФЕЙС (FAQ) ---
     function toggleFaq() {
         const body = document.getElementById('faqBody');
         const arrow = document.getElementById('faqArrow');
@@ -167,6 +480,22 @@
         const saved = localStorage.getItem('de_cart'); 
         if (saved) cart = JSON.parse(saved);
 
+        // --- НОВЫЙ ДИЗАЙН ШАПКИ (v11.3 - Ratio 1:2) ---
+        const isLocal = window.location.hostname === '' || window.location.hostname === 'localhost';
+        
+        document.getElementById('appTitle').innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                <div style="font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; display:flex; align-items:baseline; line-height: 1;">
+                    <span style="color:#d32f2f">Rx</span>
+                    <span style="color:#1976d2; font-size:0.5em; margin-left:2px; font-weight:700;">DE.online</span>
+                    <span class="version-badge ${isLocal ? 'local' : 'global'}" style="margin-left:8px; font-size:0.35em; opacity:0.6; align-self:center;">${APP_VERSION}</span>
+                </div>
+                <div style="font-size: 0.65rem; color: #444; margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <span style="color:#1976d2">✓</span> Немецкое качество с доставкой на дом
+                </div>
+            </div>
+        `;
+
         const upsellDesc = document.querySelector('.upsell-desc');
         if(upsellDesc) upsellDesc.innerText = 'Добавим новые позиции? Выход из корзины';
         const upsellBox = document.querySelector('.upsell-box');
@@ -188,7 +517,6 @@
             });
         });
     }
-
     async function fetchCbrRate() {
         try {
             const response = await fetch(CBR_API_URL);
@@ -196,7 +524,6 @@
             cbrRateData = data.Valute.EUR.Value;
         } catch (e) { console.error("⚠️ ЦБ недоступен"); }
     }
-
     function fetchGoogleSettings() {
         return new Promise((resolve) => {
             Papa.parse(GOOGLE_SETTINGS_URL, { 
@@ -205,11 +532,6 @@
                 error: (err) => { console.warn("Google недоступен"); resolve(); }
             });
         });
-    }
-
-    function showError(msg) {
-        const box = document.getElementById('errorBox');
-        if(box) { box.innerText = msg; box.style.display = 'block'; }
     }
 
     // --- МОЗГ: РАСЧЕТ КУРСА ---
@@ -225,6 +547,7 @@
 
         let baseRate = 0, sourceName = "", colorStyle = "color: #888"; 
 
+        // ЛОГИКА 10%
         if (!googleRate || googleRate === 100) {
             if (cbrRateData) { baseRate = cbrRateData; sourceName = "(ЦБ РФ)"; } 
             else { baseRate = KURS_REZERV; sourceName = "(Резерв)"; colorStyle = "color: #d32f2f"; showError("Нет связи с банками."); }
@@ -449,6 +772,7 @@
             d.appendChild(btn);
         });
 
+        // 🟢 КНОПКА "БЕЗ РЕЦЕПТА"
         const freeBtn = document.createElement('div');
         freeBtn.id = 'btnFreeRecipe';
         freeBtn.innerText = '☘️ Без рецепта';
@@ -476,6 +800,8 @@
         }
     }
 
+    // --- КОРЗИНА И УТИЛИТЫ ---
+    
     function exitCartWithHighlight() {
         closeModal();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -500,6 +826,7 @@
         localStorage.setItem('de_cart', JSON.stringify(cart)); updateBar(); render(); renderCartItems(); renderPreview();
     }
     
+    // --- VISUAL FIX: КРУПНЫЙ ШРИФТ ПОЧТЫ В СИНЕЙ ТАБЛЕТКЕ ---
     function updateBar() {
         let totalEur = 0, count = 0; 
         db.forEach(r => { if(cart[r.PZN]) { 
@@ -691,17 +1018,6 @@
                 history.replaceState(null, null, ' ');
             }
         }
-    }
-    
-    function copyVisibleItems() {
-        if(currentVisible.length === 0) return;
-        let text = "Список из фильтра:\n";
-        currentVisible.forEach(r => {
-            text += `- ${r.Name_DE} (${r.Hersteller}) — ${r.Price}€\n`;
-        });
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Список скопирован в буфер обмена!");
-        });
     }
 
     init();
