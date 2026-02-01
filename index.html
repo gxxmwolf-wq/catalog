@@ -3,23 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RXDE.online — Аптека Германии</title>
     
-    <link rel="stylesheet" href="style.css">
-
+    <title>RXDE.online — Сервис доставки лекарств из Германии</title>
+    
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://rxde.online/">
-    <meta property="og:title" content="RXDE.online — Аптека Германии">
-    <meta property="og:description" content="С первого вопроса — всегда на связи. Аптека Германии ближе, чем когда либо. Проверьте цены и наличие!">
+    <meta property="og:title" content="RXDE.online — Сервис доставки лекарств из Германии">
+    <meta property="og:description" content="С первого вопроса — всегда на связи. Немецкое качество ближе, чем когда-либо. Проверьте цены и наличие!">
     <meta property="og:image" content="https://rxde.online/favicon.png">
 
     <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+
+    <style>
+        /* --- НАСТРОЙКИ --- */
+        :root { --p: #005691; --bg: #f4f6f8; --w: #fff; --txt: #333; --rx: #d32f2f; --otc: #2e7d32; --active: #4caf50; --tg: #229ED9; --wa: #25D366; --em: #555555; }
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--txt); margin: 0; padding-bottom: 120px; -webkit-tap-highlight-color: transparent; }
+        .cont { max-width: 600px; margin: 0 auto; padding: 10px; }
+
+        /* КНОПКИ */
+        .c-btn { border: none; padding: 10px; color: #fff !important; font-size: 0.85rem; font-weight: 700; text-align: center; text-decoration: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; font-family: sans-serif; transition: transform 0.1s, opacity 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .c-btn:active { transform: scale(0.97); opacity: 0.9; } 
+        .c-btn.tg { background: var(--tg); }
+        .c-btn.wa { background: var(--wa); }
+        .c-btn.em { background: var(--em); grid-column: 1 / -1; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; border: none; }
+
+        /* ШАПКА */
+        header { background: var(--w); padding: 10px 12px; border-radius: 0 0 12px 12px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); overflow: hidden; }
+        .head-row { display: flex; justify-content: space-between; align-items: center; gap: 5px; margin-bottom: 6px; }
+        .logo-block { flex-shrink: 0; }
+        .logo-line { line-height: 1; white-space: nowrap; display: flex; align-items: center; }
+        .rx-style { font-family: sans-serif; font-weight: 900; font-size: 24px; color: var(--rx); border: 2px solid var(--rx); background: #fff1f1; padding: 0px 3px; border-radius: 5px; margin-right: 2px; letter-spacing: 0; display: inline-block; }
+        .de-style { font-family: sans-serif; font-weight: 900; font-size: 28px; color: #000; letter-spacing: -1.5px; }
+        .online-style { font-family: sans-serif; font-weight: 400; font-size: 14px; color: #000; margin-left: 2px; }
+        .info-block { text-align: right; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+        .info-text { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif; font-size: 12px; font-weight: 400; color: #000; line-height: 1.3; white-space: nowrap; letter-spacing: -0.2px; }
+        .slogan-full { font-family: 'Roboto Condensed', 'Arial Narrow', sans-serif; font-size: 11px; color: #333; line-height: 1.3; font-weight: 500; border-top: 1px solid #f0f0f0; padding-top: 6px; width: 100%; }
+
+        /* ПОИСК */
+        .sticky { position: sticky; top: 0; background: var(--bg); padding: 5px 0; z-index: 90; }
+        .inp-wrap { position: relative; height: 50px; background: #fff; border-radius: 10px; border: 1px solid #ccc; overflow: hidden; display: flex; align-items: center; }
+        .search-input { width: 100%; padding: 10px 15px; border-radius: 10px; font-size: 16px; border: none; outline: none; background: transparent; line-height: 1.5; z-index: 2; color: #000; height: 100%; box-sizing: border-box; }
+        .hint-text { position: absolute; right: 45px; top: 10px; z-index: 20; display: none; align-items: center; height: 30px; background: #e8f5e9; border: 1px solid #c8e6c9; border-radius: 6px; padding: 0 10px; color: #2e7d32; font-weight: 700; font-size: 0.85rem; cursor: pointer; white-space: nowrap; max-width: 50%; overflow: hidden; text-overflow: ellipsis; }
+        .hint-text.show { display: flex; }
+        .cls-btn { position: absolute; right: 12px; top: 14px; color: #999; cursor: pointer; z-index: 3; font-size: 1.2rem; }
+
+        .filter-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 5px; }
+        .chip { background: var(--active); color: #fff; padding: 4px 10px; border-radius: 15px; font-size: 0.7rem; display: flex; align-items: center; font-weight: 600; }
+        .chip b { margin-left: 6px; cursor: pointer; font-size: 1rem; }
+
+        .cat-nav-wrap { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+        #catChips, #subCatChips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+        #catChips::-webkit-scrollbar, #subCatChips::-webkit-scrollbar { display: none; }
+        .cat-btn { padding: 6px 14px; border-radius: 20px; background: #fff; color: #333; font-size: 0.75rem; cursor: pointer; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid transparent; transition: 0.2s; font-weight: 500; }
+        .cat-btn.active { background: #333; color: #fff; }
+        .cat-btn.free-filter.active { background: var(--otc); color: #fff; border-color: var(--otc); }
+        .sub-cat-btn { padding: 5px 12px; border-radius: 12px; background: #fff; color: var(--p); font-size: 0.7rem; cursor: pointer; white-space: nowrap; border: 1px solid var(--p); transition: all 0.2s ease; font-weight: 500; }
+        .sub-cat-btn.active { background: var(--p); color: #fff; }
+
+        .man-bar { display: none; justify-content: space-between; align-items: center; background: #fff8e1; padding: 8px 12px; border-radius: 8px; margin: 10px 0; font-size: 0.8rem; color: #f57f17; border: 1px solid #ffe082; }
+
+        /* Empty State */
+        .empty-state { background: #fff; border-radius: 15px; padding: 30px 20px; text-align: center; border: 1px dashed #ccc; margin-top: 20px; }
+        .empty-state h3 { color: var(--p); margin-top: 0; font-size: 1.1rem; }
+        .empty-hint { font-size: 0.85rem; color: #777; line-height: 1.5; max-width: 85%; margin: 15px auto 0 auto; }
+        .did-you-mean { background: #e3f2fd; color: var(--p); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; cursor: pointer; border: 1px solid #bbdefb; display: block; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        .card { background: var(--w); border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.3s; border: 1px solid transparent; }
+        .card.selected-item { background: #e3f2fd; border: 1px solid #bbdefb; }
+        .c-tit-line { font-weight: 700; font-size: 0.95rem; color: #000; line-height: 1.35; display: inline; } 
+        .badge { font-size: 0.6rem; padding: 1px 3px; border-radius: 4px; font-weight: 900; text-transform: uppercase; border: 1px solid; display: inline-block; vertical-align: middle; margin: 0 2px; position: relative; top: -1px; }
+        .badge.rx { color: var(--rx); border-color: var(--rx); background: #fff1f1; }
+        .badge.free { color: var(--otc); border-color: var(--otc); background: #f1fff1; }
+        .check-btn { font-size: 0.6rem; text-decoration: none; background: #f0f0f0; color: #555; padding: 1px 5px; border-radius: 4px; border: 1px solid #ccc; display: inline-flex; align-items: center; gap: 3px; font-weight: 500; transition: 0.2s; white-space: nowrap; vertical-align: middle; margin-left: 2px; position: relative; top: -1px; }
+        .cam-wrap { position: relative; display: inline-block; cursor: pointer; color: var(--p); font-size: 1rem; }
+        .preview-img { display: none; position: absolute; bottom: 25px; left: 0; z-index: 150; border: 3px solid var(--p); border-radius: 12px; background: #fff; width: 220px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+        .cam-wrap:hover .preview-img { display: block; }
+        .t-lnk { color: var(--p); cursor: pointer; border-bottom: 1px dashed #bbb; font-size: 0.7rem; padding: 0 3px; transition: 0.2s; white-space: nowrap; margin-bottom: 2px; display: inline-block; }
+        .t-lnk.active-f { background: var(--active); color: #fff; border-bottom: none; border-radius: 4px; }
+        .qty-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; justify-content: flex-end; }
+        .btn-qty { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #ddd; background: #fff; color: var(--p); font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-qty.add { background: var(--p); color: #fff; border-color: var(--p); }
+
+        /* CART & MODAL */
+        .cart-wrapper { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; z-index: 100; }
+        .float-bar { width: 100%; height: 50px; background: var(--p); color: white; padding: 0 20px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 25px rgba(0,86,145,0.4); cursor: pointer; box-sizing: border-box; }
+        .float-bar.empty { opacity: 0.5; filter: grayscale(1); }
+        .cart-preview { display: none; position: absolute; bottom: 60px; left: 0; width: 100%; background: white; border-radius: 15px; box-shadow: 0 -5px 30px rgba(0,0,0,0.2); padding: 15px; border: 1px solid #ccc; max-height: 400px; overflow-y: auto; box-sizing: border-box; }
+        .cart-wrapper:hover .cart-preview { display: block; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; align-items: flex-end; }
+        .m-box { background: #fff; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
+        .cart-row { padding: 8px 0; border-bottom: 1px solid #eee; }
+        .undo-box { background: #fff8e1; color: #f57f17; border: 1px dashed #f57f17; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .upsell-box { background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%); border: 1px solid #c8e6c9; border-radius: 12px; padding: 12px 15px; margin: 10px 0; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .upsell-box:active { transform: scale(0.98); }
+        .upsell-desc { font-size: 0.75rem; color: #555; margin-top: 1px; font-weight: 600; }
+        .upsell-arr { margin-left: auto; color: var(--otc); font-size: 1.1rem; opacity: 0.5; }
+
+        #errorBox { display: none; background: #ffebee; color: #c62828; border: 1px solid #e57373; padding: 15px; border-radius: 10px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
+        .faq-wrapper { background: #fff; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 20px; position: relative; }
+        .faq-toggle { background: #fff; color: #000; padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; font-weight: 600; transition: background-color 0.2s; }
+        .faq-content { display: none; padding: 20px 15px; border-top: 1px solid #ccc; color: #333; }
+        .faq-content.show { display: block; }
+        .qa-block { margin-bottom: 15px; }
+        .qa-question { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #000; margin-bottom: 5px; }
+        .qa-answer { font-size: 0.9rem; color: #333; line-height: 1.5; }
+    </style>
 </head>
 <body onclick="closeModal()">
 
 <div class="cont">
-    
     <header onclick="event.stopPropagation()">
         <div class="head-row">
             <div class="logo-block">
@@ -29,28 +126,23 @@
                     <span class="online-style">.online</span>
                 </div>
             </div>
-
             <div class="info-block">
                 <div class="info-text">
-                    ЦБ: <span id="cbRate">...</span> | Расч: <span id="finalRate">...</span>
+                    ЦБ: <span id="cbRate">...</span> | Расчетный: <span id="finalRate">...</span>
                 </div>
                 <div id="topDate" class="info-text"></div>
             </div>
         </div>
-
         <div class="slogan-full">
             С первого вопроса — всегда на связи.<br>
             Немецкая аптека ближе, чем когда-либо.
         </div>
-
         <div id="errorBox"></div>
-
-        <div class="contact-grid" style="margin-top:12px; border:none; padding-top:0;">
+        <div class="contact-grid">
             <a href="https://t.me/remed01?text=Здравствуйте%20RxDe,%20у%20меня%20вопрос:" target="_blank" class="c-btn tg">Telegram</a>
             <a href="https://wa.me/79650302556?text=Здравствуйте%20RxDe,%20у%20меня%20вопрос:" target="_blank" class="c-btn wa">WhatsApp</a>
             <a href="mailto:med.zakaz.de@gmail.com?subject=Здравствуйте RxDe, у меня вопрос:" class="c-btn em">Email</a>
         </div>
-
         <div id="faqWrap" class="faq-wrapper" style="margin-top:10px; margin-bottom:0; border:none; border-top:1px solid #eee;">
             <div class="faq-toggle" onclick="toggleFaq()" style="padding: 6px 0; font-size: 0.75rem; color:#777; justify-content: center; gap: 5px;">
                 <span>ℹ️ Условия доставки и оплаты</span>
@@ -87,9 +179,9 @@
 <div class="cart-wrapper" onclick="event.stopPropagation()">
     <div id="cartPreview" class="cart-preview"></div>
     <div id="floatBar" class="float-bar empty" onclick="openCart()">
-    <div id="barTotal" style="font-weight:bold;">Корзина пуста</div>
-    <span style="background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:30px; font-weight:bold; font-size:0.8rem">🛒 К ЗАКАЗУ</span>
-</div>
+        <div id="barTotal" style="font-weight:bold;">Корзина пуста</div>
+        <span style="background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:30px; font-weight:bold; font-size:0.8rem">🛒 К ЗАКАЗУ</span>
+    </div>
 </div>
 
 <div id="modal" class="modal">
@@ -100,7 +192,7 @@
         </h3>
         <div id="undoArea"></div>
         <div id="cartItems"></div>
-        <div class="upsell-box" onclick="activateFreeFilter()">
+        <div class="upsell-box" onclick="exitCartWithHighlight()">
             <div><div class="upsell-desc">Добавим в посылку безрецептурные?</div></div>
             <div class="upsell-arr">➝</div>
         </div>
@@ -114,17 +206,13 @@
 </div>
 
 <script>
-    // ==========================================
-    // ⚙️ НАСТРОЙКИ
-    // ==========================================
-    const APP_VERSION = 'v11.6'; 
+    const APP_VERSION = 'v11.20'; 
     const KURS_REZERV = 100; 
     const LOCAL_DB_URL = 'db.csv'; 
     const GOOGLE_SETTINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=185046132&single=true&output=csv';
     const CBR_API_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
     const TG_USER = 'remed01';
     const WA_PHONE = '79650302556';
-    // ==========================================
 
     let db = [], cart = {}, lastDel = null, rateCalc = 0;
     let cbrRateData = null, googleSettings = null;
@@ -135,7 +223,6 @@
     let filters = { search: '', manuf: null, subst: null, subst_ru: null, dosage: null, size: null, cat: 'ALL', subcat: null, onlyFree: false, form: null };
     const searchFields = ['PZN', 'Name_DE', 'Name_RU', 'Hersteller', 'Substance', 'Substance_RU', 'Dosage', 'Size', 'Category', 'Form'];
 
-    // --- FAQ ---
     function toggleFaq() {
         const body = document.getElementById('faqBody');
         const arrow = document.getElementById('faqArrow');
@@ -151,18 +238,15 @@
         if (wrap && !wrap.contains(event.target) && body && body.classList.contains('show')) { toggleFaq(); }
     });
 
-    // --- ЗАПУСК (INIT) ---
     function init() {
         const d = new Date();
-        document.getElementById('topDate').innerText = d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        const datePart = d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        let dayPart = d.toLocaleDateString('ru-RU', { weekday: 'short' }); 
+        dayPart = dayPart.charAt(0).toUpperCase() + dayPart.slice(1); 
+        document.getElementById('topDate').innerText = `${dayPart}, ${datePart}`;
         
         const saved = localStorage.getItem('de_cart'); 
         if (saved) cart = JSON.parse(saved);
-
-        const upsellDesc = document.querySelector('.upsell-desc');
-        if(upsellDesc) upsellDesc.innerText = 'Добавим новые позиции? Выход из корзины';
-        const upsellBox = document.querySelector('.upsell-box');
-        if(upsellBox) upsellBox.onclick = exitCartWithHighlight;
 
         console.log(`🚀 Загрузка системы ${APP_VERSION}...`);
         Promise.all([fetchLocalDB(), fetchCbrRate(), fetchGoogleSettings()]).then(() => {
@@ -204,7 +288,6 @@
         if(box) { box.innerText = msg; box.style.display = 'block'; }
     }
 
-    // --- МОЗГ: РАСЧЕТ КУРСА ---
     function finalizeAppStart() {
         if (!db || db.length === 0) { showError("База товаров пуста (db.csv)."); return; }
 
@@ -215,30 +298,24 @@
             shipEurGlobal = parseFloat(googleSettings.Mail_EURO?.replace(',', '.') || 0);
         }
 
-        let baseRate = 0, sourceName = "", colorStyle = "color: #888"; 
-
+        let baseRate = 0; 
         if (!googleRate || googleRate === 100) {
-            if (cbrRateData) { baseRate = cbrRateData; sourceName = "(ЦБ РФ)"; } 
-            else { baseRate = KURS_REZERV; sourceName = "(Резерв)"; colorStyle = "color: #d32f2f"; showError("Нет связи с банками."); }
+            if (cbrRateData) { baseRate = cbrRateData; } 
+            else { baseRate = KURS_REZERV; showError("Нет связи с банками."); }
         } 
         else if (cbrRateData) {
             const diff = Math.abs((googleRate - cbrRateData) / cbrRateData) * 100;
             if (diff > 10) {
-                if (googleRate > cbrRateData) { baseRate = googleRate; sourceName = "(Биржа)"; } 
-                else { baseRate = cbrRateData; sourceName = "(ЦБ РФ)"; }
-                colorStyle = "color: #e65100"; 
-            } else { baseRate = googleRate; sourceName = "(Биржа)"; colorStyle = "color: #2e7d32"; } 
-        } else { baseRate = googleRate; sourceName = "(Биржа)"; }
+                if (googleRate > cbrRateData) { baseRate = googleRate; } 
+                else { baseRate = cbrRateData; }
+            } else { baseRate = googleRate; } 
+        } else { baseRate = googleRate; }
 
         rateCalc = baseRate + bankMargin;
         
-        document.getElementById('cbRate').innerHTML = `
-            ${baseRate.toFixed(2)}
-            <span style="font-size:0.75rem; font-weight:normal; ${colorStyle}">
-                ${sourceName}
-            </span>`;
-            
-        document.getElementById('finalRate').innerText = rateCalc.toFixed(2) + ' ₽';
+        document.getElementById('cbRate').innerHTML = baseRate.toFixed(2);
+        document.getElementById('finalRate').innerText = rateCalc.toFixed(2);
+        
         document.getElementById('errorBox').style.display = 'none';
         
         restoreOrderFromUrl();
@@ -247,7 +324,6 @@
         renderPreview();
     }
 
-    // --- ПОИСК И ФИЛЬТРЫ ---
     function levenshtein(a, b) {
         if(a.length === 0) return b.length; 
         if(b.length === 0) return a.length;
@@ -305,10 +381,13 @@
         if ((e.key === 'Tab' || e.key === 'ArrowRight') && document.getElementById('enterHint').classList.contains('show')) { e.preventDefault(); completeSearch(); }
     }
 
-    // --- RENDER ---
     function render() {
-        const list = document.getElementById('list'); list.innerHTML = '';
-        const chipBar = document.getElementById('chipBar'); chipBar.innerHTML = '';
+        const list = document.getElementById('list'); 
+        if(!list) return;
+        list.innerHTML = '';
+        
+        const chipBar = document.getElementById('chipBar'); 
+        if(chipBar) chipBar.innerHTML = '';
         
         const labels = {manuf:'🏭', subst:'🧪', cat:'📂'}; 
         Object.keys(labels).forEach(key => { if (filters[key] && filters[key] !== 'ALL') chipBar.innerHTML += `<div class="chip">${labels[key]} ${filters[key]} <b onclick="setHardFilter('${key}', null)">×</b></div>`; });
@@ -342,8 +421,11 @@
             return sWords.every(word => searchFields.some(f => r[f] && r[f].toLowerCase().includes(word)));
         });
 
-        document.getElementById('manBar').style.display = (filters.search || filters.cat !== 'ALL' || filters.onlyFree || filters.manuf) ? 'flex' : 'none';
-        document.getElementById('cnt').innerText = currentVisible.length;
+        const manBar = document.getElementById('manBar');
+        if(manBar) manBar.style.display = (filters.search || filters.cat !== 'ALL' || filters.onlyFree || filters.manuf) ? 'flex' : 'none';
+        
+        const cnt = document.getElementById('cnt');
+        if(cnt) cnt.innerText = currentVisible.length;
 
         if (currentVisible.length === 0 && filters.search) {
             let suggestion = null;
@@ -360,7 +442,17 @@
                 }
             }
             const didYouMean = suggestion ? `<div class="did-you-mean" onclick="setSearch('${suggestion}')">Возможно, вы искали: <u>${suggestion}</u>?</div>` : '';
-            list.innerHTML = `<div class="empty-state">${didYouMean}<h3>🔍 Позиция не найдена</h3><p>Попробуйте изменить запрос.</p><div class="empty-btns"><button class="eb-btn" onclick="doShare('tg','Поиск: '+filters.search)" style="background:#229ED9">Telegram</button></div></div>`;
+            
+            list.innerHTML = `
+                <div class="empty-state">
+                    ${didYouMean}
+                    <h3>🔍 Позиция не найдена</h3>
+                    <div class="empty-hint">
+                        Наша база ежедневно расширяется. Перечень лекарств Германии огромен.<br>
+                        Напишите нам, и мы найдем то, что Вы ищете.
+                    </div>
+                </div>`;
+                
         } else {
             currentVisible.forEach(r => {
                 const rub = getRubPrice(r.Price);
@@ -432,7 +524,10 @@
             }
         });
 
-        const d = document.getElementById('catChips'); d.innerHTML = '';
+        const d = document.getElementById('catChips'); 
+        if(!d) return;
+        d.innerHTML = '';
+        
         Array.from(parents).sort().forEach(c => {
             const btn = document.createElement('div');
             btn.innerText = (c === 'ALL' ? 'Все' : c);
@@ -448,7 +543,9 @@
         freeBtn.onclick = () => { filters.onlyFree = !filters.onlyFree; if (filters.onlyFree) { filters.cat = 'ALL'; filters.subcat = null; } document.getElementById('search').value = ''; handleInput(); };
         d.appendChild(freeBtn);
 
-        const sd = document.getElementById('subCatChips'); sd.innerHTML = ''; sd.style.display = 'none';
+        const sd = document.getElementById('subCatChips'); 
+        if(!sd) return;
+        sd.innerHTML = ''; sd.style.display = 'none';
         
         if (filters.cat !== 'ALL' && subcategories.size > 0) {
             sd.style.display = 'flex'; 
