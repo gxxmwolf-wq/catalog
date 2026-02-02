@@ -97,9 +97,8 @@
     let googleSettings = null, cbrRateData = 0;
     let currentVisible = [], lastBarEur = 0, lastBarRub = 0;
 
-    // Добавил subst_ru в фильтры
-    let filters = { search: '', manuf: null, subst: null, subst_ru: null, dosage: null, size: null, cat: 'ALL', subcat: null, onlyFree: false, form: null };
-    // Добавил Substance_RU в поля поиска
+    // ДОБАВИЛ 'name_ru' в фильтры
+    let filters = { search: '', manuf: null, subst: null, subst_ru: null, name_ru: null, dosage: null, size: null, cat: 'ALL', subcat: null, onlyFree: false, form: null };
     const searchFields = ['PZN', 'Name_DE', 'Name_RU', 'Hersteller', 'Substance', 'Substance_RU', 'Dosage', 'Size', 'Category', 'Form'];
 
     // --- INIT ---
@@ -200,7 +199,6 @@
         return matrix[b.length][a.length];
     }
 
-    // Транслитерация (на всякий случай, если в Substance_RU пусто)
     function transliterate(word) {
         const a = {"а":"a", "б":"b", "в":"v", "г":"g", "д":"d", "е":"e", "ё":"jo", "ж":"zh",
                    "з":"z", "и":"i", "й":"j", "к":"k", "л":"l", "м":"m", "н":"n", "о":"o",
@@ -257,7 +255,6 @@
     }
 
     // --- ГЛАВНЫЙ РЕНДЕР ---
-    // --- ГЛАВНЫЙ РЕНДЕР ---
     function render() {
         const list = document.getElementById('list'); if(!list) return;
         list.innerHTML = '';
@@ -265,7 +262,8 @@
         
         const MAX_ITEMS = 50; 
 
-        const labels = {manuf:'🏭', subst:'🧪', cat:'📂'}; 
+        // ДОБАВИЛ name_ru В СПИСОК ЧИПСОВ
+        const labels = {manuf:'🏭', subst:'🧪', name_ru:'💊', cat:'📂'}; 
         Object.keys(labels).forEach(key => { if (filters[key] && filters[key] !== 'ALL') chipBar.innerHTML += `<div class="chip">${labels[key]} ${filters[key]} <b onclick="setHardFilter('${key}', null)">×</b></div>`; });
         
         const sWords = filters.search.toLowerCase().trim().split(/\s+/).filter(w => w.length > 0);
@@ -288,6 +286,7 @@
             if(filters.manuf && r.Hersteller !== filters.manuf) return false;
             if(filters.subst && r.Substance !== filters.subst) return false;
             if(filters.subst_ru && r.Substance_RU !== filters.subst_ru) return false;
+            if(filters.name_ru && r.Name_RU !== filters.name_ru) return false; // Фильтр по Name_RU
             if(filters.dosage && r.Dosage !== filters.dosage) return false;
             if(filters.size && r.Size !== filters.size) return false;
             if(filters.form && r.Form !== filters.form) return false;
@@ -384,7 +383,10 @@
                 const statusHtml = status === 1 ? `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#4caf50; box-shadow:0 0 4px #4caf50; margin-right:6px; flex-shrink:0;" title="В наличии"></span>` : `<span style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#d32f2f; box-shadow:0 0 4px #d32f2f; margin-right:6px; flex-shrink:0;" title="Под заказ"></span>`;
                 const checkLink = (r.Price_chek) ? `<a href="${r.Price_chek}" target="_blank" class="check-btn">🔗 CheckOriginal</a>` : '';
                 const imgH = r.Image ? `<div class="cam-wrap">📷<img class="preview-img" src="img/${r.Image}"></div>` : '';
-                const ruNameHtml = r.Name_RU ? `<span class="t-lnk" onclick="setSearch('${r.Name_RU}')">🇷🇺 ${r.Name_RU}</span>` : '';
+                
+                // РУССКОЕ НАЗВАНИЕ (ТЕПЕРЬ ФИЛЬТР)
+                const ruNameHtml = r.Name_RU ? `<span class="t-lnk ${filters.name_ru===r.Name_RU?'active-f':''}" onclick="setHardFilter('name_ru','${r.Name_RU}')">🇷🇺 ${r.Name_RU}</span>` : '';
+                
                 const ruSubstHtml = r.Substance_RU ? `<span class="t-lnk ${filters.subst_ru===r.Substance_RU?'active-f':''}" onclick="setHardFilter('subst_ru','${r.Substance_RU}')">🇷🇺 ${r.Substance_RU}</span>` : '';
                 
                 list.innerHTML += `
