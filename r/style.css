@@ -1,0 +1,229 @@
+/* --- style.css --- */
+
+/* ОСНОВНЫЕ ПЕРЕМЕННЫЕ */
+:root { 
+    --p: #005691; 
+    --bg: #f4f6f8; 
+    --w: #fff; 
+    --txt: #333; 
+    --rx: #d32f2f; 
+    --otc: #2e7d32; 
+    --active: #4caf50; 
+    --tg: #229ED9; 
+    --wa: #25D366; 
+    --em: #555555;
+}
+
+body { 
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+    background: var(--bg); 
+    color: var(--txt); 
+    margin: 0; 
+    padding-bottom: 120px; 
+    -webkit-tap-highlight-color: transparent; 
+}
+
+header { display: none !important; }
+
+.cont { 
+    max-width: 600px; 
+    margin: 0 auto; 
+    padding: 0 10px; 
+    box-sizing: border-box;
+}
+
+/* ВЕРХНЯЯ СТРОКА */
+.top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin: 8px 0 5px 0;
+    line-height: 1.2;
+}
+
+.slogan-top {
+    text-align: left;
+    font-size: 12px;
+    font-family: 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    color: #222;
+}
+
+.rates-top {
+    text-align: right;
+    font-size: 11px;
+    font-family: 'Arial Narrow', sans-serif;
+    font-weight: 700;
+    color: #222;
+    max-width: 50%;
+}
+
+/* --- ПОИСК --- */
+.sticky { 
+    position: sticky; 
+    top: 0; 
+    background: var(--bg); 
+    padding: 5px 0 10px 0; 
+    z-index: 90; 
+    width: 100%;
+    transform: translateZ(0); 
+}
+
+.inp-wrap { 
+    position: relative; 
+    height: 48px; 
+    background-color: #ffffff !important; 
+    border: 1px solid #bbb !important;    
+    border-radius: 12px; 
+    display: flex !important;             
+    align-items: center; 
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; 
+    width: 100%; 
+    box-sizing: border-box;
+    margin-top: 2px;
+}
+
+.embedded-logo {
+    display: flex;
+    align-items: center;
+    padding: 0 10px 0 12px;
+    gap: 3px;
+    height: 100%;
+    background: #fff;
+    flex-shrink: 0;
+    border-right: 1px solid #eee; 
+    z-index: 5;
+}
+
+.rx-mini {
+    font-family: sans-serif; font-weight: 900; font-size: 14px; color: var(--rx);
+    border: 1.5px solid var(--rx); padding: 0 2px; border-radius: 4px; line-height: 1; background: #fff1f1;
+}
+.de-mini {
+    font-family: sans-serif; font-weight: 900; font-size: 18px; color: #000;
+    letter-spacing: -1px; line-height: 1;
+}
+
+.search-input { 
+    flex: 1; padding: 0 12px; font-size: 16px; border: none; outline: none; background: transparent; height: 100%; color: #000; min-width: 0; z-index: 2;
+}
+
+.cls-btn { 
+    position: absolute; right: 0; top: 0; height: 100%; width: 40px; 
+    display: flex; align-items: center; justify-content: center; 
+    color: #ccc; font-size: 1.2rem; cursor: pointer; z-index: 10;
+}
+
+/* УМНЫЕ КНОПКИ */
+.suggestions-wrap {
+    display: flex; gap: 6px; overflow-x: auto; padding: 6px 0 10px 0;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch; min-height: 40px; margin-left: 2px;
+}
+.suggestions-wrap:empty { display: none; }
+.suggestions-wrap::-webkit-scrollbar { display: none; }
+
+/* Умные кнопки-фильтры */
+.smart-tag {
+    background: #fff; 
+    color: #333;              
+    border: 1px solid #ccc;   
+    font-family: -apple-system, sans-serif; /* Обычный шрифт, не компьютерный */
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 6px 12px;
+    border-radius: 20px; /* Овальные, как чипсы */
+    white-space: nowrap;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.smart-tag:active { 
+    background: #333; 
+    color: #fff; 
+    border-color: #333; 
+}
+
+/* Кнопка сброса (красная стрелка) */
+.smart-tag.back-btn {
+    color: #d32f2f;          
+    border-color: #ef9a9a; 
+    background: #ffebee;     
+    padding: 6px 14px;
+    font-weight: 900;
+}
+/* КАТЕГОРИИ И UI */
+.cat-nav-wrap { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+#catChips, #subCatChips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+#catChips::-webkit-scrollbar, #subCatChips::-webkit-scrollbar { display: none; }
+.cat-btn { padding: 6px 14px; border-radius: 20px; background: #fff; color: #333; font-size: 0.75rem; cursor: pointer; white-space: nowrap; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid transparent; transition: 0.2s; font-weight: 500; }
+.cat-btn.active { background: #333; color: #fff; }
+.cat-btn.free-filter.active { background: var(--otc); color: #fff; border-color: var(--otc); }
+.sub-cat-btn { padding: 5px 12px; border-radius: 12px; background: #fff; color: var(--p); font-size: 0.7rem; cursor: pointer; white-space: nowrap; border: 1px solid var(--p); transition: all 0.2s ease; font-weight: 500; }
+.sub-cat-btn.active { background: var(--p); color: #fff; }
+
+.man-bar { display: none; justify-content: space-between; align-items: center; background: #fff8e1; padding: 8px 12px; border-radius: 8px; margin: 10px 0; font-size: 0.8rem; color: #f57f17; border: 1px solid #ffe082; }
+
+/* КАРТОЧКИ */
+.empty-state { background: #fff; border-radius: 15px; padding: 30px 20px; text-align: center; border: 1px dashed #ccc; margin-top: 20px; }
+.empty-state h3 { color: var(--p); margin-top: 0; font-size: 1.1rem; }
+.empty-hint { font-size: 0.85rem; color: #777; line-height: 1.5; max-width: 85%; margin: 15px auto 0 auto; }
+.did-you-mean { background: #e3f2fd; color: var(--p); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: bold; cursor: pointer; border: 1px solid #bbdefb; display: block; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+.card { background: var(--w); border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: flex-start; transition: background 0.3s; border: 1px solid transparent; }
+.card.selected-item { background: #e3f2fd; border: 1px solid #bbdefb; }
+.c-tit-line { font-weight: 700; font-size: 0.95rem; color: #000; line-height: 1.35; display: inline; } 
+.badge { font-size: 0.6rem; padding: 1px 3px; border-radius: 4px; font-weight: 900; text-transform: uppercase; border: 1px solid; display: inline-block; vertical-align: middle; margin: 0 2px; position: relative; top: -1px; }
+.badge.rx { color: var(--rx); border-color: var(--rx); background: #fff1f1; }
+.badge.free { color: var(--otc); border-color: var(--otc); background: #f1fff1; }
+.check-btn { font-size: 0.6rem; text-decoration: none; background: #f0f0f0; color: #555; padding: 1px 5px; border-radius: 4px; border: 1px solid #ccc; display: inline-flex; align-items: center; gap: 3px; font-weight: 500; transition: 0.2s; white-space: nowrap; vertical-align: middle; margin-left: 2px; position: relative; top: -1px; }
+
+/* ПРОСТОЙ ТЕКСТ СВОЙСТВ (Вместо ссылок) */
+.prop-text { display: inline-block; padding: 0 4px; margin-bottom: 2px; border: 1px solid #eee; border-radius: 4px; background: #f9f9f9; }
+
+.cam-wrap { position: relative; display: inline-block; cursor: pointer; color: var(--p); font-size: 1rem; }
+.preview-img { display: none; position: absolute; bottom: 25px; left: 0; z-index: 150; border: 3px solid var(--p); border-radius: 12px; background: #fff; width: 175px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
+.cam-wrap:hover .preview-img { display: block; }
+
+.qty-wrap { display: flex; align-items: center; gap: 8px; margin-top: 6px; justify-content: flex-end; }
+.btn-qty { width: 30px; height: 30px; border-radius: 50%; border: 1px solid #ddd; background: #fff; color: var(--p); font-size: 1.2rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.btn-qty.add { background: var(--p); color: #fff; border-color: var(--p); }
+
+.cart-wrapper { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 500px; z-index: 100; }
+.float-bar { width: 100%; height: 50px; background: var(--p); color: white; padding: 0 20px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 25px rgba(0,86,145,0.4); cursor: pointer; box-sizing: border-box; }
+.float-bar.empty { opacity: 0.5; filter: grayscale(1); }
+.cart-preview { display: none; position: absolute; bottom: 60px; left: 0; width: 100%; background: white; border-radius: 15px; box-shadow: 0 -5px 30px rgba(0,0,0,0.2); padding: 15px; border: 1px solid #ccc; max-height: 400px; overflow-y: auto; box-sizing: border-box; }
+.cart-wrapper:hover .cart-preview { display: block; }
+
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; align-items: flex-end; }
+.m-box { background: #fff; width: 100%; max-width: 600px; margin: 0 auto; border-radius: 20px 20px 0 0; padding: 20px; max-height: 90vh; overflow-y: auto; }
+.cart-row { padding: 8px 0; border-bottom: 1px solid #eee; }
+.undo-box { background: #fff8e1; color: #f57f17; border: 1px dashed #f57f17; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 10px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+.upsell-box { background: linear-gradient(135deg, #e8f5e9 0%, #ffffff 100%); border: 1px solid #c8e6c9; border-radius: 12px; padding: 12px 15px; margin: 10px 0; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+.upsell-box:active { transform: scale(0.98); }
+.upsell-desc { font-size: 0.75rem; color: #555; margin-top: 1px; font-weight: 600; }
+.upsell-arr { margin-left: auto; color: var(--otc); font-size: 1.1rem; opacity: 0.5; }
+
+.c-btn { border: none; padding: 10px; color: #fff !important; font-size: 0.85rem; font-weight: 700; text-align: center; text-decoration: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 100%; box-sizing: border-box; font-family: sans-serif; transition: transform 0.1s, opacity 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+.c-btn:active { transform: scale(0.97); opacity: 0.9; } 
+.c-btn.tg { background: var(--tg); }
+.c-btn.wa { background: var(--wa); }
+.c-btn.em { background: var(--em); grid-column: 1 / -1; }
+.contact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; border: none; }
+
+#errorBox { display: none; background: #ffebee; color: #c62828; border: 1px solid #e57373; padding: 15px; border-radius: 10px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.4; }
+
+/* ФИКСАЦИЯ ЦИФР КУРСА */
+#cbRate, #finalRate {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    font-family: 'Courier New', Courier, monospace; 
+    display: inline-block;
+    min-width: 45px;
+    text-align: left;
+}
+.rate-updating { color: #222; }
+.rate-static { color: #222; }
