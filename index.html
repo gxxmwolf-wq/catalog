@@ -19,9 +19,10 @@
     <div class="sticky">
         <div class="inp-wrap">
             <div class="embedded-logo" ondblclick="copyForClient()" title="Double click to copy offer"><span class="rx-part">RX</span><span class="de-part">DE</span></div>
-            <input type="text" id="search" class="search-input" placeholder="Поиск (рус / lat)..." oninput="handleInput()" autocomplete="off">
+            <input type="text" id="search" class="search-input" placeholder="Поиск (рус / lat)..." oninput="handleInput()" onkeydown="checkEnter(event)" autocomplete="off">
             <span class="cls-btn" id="clearBtn" onclick="clearSearch()" style="display:none">✕</span>
         </div>
+        <div id="suggestRow" class="suggestions-row"></div>
     </div>
     
     <div id="list"></div>
@@ -123,8 +124,8 @@
         try { const response = await fetch(CBR_API_URL); const data = await response.json(); cbrRateData = data.Valute.EUR.Value; } catch (e) { cbrRateData = 0; }
     }
 
-    /* =========================================
-       BLOCK 3: ЯДРО РАСЧЕТОВ И УТИЛИТЫ
+   /* =========================================
+       BLOCK 3: УМНЫЙ ПОИСК (РАСКЛАДКА + ВЕЩЕСТВА RU/DE)
        ========================================= */
     function calculateFinalLogic() {
         if (!db.length) return;
@@ -144,18 +145,44 @@
 
     function getRubPrice(eur) { return Math.floor((parseFloat(eur) * rateCalc) / 100) * 100; }
 
-    function getTranslitVariations(word) {
+    function getSearchVariations(word) {
+        const w = word.toLowerCase();
+        
         const ru2en = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya' };
         const en2ru = { 'a':'а','b':'б','v':'в','g':'г','d':'д','e':'е','z':'з','i':'и','k':'к','l':'л','m':'м','n':'н','o':'о','p':'п','r':'р','s':'с','t':'т','u':'у','f':'ф','h':'х','c':'ц','y':'ы','x':'х','w':'в' }; 
-        const w = word.toLowerCase();
-        let resRu = '', resEn = '';
-        for(let char of w) { resEn += ru2en[char] || char; resRu += en2ru[char] || char; }
-        return [w, resEn, resRu];
+        
+        const layEn = "qwertyuiop[]asdfghjkl;'zxcvbnm,.`";
+        const layRu = "йцукенгшщзхъфывапролджэячсмитьбюё";
+        
+        let resTranslit = '';
+        let resLayout = '';
+
+        for(let i = 0; i < w.length; i++) {
+            const char = w[i];
+            
+            if (ru2en[char]) resTranslit += ru2en[char];
+            else if (en2ru[char]) resTranslit += en2ru[char];
+            else resTranslit += char;
+
+            const idxEn = layEn.indexOf(char);
+            const idxRu = layRu.indexOf(char);
+            
+            if (idxEn !== -1) resLayout += layRu[idxEn];
+            else if (idxRu !== -1) resLayout += layEn[idxRu];
+            else resLayout += char;
+        }
+
+        return [w, resTranslit, resLayout];
+    }
+
+    function checkEnter(e) {
+        if (e.key === 'Enter') document.getElementById('search').blur();
     }
 
     function handleInput(updateUrl = true) {
         const input = document.getElementById('search');
-        filters.search = input.value.trim();
+        const rawValue = input.value; 
+        filters.search = rawValue.trim(); 
         document.getElementById('clearBtn').style.display = filters.search ? 'flex' : 'none';
         
         if (updateUrl) {
@@ -164,13 +191,88 @@
             else url.searchParams.delete('q');
             window.history.replaceState({}, '', url);
         }
+        
         render(); 
+        renderSuggestions(rawValue);
     }
     
-    function clearSearch() { document.getElementById('search').value = ''; handleInput(); }
+    function clearSearch() { 
+        const input = document.getElementById('search');
+        input.value = ''; 
+        handleInput(); 
+        input.focus(); 
+    }
 
+    function renderSuggestions(inputText) {
+        const box = document.getElementById('suggestRow');
+        box.innerHTML = '';
+        if (!inputText) return;
+
+        const userWords = inputText.toLowerCase().split(/\s+/);
+        const targetIndex = userWords.length - 1;
+        const targetFragment = userWords[targetIndex]; 
+
+        let nextWordsSet = new Set();
+
+        db.forEach(r => {
+            // ДОБАВЛЕНЫ Substance И Substance_RU
+            const cleanName = (
+                r.Name_DE + ' ' + 
+                (r.Name_RU||'') + ' ' + 
+                (r.Substance||'') + ' ' + 
+                (r.Substance_RU||'') + ' ' + 
+                (r.Form||'') + ' ' + 
+                r.Hersteller
+            ).replace(/[.,()]/g, '').toLowerCase();
+            
+            const productWords = cleanName.split(/\s+/).filter(w => w.length > 0);
+
+            let isMatchChain = true;
+            for (let i = 0; i < targetIndex; i++) {
+                const uW = userWords[i]; 
+                const pW = productWords[i]; 
+                const variations = getSearchVariations(uW);
+                if (!pW || !variations.some(v => pW.includes(v))) {
+                    isMatchChain = false;
+                    break;
+                }
+            }
+
+            if (isMatchChain) {
+                const candidateWord = productWords[targetIndex];
+                const targetVariations = getSearchVariations(targetFragment);
+                if (candidateWord && targetVariations.some(v => candidateWord.startsWith(v))) {
+                    const isFullyTyped = targetVariations.some(v => v === candidateWord);
+                    if (!isFullyTyped || targetFragment === '') {
+                        nextWordsSet.add(candidateWord);
+                    }
+                }
+            }
+        });
+
+        const sorted = Array.from(nextWordsSet).sort().slice(0, 8);
+        if (sorted.length === 0) return;
+
+        sorted.forEach(word => {
+            const chip = document.createElement('div');
+            chip.className = 's-chip';
+            chip.innerText = word;
+            chip.onclick = () => applySuggestionChain(word, userWords, targetIndex);
+            box.appendChild(chip);
+        });
+    }
+
+    function applySuggestionChain(selectedWord, currentWordsArr, indexToReplace) {
+        const input = document.getElementById('search');
+        currentWordsArr[indexToReplace] = selectedWord;
+        const newText = currentWordsArr.join(' ') + ' ';
+        input.value = newText;
+        input.focus();
+        handleInput();
+    }
+    
     /* =========================================
-       BLOCK 4: РЕНДЕР ГЛАВНОГО СПИСКА (НОВАЯ СТРУКТУРА)
+       BLOCK 4: РЕНДЕР (ВЕРНУЛ PZN, ДОБАВИЛ ВЕЩЕСТВА В ПОИСК)
        ========================================= */
     function getQty(pzn) { const item = cart.find(i => i.pzn === pzn); return item ? item.qty : 0; }
 
@@ -182,10 +284,22 @@
 
         if (filters.search) {
             intro.style.display = 'none';
-            const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getTranslitVariations(t));
+            const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getSearchVariations(t));
+            
             results = db.filter(r => {
                 if (!r.Name_DE) return false;
-                const text = (r.Name_DE + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
+                
+                // ПОЛНЫЙ ПОИСКОВЫЙ ИНДЕКС
+                const text = (
+                    r.Name_DE + ' ' + 
+                    (r.Name_RU||'') + ' ' + 
+                    (r.Substance||'') + ' ' + 
+                    (r.Substance_RU||'') + ' ' + 
+                    (r.Form||'') + ' ' + 
+                    r.Hersteller + ' ' + 
+                    r.PZN
+                ).toLowerCase();
+                
                 return tokens.every(vrs => vrs.some(v => text.includes(v)));
             });
         } else { intro.style.display = 'block'; return; }
@@ -195,33 +309,28 @@
             const q = getQty(r.PZN);
             const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
             
-            const imagePath = r.Image ? `img/${r.Image}` : ''; 
-            
-            // Если картинки нет, показываем иконку
-            const imgHtml = imagePath 
-                ? `<img src="${imagePath}" class="product-thumb" alt="foto" onerror="this.replaceWith('📷')">`
-                : `<div class="product-thumb" style="background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#ddd; font-size:22px;">📷</div>`;
+            const imagePath = `img/${r.PZN}.webp`;
+            const imgHtml = `
+            <img src="${imagePath}" 
+                 class="product-thumb" 
+                 alt="${r.Name_DE}" 
+                 onerror="this.outerHTML='<div class=\'product-thumb\' style=\'background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#ddd; font-size:22px;\'>📷</div>'"
+            >`;
 
             list.innerHTML += `
             <div class="card ${q > 0 ? 'selected' : ''}">
-                
                 ${imgHtml}
-
                 <div class="card-body">
-                    
                     <div class="c-title">
                         ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
                     </div>
-
                     <div class="card-bottom">
                         <div class="c-meta-box">
                             <div>${r.Hersteller}</div>
                             <div>PZN: ${r.PZN}</div>
                         </div>
-
                         <div class="c-ctrl">
                             <div class="u-price">${Math.round(price)} €</div>
-                            
                             <div class="qty-capsule-wrap">
                                 ${q > 0 ? `
                                     <div class="qty-capsule">
@@ -231,17 +340,16 @@
                                     </div>
                                 ` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`}
                             </div>
-
                             <div class="sum-box">
                                 ${q > 0 ? `<div class="s-eur">${Math.round(price * q)}€</div><div class="s-rub">${getRubPrice(price * q).toLocaleString()}₽</div>` : ''}
                             </div>
                         </div>
                     </div>
                 </div>
-
             </div>`;
         });
     }
+
 
     /* =========================================
        BLOCK 5: ЛОГИКА КОРЗИНЫ (ОЧЕРЕДЬ)
@@ -481,7 +589,7 @@
     }
 
     /* =========================================
-       BLOCK 9: ФУНКЦИИ АДМИНА (COPY)
+       BLOCK 9: КОПИРОВАНИЕ (FIXED SEARCH)
        ========================================= */
     function copyForClient() {
         if (!filters.search) { 
@@ -489,10 +597,18 @@
             return; 
         }
 
-        const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getTranslitVariations(t));
+        const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getSearchVariations(t));
         const currentResults = db.filter(r => {
             if (!r.Name_DE) return false;
-            const text = (r.Name_DE + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
+            const text = (
+                r.Name_DE + ' ' + 
+                (r.Name_RU||'') + ' ' + 
+                (r.Substance||'') + ' ' + 
+                (r.Substance_RU||'') + ' ' + 
+                (r.Form||'') + ' ' + 
+                r.Hersteller + ' ' + 
+                r.PZN
+            ).toLowerCase();
             return tokens.every(vrs => vrs.some(v => text.includes(v)));
         });
 
@@ -511,8 +627,6 @@
         currentResults.slice(0, 20).forEach((r, index) => {
             const priceEur = parseFloat(r.Price.replace(',','.'));
             const priceRub = getRubPrice(priceEur);
-            
-            // Красивый формат с пробелами
             text += `${index + 1}. ${r.Name_DE}, ${r.Hersteller}, PZN: ${r.PZN} ... ${Math.round(priceEur).toLocaleString()}€ (${priceRub.toLocaleString()}₽)\n\n`;
         });
 
@@ -524,7 +638,6 @@
             logo.style.transition = 'color 0.2s';
             logo.style.color = 'var(--ok)'; 
             setTimeout(() => { logo.style.color = ''; }, 400);
-            
             if (navigator.vibrate) navigator.vibrate(100);
         }).catch(err => {
             console.error('Ошибка копирования', err);

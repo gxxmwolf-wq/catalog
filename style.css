@@ -25,62 +25,71 @@ body {
 .slogan-top, .rates-top { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; }
 
 /* =========================================
-   BLOCK 2: ПОИСК (STICKY HEADER)
+   BLOCK 2: ПОИСК И ПОДСКАЗКИ
    ========================================= */
-.sticky { position: sticky; top: 0; background: #fff; padding: 10px 0; z-index: 100; border-bottom: 1px solid #f0f0f0; }
+.sticky { position: sticky; top: 0; background: #fff; padding: 10px 0 5px 0; z-index: 100; border-bottom: 1px solid #f0f0f0; }
 
 .inp-wrap { 
     height: 42px; 
     background: #f0f2f5; 
     border-radius: 12px; 
     display: flex; 
-    align-items: center; /* Центрируем лого, инпут и крестик по вертикали */
+    align-items: center; 
     border: 1px solid #e5e5e5; 
-    overflow: hidden; /* Чтобы ничего не вылезало за скругления */
+    overflow: hidden;
 }
 
 .embedded-logo { 
-    padding: 0 12px; 
-    display: flex; 
-    gap: 4px; 
-    border-right: 1px solid #ddd; 
-    height: 100%; /* Логотип на всю высоту */
-    align-items: center;
+    padding: 0 12px; display: flex; gap: 4px; border-right: 1px solid #ddd; 
+    height: 100%; align-items: center;
     cursor: pointer; user-select: none; -webkit-user-select: none;
 }
-
 .rx-part { color: var(--rx); border: 1.5px solid var(--rx); font-weight: 900; font-size: 10px; padding: 0 3px; border-radius: 4px; }
 .de-part { font-weight: 900; font-size: 13px; }
 
 .search-input { 
-    flex: 1; /* Занимает всё свободное место */
-    height: 100%;
-    border: none; 
-    background: transparent; 
-    padding: 0 12px; 
-    font-size: 15px; 
-    outline: none; 
-    color: #000;
-    margin: 0; /* Убираем отступы браузера */
+    flex: 1; height: 100%; border: none; background: transparent; 
+    padding: 0 12px; font-size: 15px; outline: none; color: #000; margin: 0; 
 }
 
-/* КРАСИВЫЙ КРЕСТИК */
 .cls-btn {
-    width: 40px; /* Широкая зона клика */
-    height: 100%;
-    display: flex; /* Магия центровки */
-    align-items: center;
-    justify-content: center;
+    width: 40px; height: 100%; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: bold; color: #bbb; cursor: pointer;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.cls-btn:active { color: #555; background: rgba(0,0,0,0.05); }
+
+/* --- НОВЫЙ БЛОК ПОДСКАЗОК --- */
+.suggestions-row {
+    display: flex;
+    overflow-x: auto; /* Горизонтальная прокрутка */
+    white-space: nowrap;
+    gap: 8px;
+    padding: 8px 4px 4px 4px;
     
-    font-size: 16px; /* Размер самого символа */
-    font-weight: bold;
-    color: #bbb; /* Ненавязчивый серый */
+    /* Скрываем скроллбар, но оставляем прокрутку */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* IE */
+}
+.suggestions-row::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
+
+.s-chip {
+    background: #e3f2fd;
+    color: var(--p);
+    border: 1px solid #bbdefb;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
     user-select: none;
-    -webkit-tap-highlight-color: transparent; /* Убирает синий блик на Android */
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.2s;
 }
-
-.cls-btn:active { color: #555; background: rgba(0,0,0,0.05); } /* Эффект нажатия */
+.s-chip:active {
+    background: var(--p);
+    color: #fff;
+}
 
 /* =========================================
    BLOCK 3: СПИСОК ТОВАРОВ (LAYOUT: SIDE IMAGE)
