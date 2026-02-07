@@ -159,13 +159,11 @@
     function clearSearch() { document.getElementById('search').value = ''; handleInput(); }
 
     function copyForClient() {
-        // Если поиска нет — легкая вибрация (ошибка)
         if (!filters.search) { 
             if (navigator.vibrate) navigator.vibrate(50); 
             return; 
         }
 
-        // 1. Получаем список товаров
         const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getTranslitVariations(t));
         const currentResults = db.filter(r => {
             if (!r.Name_DE) return false;
@@ -175,41 +173,35 @@
 
         if (currentResults.length === 0) return;
 
-        // 2. Готовим текст (Шапка)
         const dateNow = new Date().toLocaleDateString('ru-RU');
         
         let text = `[${dateNow}]\n`;
-        text += `Курс евро расчетный: ${rateCalc.toFixed(2)} ₽\n`;
-        text += `Тариф почты из Германии: ${shipEur} €\n\n`;
+        text += `Курс евро расчетный: ${rateCalc.toFixed(2)}₽\n`;
+        text += `Тариф почты из Германии до 5кг: ${shipEur}€\n\n`;
 
-        // Действующее вещество (если есть)
         if (currentResults[0].Substance) {
             text += `Действующее вещество: [${currentResults[0].Substance}]\n\n`;
         }
 
-        // 3. Формируем список (без Form)
         currentResults.slice(0, 20).forEach((r, index) => {
             const priceEur = parseFloat(r.Price.replace(',','.'));
             const priceRub = getRubPrice(priceEur);
             
-            // Формат: 1. Name, Hersteller, PZN ... Price
-            text += `${index + 1}. ${r.Name_DE}, ${r.Hersteller}, PZN: ${r.PZN} ... ${Math.round(priceEur)} € (${priceRub.toLocaleString()} ₽)\n`;
+            // Используем .toLocaleString() для разрядов (1 000)
+            text += `${index + 1}. ${r.Name_DE}, ${r.Hersteller}, PZN: ${r.PZN} ... ${Math.round(priceEur).toLocaleString()}€ (${priceRub.toLocaleString()}₽)\n\n`;
         });
 
-        // 4. Ссылка
         const link = window.location.href;
-        text += `\nСсылка для быстрого заказа:\n${link}`;
+        
+        // ДОБАВИЛ \n ПЕРЕД БЛОКОМ ССЫЛКИ, ЧТОБЫ ОТДЕЛИТЬ ОТ СПИСКА
+        text += `Ссылка для быстрого заказа:\n${link}`;
 
-        // 5. Копируем (Тихо, без звука)
         navigator.clipboard.writeText(text).then(() => {
-            // Визуальный сигнал (логотип мигнет зеленым)
             const logo = document.querySelector('.embedded-logo');
             logo.style.transition = 'color 0.2s';
             logo.style.color = 'var(--ok)'; 
-            
             setTimeout(() => { logo.style.color = ''; }, 400);
             
-            // Тактильный сигнал (короткая вибрация)
             if (navigator.vibrate) navigator.vibrate(100);
         }).catch(err => {
             console.error('Ошибка копирования', err);
@@ -383,7 +375,11 @@
                     <span class="num"></span><span class="name">Почтовый тариф</span><span class="dots"></span><span class="calc">${shipEur} €</span>
                 </div>
                 <div class="receipt-row calc-line">Итого: ${grandTotalEur}€ × ${rateCalc.toFixed(2)}</div>
-                <div class="receipt-row total-rub-line">= ${grandTotalRub.toLocaleString()} ₽</div>
+                
+                <div class="receipt-row total-rub-line" style="justify-content: space-between; align-items: center;">
+                    <span style="font-size: 10px; color: #777; font-weight: 500;">Нажмите для заказа</span>
+                    <span>= ${grandTotalRub.toLocaleString()} ₽ ➔</span>
+                </div>
             `;
             bar.classList.add('active');
             document.getElementById('miniCount').innerText = count;
