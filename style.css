@@ -7,11 +7,14 @@
 }
 
 body { 
-    font-family: -apple-system, ui-sans-serif, system-ui, sans-serif; background: var(--bg); color: var(--txt); 
+    font-family: -apple-system, ui-sans-serif, system-ui, sans-serif; 
+    background: var(--bg); 
+    color: var(--txt); 
     margin: 0; 
     
-    /* Увеличиваем отступ, чтобы чек никогда не перекрывал контент */
-    padding-bottom: 180px; 
+    /* БЫЛО: 180px -> СТАЛО: 320px */
+    /* Это гарантирует, что даже полный чек не закроет товары */
+    padding-bottom: 320px; 
     
     -webkit-tap-highlight-color: transparent;
 }
