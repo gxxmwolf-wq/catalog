@@ -18,7 +18,7 @@
 
     <div class="sticky">
         <div class="inp-wrap">
-            <div class="embedded-logo"><span class="rx-part">RX</span><span class="de-part">DE</span></div>
+            <div class="embedded-logo" ondblclick="copyForClient()" title="Double click to copy offer"><span class="rx-part">RX</span><span class="de-part">DE</span></div>
             <input type="text" id="search" class="search-input" placeholder="Поиск (рус / lat)..." oninput="handleInput()" autocomplete="off">
             <span class="cls-btn" id="clearBtn" onclick="clearSearch()" style="display:none">✕</span>
         </div>
@@ -60,33 +60,40 @@
     const TG_USER = 'remed01';
     const WA_PHONE = '79650302556';
 
-    let db = [], cart = {};
+    let db = [], cart = [];
     let rateCalc = KURS_FALLBACK, shipEur = 50; 
     let filters = { search: '' };
 
-    // === ВОЗВРАЩАЕМ КЛАССНЫЙ ЗВУК ОТ GOOGLE ===
-    // Тот самый приятный "Pop"
-    const audioAdd = new Audio("https://actions.google.com/sounds/v1/cartoon/pop.ogg");
-    // Тихий "Свайп"
-    const audioRem = new Audio("https://actions.google.com/sounds/v1/cartoon/swipe.ogg");
+    const audioAdd = new Audio("sounds/add.mp3");
+    const audioRem = new Audio("sounds/remove.mp3");
 
     function playSound(type) {
         if(type === 'add') {
-            audioAdd.currentTime = 0;
-            audioAdd.volume = 0.35; // Приятная средняя громкость
-            audioAdd.play().catch(e=>{});
+            audioAdd.currentTime = 0; audioAdd.volume = 0.4; audioAdd.play().catch(e=>{});
         } else {
-            audioRem.currentTime = 0;
-            audioRem.volume = 0.2; // Очень тихо
-            audioRem.play().catch(e=>{});
+            audioRem.currentTime = 0; audioRem.volume = 0.3; audioRem.play().catch(e=>{});
         }
     }
 
     function init() {
-        try { const saved = localStorage.getItem('de_cart'); if (saved) cart = JSON.parse(saved); } catch(e) { cart = {}; }
+        try { 
+            const saved = localStorage.getItem('de_cart_arr'); 
+            if (saved) cart = JSON.parse(saved); 
+            if (!Array.isArray(cart)) cart = []; 
+        } catch(e) { cart = []; }
+        
         fetchLocalDB().then(() => {
-            calculateFinalLogic(); 
-            Promise.all([fetchCbrRate(), fetchGoogleSettings()]).then(() => calculateFinalLogic());
+            Promise.all([fetchCbrRate(), fetchGoogleSettings()]).then(() => {
+                calculateFinalLogic();
+                const urlParams = new URLSearchParams(window.location.search);
+                const query = urlParams.get('q');
+                if (query) {
+                    const input = document.getElementById('search');
+                    input.value = query;
+                    filters.search = query;
+                    handleInput(false);
+                }
+            });
         });
     }
 
@@ -135,65 +142,126 @@
         return [w, resEn, resRu];
     }
 
-    function handleInput() {
+    function handleInput(updateUrl = true) {
         const input = document.getElementById('search');
         filters.search = input.value.trim();
         document.getElementById('clearBtn').style.display = filters.search ? 'flex' : 'none';
+        
+        if (updateUrl) {
+            const url = new URL(window.location);
+            if (filters.search) url.searchParams.set('q', filters.search);
+            else url.searchParams.delete('q');
+            window.history.replaceState({}, '', url);
+        }
         render(); 
     }
     
     function clearSearch() { document.getElementById('search').value = ''; handleInput(); }
 
-    function animateFly(startElement, isRemoving = false) {
-        const target = document.getElementById('miniCart');
-        const fly = document.createElement('div');
-        fly.className = 'fly-pill'; 
-        fly.innerText = '💊';
+    function copyForClient() {
+        // Если поиска нет — легкая вибрация (ошибка)
+        if (!filters.search) { 
+            if (navigator.vibrate) navigator.vibrate(50); 
+            return; 
+        }
 
-        // ЗВУК
+        // 1. Получаем список товаров
+        const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getTranslitVariations(t));
+        const currentResults = db.filter(r => {
+            if (!r.Name_DE) return false;
+            const text = (r.Name_DE + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
+            return tokens.every(vrs => vrs.some(v => text.includes(v)));
+        });
+
+        if (currentResults.length === 0) return;
+
+        // 2. Готовим текст (Шапка)
+        const dateNow = new Date().toLocaleDateString('ru-RU');
+        
+        let text = `[${dateNow}]\n`;
+        text += `Курс евро расчетный: ${rateCalc.toFixed(2)} ₽\n`;
+        text += `Тариф почты из Германии: ${shipEur} €\n\n`;
+
+        // Действующее вещество (если есть)
+        if (currentResults[0].Substance) {
+            text += `Действующее вещество: [${currentResults[0].Substance}]\n\n`;
+        }
+
+        // 3. Формируем список (без Form)
+        currentResults.slice(0, 20).forEach((r, index) => {
+            const priceEur = parseFloat(r.Price.replace(',','.'));
+            const priceRub = getRubPrice(priceEur);
+            
+            // Формат: 1. Name, Hersteller, PZN ... Price
+            text += `${index + 1}. ${r.Name_DE}, ${r.Hersteller}, PZN: ${r.PZN} ... ${Math.round(priceEur)} € (${priceRub.toLocaleString()} ₽)\n`;
+        });
+
+        // 4. Ссылка
+        const link = window.location.href;
+        text += `\nСсылка для быстрого заказа:\n${link}`;
+
+        // 5. Копируем (Тихо, без звука)
+        navigator.clipboard.writeText(text).then(() => {
+            // Визуальный сигнал (логотип мигнет зеленым)
+            const logo = document.querySelector('.embedded-logo');
+            logo.style.transition = 'color 0.2s';
+            logo.style.color = 'var(--ok)'; 
+            
+            setTimeout(() => { logo.style.color = ''; }, 400);
+            
+            // Тактильный сигнал (короткая вибрация)
+            if (navigator.vibrate) navigator.vibrate(100);
+        }).catch(err => {
+            console.error('Ошибка копирования', err);
+        });
+    }
+
+    function animateFly(startElement, isRemoving = false, productSize = 0) {
+        const modal = document.getElementById('modal');
+        const isModalOpen = modal.classList.contains('active');
+        let target = isModalOpen ? document.getElementById('summaryBox') : document.getElementById('miniCart');
+
         playSound(isRemoving ? 'rem' : 'add');
 
-        if (isRemoving) {
-            fly.classList.add('removing');
-        }
+        let sizeVal = parseInt(productSize) || 0; 
+        let pillCount = 1;
+        if (sizeVal > 90) pillCount = 3; else if (sizeVal > 50) pillCount = 2;
 
         const sRect = startElement.getBoundingClientRect();
         const tRect = target.getBoundingClientRect();
 
+        for (let i = 0; i < pillCount; i++) {
+            setTimeout(() => { createSinglePill(sRect, tRect, isRemoving); }, i * 120);
+        }
+    }
+
+    function createSinglePill(sRect, tRect, isRemoving) {
+        const fly = document.createElement('div');
+        fly.className = 'fly-pill'; fly.innerText = '💊';
+        if (isRemoving) fly.classList.add('removing');
+
         if (isRemoving) {
-            // ЛЕТИТ ОБРАТНО (Медленно)
-            fly.style.left = (tRect.left + tRect.width / 2) + 'px';
-            fly.style.top = (tRect.top + tRect.height / 2) + 'px';
-            fly.style.transform = 'scale(0.5)';
+            fly.style.left = (tRect.left + tRect.width/2) + 'px'; fly.style.top = (tRect.top + tRect.height/2) + 'px'; fly.style.transform = 'scale(0.5)';
             document.body.appendChild(fly);
-            
-            setTimeout(() => {
-                fly.style.left = (sRect.left + sRect.width / 2) + 'px';
-                fly.style.top = (sRect.top + sRect.height / 2) + 'px';
-                fly.style.transform = 'scale(1) rotate(-360deg)'; 
-                fly.style.opacity = '0.5'; 
-            }, 50);
-            
-            setTimeout(() => { fly.remove(); }, 900); 
-
+            setTimeout(() => { fly.style.left = (sRect.left + sRect.width/2) + 'px'; fly.style.top = (sRect.top + sRect.height/2) + 'px'; fly.style.transform = 'scale(1) rotate(-360deg)'; fly.style.opacity = '0.5'; }, 50);
+            setTimeout(() => { fly.remove(); }, 900);
         } else {
-            // ЛЕТИТ ТУДА (Быстро)
-            fly.style.left = (sRect.left + sRect.width / 2) + 'px';
-            fly.style.top = (sRect.top + sRect.height / 2) + 'px';
+            fly.style.left = (sRect.left + sRect.width/2) + 'px'; fly.style.top = (sRect.top + sRect.height/2) + 'px';
             document.body.appendChild(fly);
-            
-            setTimeout(() => {
-                fly.style.left = (tRect.left + tRect.width / 2) + 'px';
-                fly.style.top = (tRect.top + tRect.height / 2) + 'px';
-                fly.style.transform = 'scale(0.1) rotate(360deg)'; 
-                fly.style.opacity = '0.5'; 
-            }, 50);
-
-            setTimeout(() => { target.classList.add('pulse'); }, 600);
-            setTimeout(() => target.classList.remove('pulse'), 900);
+            setTimeout(() => { fly.style.left = (tRect.left + tRect.width/2) + 'px'; fly.style.top = (tRect.top + tRect.height/2) + 'px'; fly.style.transform = 'scale(0.1) rotate(360deg)'; fly.style.opacity = '0.5'; }, 50);
+            setTimeout(() => { 
+                const targetEl = document.getElementById(document.getElementById('modal').classList.contains('active') ? 'summaryBox' : 'miniCart');
+                targetEl.classList.add('pulse'); 
+            }, 600);
+            setTimeout(() => { 
+                const targetEl = document.getElementById(document.getElementById('modal').classList.contains('active') ? 'summaryBox' : 'miniCart');
+                targetEl.classList.remove('pulse'); 
+            }, 900);
             setTimeout(() => { fly.remove(); }, 600);
         }
     }
+
+    function getQty(pzn) { const item = cart.find(i => i.pzn === pzn); return item ? item.qty : 0; }
 
     function render() {
         const list = document.getElementById('list'); 
@@ -209,14 +277,11 @@
                 const text = (r.Name_DE + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
                 return tokens.every(vrs => vrs.some(v => text.includes(v)));
             });
-        } else {
-            intro.style.display = 'block';
-            return;
-        }
+        } else { intro.style.display = 'block'; return; }
 
         results.forEach(r => {
             const price = parseFloat(r.Price.replace(',','.'));
-            const q = cart[r.PZN] || 0;
+            const q = getQty(r.PZN);
             const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
             list.innerHTML += `
             <div class="card ${q > 0 ? 'selected' : ''}">
@@ -244,37 +309,34 @@
     }
 
     function modQty(pzn, d, event) { 
-        if (event) animateFly(event.target, d < 0);
-        let current = cart[pzn] || 0;
-        if (d === 0) delete cart[pzn];
-        else {
-            let next = current + d;
-            if (next <= 0) delete cart[pzn]; else cart[pzn] = next;
-        }
-        localStorage.setItem('de_cart', JSON.stringify(cart));
-        updateBar(); render(); 
+        const product = db.find(r => r.PZN === pzn);
+        const sizeStr = product ? product.Size : "0";
+        if (event) animateFly(event.target, d < 0, sizeStr);
         
-        // Исправленная проверка класса active для обновления модалки
-        const modal = document.getElementById('modal');
-        if (modal.classList.contains('active')) {
-            renderCartItems();
-        }
+        const index = cart.findIndex(i => i.pzn === pzn);
+        // ЛОГИКА: Новый товар - в конец очереди (push). 
+        if (index === -1) { if (d > 0) cart.push({ pzn: pzn, qty: 1 }); } 
+        else { let newQty = cart[index].qty + d; if (newQty <= 0) cart.splice(index, 1); else cart[index].qty = newQty; }
+        
+        localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+        updateBar(); render(); 
+        if (document.getElementById('modal').classList.contains('active')) renderCartItems();
     }
 
     function updateBar() {
         let totalEur = 0, count = 0; 
         let receiptHtml = '';
         let activeItems = [];
-
-        db.forEach(r => { 
-            if(cart[r.PZN] > 0) { 
-                const p = Math.round(parseFloat(r.Price.replace(',','.')));
-                const q = cart[r.PZN];
-                const lineSum = p * q;
-                totalEur += lineSum; 
-                count += q;
-                activeItems.push({ name: r.Name_DE, p: p, q: q, sum: lineSum });
-            } 
+        
+        // ВАЖНО: Проходим по cart (массиву), сохраняя порядок добавления
+        cart.forEach(item => {
+            const dbItem = db.find(r => r.PZN === item.pzn);
+            if (dbItem) {
+                const p = Math.round(parseFloat(dbItem.Price.replace(',','.')));
+                const sum = p * item.qty;
+                totalEur += sum; count += item.qty;
+                activeItems.push({ name: dbItem.Name_DE, p: p, q: item.qty, sum: sum });
+            }
         });
 
         const bar = document.getElementById('miniCart');
@@ -283,52 +345,52 @@
         if(count > 0) {
             const grandTotalEur = totalEur + shipEur;
             const grandTotalRub = getRubPrice(grandTotalEur);
-
-            let displayItems = [];
-            let hasHidden = false;
-
-            if (activeItems.length <= 6) {
-                displayItems = activeItems.map((item, idx) => ({ ...item, num: idx + 1 }));
-            } else {
+            let displayItems = []; let hasHidden = false;
+            
+            // Логика 1, 2, 3 ... N-1, N
+            if (activeItems.length <= 6) { displayItems = activeItems.map((item, idx) => ({ ...item, num: idx + 1 })); } 
+            else {
                 for(let i=0; i<3; i++) displayItems.push({ ...activeItems[i], num: i + 1 });
                 hasHidden = true;
                 for(let i=activeItems.length-2; i<activeItems.length; i++) displayItems.push({ ...activeItems[i], num: i + 1 });
             }
 
             let renderedRows = '';
+            const generateRow = (item) => {
+                // ВЕРНУЛИ 'pack' В ЧЕК
+                const mathStr = item.q > 1 ? `${item.p}€ × ${item.q} pack =` : ``;
+                return `
+                <div class="receipt-row">
+                    <span class="num">${item.num}.</span>
+                    <span class="name">${item.name}</span>
+                    <span class="dots"></span>
+                    <span class="calc">${mathStr} <b>${item.sum}€</b></span>
+                </div>`;
+            };
+
             const firstPart = hasHidden ? displayItems.slice(0,3) : displayItems;
-            
-            firstPart.forEach(item => {
-                const mathStr = item.q > 1 ? `${item.p}€ × ${item.q} pak =` : ``;
-                renderedRows += `<div class="receipt-row"><span class="num">${item.num}.</span><span class="name">${item.name.substring(0,18)}..</span><span class="calc">${mathStr} <b>${item.sum}€</b></span></div>`;
-            });
+            firstPart.forEach(item => { renderedRows += generateRow(item); });
 
             if (hasHidden) {
                 renderedRows += `<div class="receipt-row center">.......</div>`;
                 const lastPart = displayItems.slice(3);
-                lastPart.forEach(item => {
-                    const mathStr = item.q > 1 ? `${item.p}€ × ${item.q} pak =` : ``;
-                    renderedRows += `<div class="receipt-row"><span class="num">${item.num}.</span><span class="name">${item.name.substring(0,18)}..</span><span class="calc">${mathStr} <b>${item.sum}€</b></span></div>`;
-                });
+                lastPart.forEach(item => { renderedRows += generateRow(item); });
             }
 
-            receiptHtml = renderedRows + `
+            receipt.innerHTML = renderedRows + `
                 <div class="receipt-divider"></div>
                 <div class="receipt-row color-ship">
-                    <span class="num"></span><span class="name">Почтовый тариф</span><span class="calc">${shipEur} €</span>
+                    <span class="num"></span><span class="name">Почтовый тариф</span><span class="dots"></span><span class="calc">${shipEur} €</span>
                 </div>
                 <div class="receipt-row calc-line">Итого: ${grandTotalEur}€ × ${rateCalc.toFixed(2)}</div>
                 <div class="receipt-row total-rub-line">= ${grandTotalRub.toLocaleString()} ₽</div>
             `;
-
             bar.classList.add('active');
             document.getElementById('miniCount').innerText = count;
             document.getElementById('miniPrice').innerText = grandTotalEur + ' €';
-            receipt.innerHTML = receiptHtml;
             receipt.style.display = 'flex';
         } else {
-            bar.classList.remove('active');
-            receipt.style.display = 'none';
+            bar.classList.remove('active'); receipt.style.display = 'none';
         }
     }
 
@@ -357,42 +419,58 @@
     function renderCartItems() {
         const div = document.getElementById('cartItems'); div.innerHTML = '';
         let totalEur = 0;
-        let counter = 1;
-
-        db.forEach(r => { 
-            if(cart[r.PZN] > 0) { 
-                const q = cart[r.PZN], p = parseFloat(r.Price.replace(',','.'));
-                totalEur += p * q;
-                div.innerHTML += `
-                <div class="m-row-interactive">
-                    <div class="m-info">
-                        <span class="m-num">${counter++}.</span>
-                        <div class="m-text">
-                            <div class="m-name">${r.Name_DE}</div>
-                            <div class="m-meta">${r.Hersteller}</div>
+        
+        if (cart.length === 0) {
+            div.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Корзина пуста</div>';
+        } else {
+            // ВАЖНО: Рендерим по массиву cart (хронологический порядок)
+            cart.forEach((item, index) => {
+                const r = db.find(x => x.PZN === item.pzn);
+                if (r) {
+                    const q = item.qty;
+                    const p = parseFloat(r.Price.replace(',','.'));
+                    const sumEur = Math.round(p * q);
+                    const sumRub = getRubPrice(sumEur);
+                    totalEur += sumEur;
+                    
+                    div.innerHTML += `
+                    <div class="m-row-interactive">
+                        <div class="m-info">
+                            <span class="m-num">${index + 1}.</span>
+                            <div class="m-text">
+                                <div class="m-name">${r.Name_DE}</div>
+                                <div class="m-meta">${r.Hersteller}</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="m-ctrl-block">
-                         <div class="qty-capsule">
-                            <button class="q-btn" onclick="modQty('${r.PZN}',-1, null)">−</button>
-                            <span class="q-val">${q}</span>
-                            <button class="q-btn" onclick="modQty('${r.PZN}',1, null)">+</button>
+                        <div class="m-ctrl-block">
+                             <div class="m-single-price">${Math.round(p)} €</div>
+                             <div class="qty-capsule">
+                                <button class="q-btn" onclick="modQty('${item.pzn}',-1, event)">−</button>
+                                <span class="q-val">${q}</span>
+                                <button class="q-btn" onclick="modQty('${item.pzn}',1, event)">+</button>
+                            </div>
+                            <div class="m-price-block">
+                                <div class="m-eur">${sumEur} €</div>
+                                <div class="m-sub-rub">${sumRub.toLocaleString()} ₽</div>
+                            </div>
                         </div>
-                        <div class="m-price-block">
-                            <div class="m-eur">${Math.round(p * q)} €</div>
-                        </div>
-                    </div>
-                </div>`;
-            } 
-        });
-
-        if (totalEur === 0) div.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Корзина пуста</div>';
+                    </div>`;
+                }
+            });
+        }
         document.getElementById('summaryBox').innerHTML = `<div class="sum-line"><span>Итого:</span><b>${Math.round(totalEur + shipEur)} €</b></div><div class="sum-rub">${getRubPrice(totalEur + shipEur).toLocaleString()} ₽</div>`;
     }
 
     function doShare(type) {
         let text = "Заказ RXDE:\n", total = 0;
-        db.forEach(r => { if(cart[r.PZN] > 0) { text += `- ${r.Name_DE} (x${cart[r.PZN]})\n`; total += parseFloat(r.Price.replace(',','.')) * cart[r.PZN]; } });
+        cart.forEach(item => {
+            const r = db.find(x => x.PZN === item.pzn);
+            if (r) {
+                const p = parseFloat(r.Price.replace(',','.'));
+                text += `- ${r.Name_DE} (x${item.qty})\n`; 
+                total += p * item.qty;
+            }
+        });
         text += `\nСумма: ${Math.round(total + shipEur)} EUR.`;
         const enc = encodeURIComponent(text);
         if(type === 'tg') window.open(`https://t.me/${TG_USER}?text=${enc}`);
