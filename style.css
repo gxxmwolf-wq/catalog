@@ -25,7 +25,7 @@ body {
 .slogan-top, .rates-top { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; }
 
 /* =========================================
-   BLOCK 2: ПОИСК И ПОДСКАЗКИ
+   BLOCK 2: ПОИСК И ПОДСКАЗКИ (MOBILE FIX)
    ========================================= */
 .sticky { position: sticky; top: 0; background: #fff; padding: 10px 0 5px 0; z-index: 100; border-bottom: 1px solid #f0f0f0; }
 
@@ -50,6 +50,9 @@ body {
 .search-input { 
     flex: 1; height: 100%; border: none; background: transparent; 
     padding: 0 12px; font-size: 15px; outline: none; color: #000; margin: 0; 
+    /* Убираем стили iOS для инпутов */
+    -webkit-appearance: none;
+    border-radius: 0;
 }
 
 .cls-btn {
@@ -59,29 +62,35 @@ body {
 }
 .cls-btn:active { color: #555; background: rgba(0,0,0,0.05); }
 
-/* --- НОВЫЙ БЛОК ПОДСКАЗОК --- */
+/* --- ГОРИЗОНТАЛЬНАЯ ЛЕНТА (С ИСПРАВЛЕНИЯМИ) --- */
 .suggestions-row {
-    display: flex;
-    overflow-x: auto; /* Горизонтальная прокрутка */
-    white-space: nowrap;
+    display: flex;           /* Обязательно в строку */
+    flex-wrap: nowrap;       /* ЗАПРЕТ НА ПЕРЕНОС СТРОК (ВАЖНО) */
+    overflow-x: auto;        /* Горизонтальный скролл */
+    align-items: center;
     gap: 8px;
     padding: 8px 4px 4px 4px;
+    width: 100%;             /* На всю ширину */
+    box-sizing: border-box;  /* Чтобы отступы не ломали ширину */
     
-    /* Скрываем скроллбар, но оставляем прокрутку */
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none;  /* IE */
+    /* Скрываем полосу прокрутки, но оставляем свайп */
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch; /* Плавный скролл на iOS */
 }
-.suggestions-row::-webkit-scrollbar { display: none; /* Chrome/Safari */ }
+.suggestions-row::-webkit-scrollbar { display: none; }
 
 .s-chip {
+    flex-shrink: 0;          /* ЗАПРЕТ НА СЖАТИЕ (ВАЖНО) - чтобы не плющило */
     background: #e3f2fd;
     color: var(--p);
     border: 1px solid #bbdefb;
     border-radius: 12px;
-    padding: 4px 10px;
-    font-size: 12px;
+    padding: 6px 12px;       /* Чуть больше для пальца */
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;     /* Текст в одну строку */
     user-select: none;
     -webkit-tap-highlight-color: transparent;
     transition: all 0.2s;
@@ -89,6 +98,7 @@ body {
 .s-chip:active {
     background: var(--p);
     color: #fff;
+    transform: scale(0.95);
 }
 
 /* =========================================
