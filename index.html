@@ -53,6 +53,9 @@
 </div>
 
 <script>
+    /* =========================================
+       BLOCK 1: КОНФИГУРАЦИЯ И ПЕРЕМЕННЫЕ
+       ========================================= */
     const LOCAL_DB_URL = 'db.csv'; 
     const GOOGLE_SETTINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=23735297&single=true&output=csv';
     const CBR_API_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
@@ -64,6 +67,7 @@
     let rateCalc = KURS_FALLBACK, shipEur = 50; 
     let filters = { search: '' };
 
+    // Звуки
     const audioAdd = new Audio("sounds/add.mp3");
     const audioRem = new Audio("sounds/remove.mp3");
 
@@ -75,6 +79,9 @@
         }
     }
 
+    /* =========================================
+       BLOCK 2: ИНИЦИАЛИЗАЦИЯ И ЗАГРУЗКА
+       ========================================= */
     function init() {
         try { 
             const saved = localStorage.getItem('de_cart_arr'); 
@@ -85,6 +92,7 @@
         fetchLocalDB().then(() => {
             Promise.all([fetchCbrRate(), fetchGoogleSettings()]).then(() => {
                 calculateFinalLogic();
+                // Deep Link Logic
                 const urlParams = new URLSearchParams(window.location.search);
                 const query = urlParams.get('q');
                 if (query) {
@@ -115,6 +123,9 @@
         try { const response = await fetch(CBR_API_URL); const data = await response.json(); cbrRateData = data.Valute.EUR.Value; } catch (e) { cbrRateData = 0; }
     }
 
+    /* =========================================
+       BLOCK 3: ЯДРО РАСЧЕТОВ И УТИЛИТЫ
+       ========================================= */
     function calculateFinalLogic() {
         if (!db.length) return;
         let gRate = 0, gSmena = 0, gMail = 0;
@@ -158,101 +169,9 @@
     
     function clearSearch() { document.getElementById('search').value = ''; handleInput(); }
 
-    function copyForClient() {
-        if (!filters.search) { 
-            if (navigator.vibrate) navigator.vibrate(50); 
-            return; 
-        }
-
-        const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getTranslitVariations(t));
-        const currentResults = db.filter(r => {
-            if (!r.Name_DE) return false;
-            const text = (r.Name_DE + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
-            return tokens.every(vrs => vrs.some(v => text.includes(v)));
-        });
-
-        if (currentResults.length === 0) return;
-
-        const dateNow = new Date().toLocaleDateString('ru-RU');
-        
-        let text = `[${dateNow}]\n`;
-        text += `Курс евро расчетный: ${rateCalc.toFixed(2)}₽\n`;
-        text += `Тариф почты из Германии до 5кг: ${shipEur}€\n\n`;
-
-        if (currentResults[0].Substance) {
-            text += `Действующее вещество: [${currentResults[0].Substance}]\n\n`;
-        }
-
-        currentResults.slice(0, 20).forEach((r, index) => {
-            const priceEur = parseFloat(r.Price.replace(',','.'));
-            const priceRub = getRubPrice(priceEur);
-            
-            // Используем .toLocaleString() для разрядов (1 000)
-            text += `${index + 1}. ${r.Name_DE}, ${r.Hersteller}, PZN: ${r.PZN} ... ${Math.round(priceEur).toLocaleString()}€ (${priceRub.toLocaleString()}₽)\n\n`;
-        });
-
-        const link = window.location.href;
-        
-        // ДОБАВИЛ \n ПЕРЕД БЛОКОМ ССЫЛКИ, ЧТОБЫ ОТДЕЛИТЬ ОТ СПИСКА
-        text += `Ссылка для быстрого заказа:\n${link}`;
-
-        navigator.clipboard.writeText(text).then(() => {
-            const logo = document.querySelector('.embedded-logo');
-            logo.style.transition = 'color 0.2s';
-            logo.style.color = 'var(--ok)'; 
-            setTimeout(() => { logo.style.color = ''; }, 400);
-            
-            if (navigator.vibrate) navigator.vibrate(100);
-        }).catch(err => {
-            console.error('Ошибка копирования', err);
-        });
-    }
-
-    function animateFly(startElement, isRemoving = false, productSize = 0) {
-        const modal = document.getElementById('modal');
-        const isModalOpen = modal.classList.contains('active');
-        let target = isModalOpen ? document.getElementById('summaryBox') : document.getElementById('miniCart');
-
-        playSound(isRemoving ? 'rem' : 'add');
-
-        let sizeVal = parseInt(productSize) || 0; 
-        let pillCount = 1;
-        if (sizeVal > 90) pillCount = 3; else if (sizeVal > 50) pillCount = 2;
-
-        const sRect = startElement.getBoundingClientRect();
-        const tRect = target.getBoundingClientRect();
-
-        for (let i = 0; i < pillCount; i++) {
-            setTimeout(() => { createSinglePill(sRect, tRect, isRemoving); }, i * 120);
-        }
-    }
-
-    function createSinglePill(sRect, tRect, isRemoving) {
-        const fly = document.createElement('div');
-        fly.className = 'fly-pill'; fly.innerText = '💊';
-        if (isRemoving) fly.classList.add('removing');
-
-        if (isRemoving) {
-            fly.style.left = (tRect.left + tRect.width/2) + 'px'; fly.style.top = (tRect.top + tRect.height/2) + 'px'; fly.style.transform = 'scale(0.5)';
-            document.body.appendChild(fly);
-            setTimeout(() => { fly.style.left = (sRect.left + sRect.width/2) + 'px'; fly.style.top = (sRect.top + sRect.height/2) + 'px'; fly.style.transform = 'scale(1) rotate(-360deg)'; fly.style.opacity = '0.5'; }, 50);
-            setTimeout(() => { fly.remove(); }, 900);
-        } else {
-            fly.style.left = (sRect.left + sRect.width/2) + 'px'; fly.style.top = (sRect.top + sRect.height/2) + 'px';
-            document.body.appendChild(fly);
-            setTimeout(() => { fly.style.left = (tRect.left + tRect.width/2) + 'px'; fly.style.top = (tRect.top + tRect.height/2) + 'px'; fly.style.transform = 'scale(0.1) rotate(360deg)'; fly.style.opacity = '0.5'; }, 50);
-            setTimeout(() => { 
-                const targetEl = document.getElementById(document.getElementById('modal').classList.contains('active') ? 'summaryBox' : 'miniCart');
-                targetEl.classList.add('pulse'); 
-            }, 600);
-            setTimeout(() => { 
-                const targetEl = document.getElementById(document.getElementById('modal').classList.contains('active') ? 'summaryBox' : 'miniCart');
-                targetEl.classList.remove('pulse'); 
-            }, 900);
-            setTimeout(() => { fly.remove(); }, 600);
-        }
-    }
-
+    /* =========================================
+       BLOCK 4: РЕНДЕР ГЛАВНОГО СПИСКА (НОВАЯ СТРУКТУРА)
+       ========================================= */
     function getQty(pzn) { const item = cart.find(i => i.pzn === pzn); return item ? item.qty : 0; }
 
     function render() {
@@ -275,52 +194,88 @@
             const price = parseFloat(r.Price.replace(',','.'));
             const q = getQty(r.PZN);
             const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
+            
+            const imagePath = r.Image ? `img/${r.Image}` : ''; 
+            
+            // Если картинки нет, показываем иконку
+            const imgHtml = imagePath 
+                ? `<img src="${imagePath}" class="product-thumb" alt="foto" onerror="this.replaceWith('📷')">`
+                : `<div class="product-thumb" style="background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#ddd; font-size:22px;">📷</div>`;
+
             list.innerHTML += `
             <div class="card ${q > 0 ? 'selected' : ''}">
-                <div class="c-info">
-                    <div class="c-title">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div>
-                    <div class="c-meta">${r.Hersteller} | PZN: ${r.PZN}</div>
-                </div>
-                <div class="c-ctrl">
-                    <div class="u-price">${Math.round(price)} €</div>
-                    <div class="qty-capsule-wrap">
-                        ${q > 0 ? `
-                            <div class="qty-capsule">
-                                <button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button>
-                                <span class="q-val">${q}</span>
-                                <button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button>
+                
+                ${imgHtml}
+
+                <div class="card-body">
+                    
+                    <div class="c-title">
+                        ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
+                    </div>
+
+                    <div class="card-bottom">
+                        <div class="c-meta-box">
+                            <div>${r.Hersteller}</div>
+                            <div>PZN: ${r.PZN}</div>
+                        </div>
+
+                        <div class="c-ctrl">
+                            <div class="u-price">${Math.round(price)} €</div>
+                            
+                            <div class="qty-capsule-wrap">
+                                ${q > 0 ? `
+                                    <div class="qty-capsule">
+                                        <button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button>
+                                        <span class="q-val">${q}</span>
+                                        <button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button>
+                                    </div>
+                                ` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`}
                             </div>
-                        ` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`}
-                    </div>
-                    <div class="sum-box">
-                        ${q > 0 ? `<div class="s-eur">${Math.round(price * q)}€</div><div class="s-rub">${getRubPrice(price * q).toLocaleString()}₽</div>` : ''}
+
+                            <div class="sum-box">
+                                ${q > 0 ? `<div class="s-eur">${Math.round(price * q)}€</div><div class="s-rub">${getRubPrice(price * q).toLocaleString()}₽</div>` : ''}
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>`;
         });
     }
 
+    /* =========================================
+       BLOCK 5: ЛОГИКА КОРЗИНЫ (ОЧЕРЕДЬ)
+       ========================================= */
     function modQty(pzn, d, event) { 
         const product = db.find(r => r.PZN === pzn);
         const sizeStr = product ? product.Size : "0";
         if (event) animateFly(event.target, d < 0, sizeStr);
         
         const index = cart.findIndex(i => i.pzn === pzn);
-        // ЛОГИКА: Новый товар - в конец очереди (push). 
-        if (index === -1) { if (d > 0) cart.push({ pzn: pzn, qty: 1 }); } 
-        else { let newQty = cart[index].qty + d; if (newQty <= 0) cart.splice(index, 1); else cart[index].qty = newQty; }
+        
+        // ВАЖНО: Новый товар добавляем В КОНЕЦ (push)
+        if (index === -1) { 
+            if (d > 0) cart.push({ pzn: pzn, qty: 1 }); 
+        } else { 
+            let newQty = cart[index].qty + d; 
+            if (newQty <= 0) cart.splice(index, 1); 
+            else cart[index].qty = newQty; 
+        }
         
         localStorage.setItem('de_cart_arr', JSON.stringify(cart));
-        updateBar(); render(); 
+        updateBar(); 
+        render(); 
         if (document.getElementById('modal').classList.contains('active')) renderCartItems();
     }
 
+    /* =========================================
+       BLOCK 6: МИНИ-ЧЕК (ПАРЯЩИЙ)
+       ========================================= */
     function updateBar() {
         let totalEur = 0, count = 0; 
-        let receiptHtml = '';
         let activeItems = [];
         
-        // ВАЖНО: Проходим по cart (массиву), сохраняя порядок добавления
+        // Собираем данные, сохраняя порядок очереди (cart)
         cart.forEach(item => {
             const dbItem = db.find(r => r.PZN === item.pzn);
             if (dbItem) {
@@ -339,9 +294,10 @@
             const grandTotalRub = getRubPrice(grandTotalEur);
             let displayItems = []; let hasHidden = false;
             
-            // Логика 1, 2, 3 ... N-1, N
-            if (activeItems.length <= 6) { displayItems = activeItems.map((item, idx) => ({ ...item, num: idx + 1 })); } 
-            else {
+            if (activeItems.length <= 6) { 
+                displayItems = activeItems.map((item, idx) => ({ ...item, num: idx + 1 })); 
+            } else {
+                // Первые 3 и Последние 2
                 for(let i=0; i<3; i++) displayItems.push({ ...activeItems[i], num: i + 1 });
                 hasHidden = true;
                 for(let i=activeItems.length-2; i<activeItems.length; i++) displayItems.push({ ...activeItems[i], num: i + 1 });
@@ -349,7 +305,7 @@
 
             let renderedRows = '';
             const generateRow = (item) => {
-                // ВЕРНУЛИ 'pack' В ЧЕК
+                // ВАЖНО: Тут логика "pack"
                 const mathStr = item.q > 1 ? `${item.p}€ × ${item.q} pack =` : ``;
                 return `
                 <div class="receipt-row">
@@ -390,6 +346,9 @@
         }
     }
 
+    /* =========================================
+       BLOCK 7: МОДАЛЬНОЕ ОКНО ЗАКАЗА
+       ========================================= */
     function openCart() { 
         const modal = document.getElementById('modal');
         const miniCart = document.getElementById('miniCart');
@@ -419,7 +378,7 @@
         if (cart.length === 0) {
             div.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">Корзина пуста</div>';
         } else {
-            // ВАЖНО: Рендерим по массиву cart (хронологический порядок)
+            // ВАЖНО: Порядок 1:1 как в мини-чеке
             cart.forEach((item, index) => {
                 const r = db.find(x => x.PZN === item.pzn);
                 if (r) {
@@ -472,6 +431,106 @@
         if(type === 'tg') window.open(`https://t.me/${TG_USER}?text=${enc}`);
         if(type === 'wa') window.open(`https://wa.me/${WA_PHONE}?text=${enc}`);
     }
+
+    /* =========================================
+       BLOCK 8: АНИМАЦИЯ
+       ========================================= */
+    function animateFly(startElement, isRemoving = false, productSize = 0) {
+        const modal = document.getElementById('modal');
+        const isModalOpen = modal.classList.contains('active');
+        let target = isModalOpen ? document.getElementById('summaryBox') : document.getElementById('miniCart');
+
+        playSound(isRemoving ? 'rem' : 'add');
+
+        let sizeVal = parseInt(productSize) || 0; 
+        let pillCount = 1;
+        if (sizeVal > 90) pillCount = 3; else if (sizeVal > 50) pillCount = 2;
+
+        const sRect = startElement.getBoundingClientRect();
+        const tRect = target.getBoundingClientRect();
+
+        for (let i = 0; i < pillCount; i++) {
+            setTimeout(() => { createSinglePill(sRect, tRect, isRemoving); }, i * 120);
+        }
+    }
+
+    function createSinglePill(sRect, tRect, isRemoving) {
+        const fly = document.createElement('div');
+        fly.className = 'fly-pill'; fly.innerText = '💊';
+        if (isRemoving) fly.classList.add('removing');
+
+        if (isRemoving) {
+            fly.style.left = (tRect.left + tRect.width/2) + 'px'; fly.style.top = (tRect.top + tRect.height/2) + 'px'; fly.style.transform = 'scale(0.5)';
+            document.body.appendChild(fly);
+            setTimeout(() => { fly.style.left = (sRect.left + sRect.width/2) + 'px'; fly.style.top = (sRect.top + sRect.height/2) + 'px'; fly.style.transform = 'scale(1) rotate(-360deg)'; fly.style.opacity = '0.5'; }, 50);
+            setTimeout(() => { fly.remove(); }, 900);
+        } else {
+            fly.style.left = (sRect.left + sRect.width/2) + 'px'; fly.style.top = (sRect.top + sRect.height/2) + 'px';
+            document.body.appendChild(fly);
+            setTimeout(() => { fly.style.left = (tRect.left + tRect.width/2) + 'px'; fly.style.top = (tRect.top + tRect.height/2) + 'px'; fly.style.transform = 'scale(0.1) rotate(360deg)'; fly.style.opacity = '0.5'; }, 50);
+            setTimeout(() => { 
+                const targetEl = document.getElementById(document.getElementById('modal').classList.contains('active') ? 'summaryBox' : 'miniCart');
+                targetEl.classList.add('pulse'); 
+            }, 600);
+            setTimeout(() => { 
+                const targetEl = document.getElementById(document.getElementById('modal').classList.contains('active') ? 'summaryBox' : 'miniCart');
+                targetEl.classList.remove('pulse'); 
+            }, 900);
+            setTimeout(() => { fly.remove(); }, 600);
+        }
+    }
+
+    /* =========================================
+       BLOCK 9: ФУНКЦИИ АДМИНА (COPY)
+       ========================================= */
+    function copyForClient() {
+        if (!filters.search) { 
+            if (navigator.vibrate) navigator.vibrate(50); 
+            return; 
+        }
+
+        const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getTranslitVariations(t));
+        const currentResults = db.filter(r => {
+            if (!r.Name_DE) return false;
+            const text = (r.Name_DE + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
+            return tokens.every(vrs => vrs.some(v => text.includes(v)));
+        });
+
+        if (currentResults.length === 0) return;
+
+        const dateNow = new Date().toLocaleDateString('ru-RU');
+        
+        let text = `[${dateNow}]\n`;
+        text += `Курс евро расчетный: ${rateCalc.toFixed(2)}₽\n`;
+        text += `Тариф почты из Германии до 5кг: ${shipEur}€\n\n`;
+
+        if (currentResults[0].Substance) {
+            text += `Действующее вещество: [${currentResults[0].Substance}]\n\n`;
+        }
+
+        currentResults.slice(0, 20).forEach((r, index) => {
+            const priceEur = parseFloat(r.Price.replace(',','.'));
+            const priceRub = getRubPrice(priceEur);
+            
+            // Красивый формат с пробелами
+            text += `${index + 1}. ${r.Name_DE}, ${r.Hersteller}, PZN: ${r.PZN} ... ${Math.round(priceEur).toLocaleString()}€ (${priceRub.toLocaleString()}₽)\n\n`;
+        });
+
+        const link = window.location.href;
+        text += `Ссылка для быстрого заказа:\n${link}`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const logo = document.querySelector('.embedded-logo');
+            logo.style.transition = 'color 0.2s';
+            logo.style.color = 'var(--ok)'; 
+            setTimeout(() => { logo.style.color = ''; }, 400);
+            
+            if (navigator.vibrate) navigator.vibrate(100);
+        }).catch(err => {
+            console.error('Ошибка копирования', err);
+        });
+    }
+
     init();
 </script>
 </body>

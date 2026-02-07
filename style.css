@@ -1,3 +1,6 @@
+/* =========================================
+   BLOCK 1: БАЗОВЫЕ НАСТРОЙКИ И ЦВЕТА
+   ========================================= */
 :root { 
     --p: #005691; --bg: #f5f7fa; --rx: #d32f2f; --txt: #1c1c1c;
     --ok: #00e676; 
@@ -13,42 +16,184 @@ body {
 .top-row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 8px 0; }
 .slogan-top, .rates-top { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #777; }
 
+/* =========================================
+   BLOCK 2: ПОИСК (STICKY HEADER)
+   ========================================= */
 .sticky { position: sticky; top: 0; background: #fff; padding: 10px 0; z-index: 100; border-bottom: 1px solid #f0f0f0; }
-.inp-wrap { height: 42px; background: #f0f2f5; border-radius: 12px; display: flex; align-items: center; border: 1px solid #e5e5e5; }
+
+.inp-wrap { 
+    height: 42px; 
+    background: #f0f2f5; 
+    border-radius: 12px; 
+    display: flex; 
+    align-items: center; /* Центрируем лого, инпут и крестик по вертикали */
+    border: 1px solid #e5e5e5; 
+    overflow: hidden; /* Чтобы ничего не вылезало за скругления */
+}
+
 .embedded-logo { 
-    padding: 0 12px; display: flex; gap: 4px; border-right: 1px solid #ddd; 
+    padding: 0 12px; 
+    display: flex; 
+    gap: 4px; 
+    border-right: 1px solid #ddd; 
+    height: 100%; /* Логотип на всю высоту */
+    align-items: center;
     cursor: pointer; user-select: none; -webkit-user-select: none;
 }
+
 .rx-part { color: var(--rx); border: 1.5px solid var(--rx); font-weight: 900; font-size: 10px; padding: 0 3px; border-radius: 4px; }
 .de-part { font-weight: 900; font-size: 13px; }
-.search-input { flex: 1; border: none; background: transparent; padding: 0 12px; font-size: 15px; outline: none; }
 
-/* ИНТРО */
+.search-input { 
+    flex: 1; /* Занимает всё свободное место */
+    height: 100%;
+    border: none; 
+    background: transparent; 
+    padding: 0 12px; 
+    font-size: 15px; 
+    outline: none; 
+    color: #000;
+    margin: 0; /* Убираем отступы браузера */
+}
+
+/* КРАСИВЫЙ КРЕСТИК */
+.cls-btn {
+    width: 40px; /* Широкая зона клика */
+    height: 100%;
+    display: flex; /* Магия центровки */
+    align-items: center;
+    justify-content: center;
+    
+    font-size: 16px; /* Размер самого символа */
+    font-weight: bold;
+    color: #bbb; /* Ненавязчивый серый */
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent; /* Убирает синий блик на Android */
+}
+
+.cls-btn:active { color: #555; background: rgba(0,0,0,0.05); } /* Эффект нажатия */
+
+/* =========================================
+   BLOCK 3: СПИСОК ТОВАРОВ (LAYOUT: SIDE IMAGE)
+   ========================================= */
 .intro-section { padding: 40px 10px; color:#555; line-height:1.6; font-size:15px; text-align: center; }
 .intro-section h2 { color:#000; margin-top:0; }
 
-/* КАРТОЧКА */
-.card { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; gap: 10px; }
-.card.selected { background: #f8fbff; margin: 0 -12px; padding: 10px 12px; border-left: 3px solid var(--p); }
+/* Карточка - ТЕПЕРЬ ГОРИЗОНТАЛЬНАЯ */
+.card { 
+    display: flex; 
+    flex-direction: row; /* Картинка слева, контент справа */
+    padding: 10px 0; 
+    border-bottom: 1px solid #f0f0f0; 
+    gap: 10px; /* Отступ картинки от текста */
+    align-items: flex-start; /* Выравнивание по верху */
+    position: relative; /* Для z-index */
+}
 
-.c-info { flex: 1; min-width: 0; }
-.c-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.c-meta { font-size: 10px; color: #888; margin-top: 2px; }
-.b-rx { color: var(--rx); font-weight: 900; font-size: 10px; }
+.card.selected { 
+    background: #f8fbff; 
+    margin: 0 -12px; 
+    padding: 10px 12px; 
+    border-left: 3px solid var(--p); 
+}
 
-.c-ctrl { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
-.u-price { font-size: 13px; font-weight: 800; color: #444; width: 45px; text-align: right; }
+/* --- ЛЕВАЯ КОЛОНКА: ФОТО --- */
+/* Стиль миниатюры с МОЩНЫМ ЗУМОМ */
+.product-thumb {
+    width: 50px;       
+    height: 50px;
+    object-fit: contain; 
+    border-radius: 6px;
+    border: 1px solid #eee;
+    background: #fff;
+    flex-shrink: 0; /* Не сжимать картинку */
+    cursor: zoom-in;
+    
+    /* Плавность */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    transform-origin: top left; /* Растем вправо-вниз */
+    position: relative;
+    z-index: 1;
+}
 
-.btn-capsule-add { background: var(--p); color: #fff; border: none; padding: 0 16px; height: 32px; border-radius: 16px; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 4px rgba(0,86,145,0.2); }
-.qty-capsule { display: flex; align-items: center; background: #f0f2f5; border-radius: 20px; padding: 2px; height: 32px; border: 1px solid #e0e0e0; }
-.q-btn { width: 28px; height: 28px; border-radius: 50%; border: none; background: #fff; color: var(--p); font-weight: 900; font-size: 18px; display: flex; align-items: center; justify-content: center; }
-.q-val { padding: 0 10px; min-width: 20px; text-align: center; font-size: 14px; font-weight: 800; }
+/* ЭФФЕКТ УВЕЛИЧЕНИЯ x4 */
+.product-thumb:hover {
+    transform: scale(4.5); /* Очень крупно */
+    z-index: 100; /* Поверх всего текста */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    border-color: #999;
+}
 
-.sum-box { width: 60px; text-align: right; line-height: 1.2; }
-.s-eur { font-size: 15px; font-weight: 900; color: #000; }
+/* --- ПРАВАЯ КОЛОНКА: ВЕСЬ КОНТЕНТ --- */
+.card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Занимает всё оставшееся место */
+    min-width: 0; /* Важно для переноса текста */
+    gap: 4px; /* Отступ между названием и низом */
+}
+
+/* Название */
+.c-title { 
+    font-size: 15px; 
+    font-weight: 600; 
+    line-height: 1.3;
+    color: #000;
+    white-space: normal; 
+}
+
+.b-rx { 
+    color: var(--rx); 
+    font-weight: 900; 
+    font-size: 10px; 
+    margin-left: 4px;
+    border: 1px solid var(--rx);
+    padding: 0 3px;
+    border-radius: 4px;
+    white-space: nowrap;
+    display: inline-block;
+    vertical-align: text-top;
+}
+
+/* Нижняя часть (Производитель + Кнопки) */
+.card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end; 
+    width: 100%;
+}
+
+.c-meta-box {
+    flex: 1; 
+    min-width: 0;
+    padding-right: 5px;
+    font-size: 11px;
+    color: #888;
+    line-height: 1.3;
+}
+
+.c-ctrl { 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; 
+    flex-shrink: 0; 
+}
+
+.u-price { font-size: 14px; font-weight: 800; color: #333; text-align: right; min-width: 35px; }
+
+.btn-capsule-add { background: var(--p); color: #fff; border: none; padding: 0 14px; height: 30px; border-radius: 15px; font-size: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 4px rgba(0,86,145,0.2); }
+.qty-capsule { display: flex; align-items: center; background: #f0f2f5; border-radius: 20px; padding: 2px; height: 30px; border: 1px solid #e0e0e0; }
+.q-btn { width: 26px; height: 26px; border-radius: 50%; border: none; background: #fff; color: var(--p); font-weight: 900; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.q-val { padding: 0 8px; min-width: 18px; text-align: center; font-size: 14px; font-weight: 800; }
+
+.sum-box { width: 55px; text-align: right; line-height: 1.1; }
+.s-eur { font-size: 14px; font-weight: 900; color: #000; }
 .s-rub { font-size: 10px; color: #777; font-weight: 600; }
 
-/* ПАРЯЩИЙ ЧЕК - ШИРОКИЙ */
+/* =========================================
+   BLOCK 4: ПАРЯЩИЙ ЧЕК (MINI-RECEIPT)
+   ========================================= */
 .mini-receipt {
     position: absolute; bottom: 85px; right: 0; 
     width: calc(100% - 40px); right: -10px; max-width: 380px; min-width: 300px;
@@ -63,7 +208,7 @@ body {
 }
 .mini-receipt:active { transform: scale(0.96) translateX(0); background: rgba(255, 255, 255, 0.85); }
 
-/* СТРОКИ ЧЕКА */
+/* Стили строк внутри чека */
 .receipt-row { display: flex; justify-content: space-between; align-items: flex-end; font-size: 11px; color: #222; line-height: 1.3; }
 .receipt-row .num { width: 15px; color: #000; font-weight: 800; font-size: 10px; padding-top: 1px; align-self: flex-start; flex-shrink: 0; margin-right: 2px; }
 .receipt-row .name { 
@@ -80,7 +225,9 @@ body {
 .receipt-row.calc-line { font-weight: 700; color: #333; justify-content: flex-end; font-size: 11px; }
 .receipt-row.total-rub-line { font-weight: 900; color: var(--p); font-size: 15px; justify-content: flex-end; margin-top: 2px; }
 
-/* 3D КНОПКА */
+/* =========================================
+   BLOCK 5: КНОПКА FAB (FLOATING ACTION BUTTON)
+   ========================================= */
 .mini-cart-fab {
     position: fixed; right: 20px; bottom: 25px; width: 65px; height: 65px;
     background: radial-gradient(circle at center 30%, #66eda8, var(--ok) 60%, #00b248);
@@ -95,13 +242,17 @@ body {
 .mini-cart-icon { font-size: 24px; }
 .mini-cart-total { font-size: 11px; font-weight: 900; margin-top: -2px; }
 
-/* АНИМАЦИЯ */
+/* =========================================
+   BLOCK 6: АНИМАЦИЯ
+   ========================================= */
 .fly-pill { position: fixed; z-index: 9999; font-size: 22px; transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; }
 .fly-pill.removing { filter: grayscale(100%); opacity: 0.8; transition: all 0.9s ease-out; }
 @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 .pulse { animation: pulse 0.2s ease-in-out; }
 
-/* МОДАЛКА */
+/* =========================================
+   BLOCK 7: МОДАЛЬНОЕ ОКНО
+   ========================================= */
 .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; align-items: center; justify-content: center; }
 .modal.active { display: flex; }
 .m-box { background: #fff; width: 90%; max-width: 450px; border-radius: 24px; padding: 25px; max-height: 85vh; overflow-y: auto; transform: scale(0.6); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -118,7 +269,6 @@ body {
 .m-price-block { text-align: right; min-width: 50px; }
 .m-eur { font-weight: 800; font-size: 16px; }
 .m-sub-rub { font-size: 11px; color: #888; margin-top: 1px; font-weight: 500; }
-/* ЦЕНА ЗА ШТУКУ: ЧЕРНАЯ, ЖИРНАЯ */
 .m-single-price { font-size: 13px; color: #000; font-weight: 800; margin-right: 8px; min-width: 35px; text-align: right; }
 .sum-line { display: flex; justify-content: space-between; margin-top: 15px; font-size: 18px; font-weight: 900; }
 .sum-rub { text-align: right; color: var(--p); font-weight: bold; font-size: 14px; }
