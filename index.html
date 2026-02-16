@@ -164,28 +164,34 @@ const audioAdd = new Audio("sounds/add.mp3");
     }
 
     function submitFinal(app) {
-        const manualInput = document.getElementById('manualMsgInput');
-        const contactInput = document.getElementById('contactDetailsInput');
-        let finalMsg = "";
+    const manualInput = document.getElementById('manualMsgInput');
+    const contactInput = document.getElementById('contactDetailsInput');
+    const contactOverlay = document.getElementById('contactOverlay');
+    
+    let finalMsg = "";
 
-        if (manualInput.style.display !== 'none') {
+    // Шлем "Контакт" только если открыто окно формы связи
+    if (contactOverlay && contactOverlay.style.display === 'flex') {
+        if (manualInput && manualInput.style.display !== 'none') {
             finalMsg = manualInput.value.trim();
-        } else if (contactInput.style.display !== 'none') {
+        } else {
             finalMsg = currentPreparedText + "\n\nКонтакт: " + contactInput.value.trim();
-        } else {
-            finalMsg = currentPreparedText;
         }
-
-        if (app === 'wa') {
-            window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-        } else if (app === 'tg') {
-            try { navigator.clipboard.writeText(finalMsg); } catch(e){}
-            window.open(`https://t.me/${TG_USER}`, '_blank');
-        } else {
-            showSuccess(generateOrderID(), contactInput.value.trim());
-        }
-        closeContact();
+    } else {
+        // Из корзины шлем только чистый чек
+        finalMsg = currentPreparedText;
     }
+
+    if (app === 'wa') {
+        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+    } else if (app === 'tg') {
+        try { navigator.clipboard.writeText(finalMsg); } catch(e){}
+        window.open(`https://t.me/${TG_USER}`, '_blank');
+    } else {
+        showSuccess(generateOrderID(), contactInput.value.trim());
+    }
+    closeContact();
+}
     
     // Удалите старые копии handleUniversalSubmit и let currentPreparedText ниже по коду!
 
@@ -949,24 +955,36 @@ function getOrderTextAndLink() {
             const sum = price * item.qty;
             itemsSumEur += sum;
             breakdown.push(sum);
-            const sizeStr = r.Size ? ` ${r.Size}` : ''; 
-            const fullDesc = `${r.Name_DE}${sizeStr}, ${r.Hersteller}, PZN ${r.PZN}`;
-            let math = item.qty > 1 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` : `${fmt(sum)}€`;
+
+            // СТРОГО: Название, Производитель, PZN
+            const fullDesc = `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
+            
+            let math = item.qty > 1 
+                ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
+                : `${fmt(sum)}€`;
+
             text += `${idx + 1}.\n${fullDesc}...${math}\n\n`;
         }
     });
 
     text += `Тариф почты из Германии.... ${shipEur}€\n`;
     const totalEur = itemsSumEur + shipEur;
+    
+    // Формула без скобок
     text += `\n${shipEur}+${breakdown.join('+')} = ${fmt(totalEur)}€\n`;
+    
     const finalRub = Math.floor((totalEur * rateCalc) / 100) * 100;
     text += `ИТОГО: ${fmt(totalEur)}€ * ${fmt(rateCalc)} = ${fmt(finalRub)} ₽\n`;
 
+    // ССЫЛКА: Берем текущий домен
     const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
-    const fullLink = `${window.location.origin}${window.location.pathname}?c=${cartStr}&d=${encodeURIComponent(fullDt)}`;
+    const baseUrl = window.location.origin + window.location.pathname;
+    const fullLink = `${baseUrl}?c=${cartStr}&d=${encodeURIComponent(fullDt)}`;
 
     text += `\nВаша собранная корзина у Вас под рукой - всегда актуальные цены!\n${fullLink}`;
-    return { text: text, link: fullLink };
+    
+    currentPreparedText = text; 
+    return { text, link: fullLink };
 }
 
     // 2. Отправка в выбранное приложение
