@@ -22,7 +22,7 @@
 
         <div class="rates-compact" style="font-size: 11px; color: #999; text-align: right; line-height: 1.2; min-width: 70px;">
             <div style="white-space: nowrap;">ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
-            <div style="white-space: nowrap;">Расч: <span id="finalRate" style="color:#000; font-weight:700">0</span></div>
+            <div style="white-space: nowrap;">Расчётный: <span id="finalRate" style="color:#000; font-weight:700">0</span></div>
         </div>
     </div>
 
@@ -52,12 +52,12 @@
 
 <div id="modal" class="modal" onclick="closeModal()">
     <div class="m-box" onclick="event.stopPropagation()">
-        <div class="modal-head" style="padding: 15px 20px 5px; border-bottom: 1px solid #eee; position: relative;">
-    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding-right: 30px;">
+        <div class="modal-head">
+    <div style="display: flex; flex-direction: column; width: 100%;">
         <div id="modalOrderId" style="font-size: 10px; color: #999; font-weight: 400; text-transform: uppercase;">Заказ: ...</div>
-        <div style="font-size: 11px; color: #000; font-weight: 400; text-align: right;">Расчётный курс: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
+        <div style="font-size: 11px; color: #000; font-weight: 400;">Расчётный: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
     </div>
-    <span onclick="closeModal()" class="close-x" style="cursor: pointer; position: absolute; right: 15px; top: 10px; padding: 5px; font-size: 20px; color: #ccc;">✕</span>
+    <div onclick="closeModal()" class="close-x">✕</div>
 </div>
         <div class="m-scroll-area" style="padding: 0 20px; flex: 1; overflow-y: auto;">
     <div id="cartItems"></div>
@@ -120,6 +120,7 @@ let db = [], cart = [], rateCalc = 100, shipEur = 50, filters = { search: '' };
 let currentPreparedText = ""; // ОБЪЯВЛЕНО ОДИН РАЗ
 let contactMode = 'question';
 let cbrRateData = 0, googleSettings = null; // Добавили недостающие переменные
+let restoredDate = ""; // Флаг для хранения даты восстановления
 
 const audioAdd = new Audio("sounds/add.mp3");
     const audioRem = new Audio("sounds/remove.mp3");
@@ -405,19 +406,36 @@ function render(isNewSearch = false) {
         });
 
         // --- БЛОК "НИЧЕГО НЕ НАЙДЕНО" С ПОРОГОМ В 3 СИМВОЛА ---
+        // --- БЛОК "НИЧЕГО НЕ НАЙДЕНО" (Professional Style) ---
+        // --- БЛОК "НИЧЕГО НЕ НАЙДЕНО" (СТРОГИЙ СТИЛЬ) ---
         if (results.length === 0) {
-            // Если введено 1-2 буквы, просто ничего не выводим (ждем слово)
             if (filters.search.length < 3) return;
 
             const searchTxt = "Здравствуйте RxDE, ищу: " + filters.search;
+            
             list.innerHTML = `
-                <div style="text-align:center; padding: 40px 10px;">
-                    <div style="font-size: 40px; margin-bottom: 10px;">🤔</div>
-                    <div style="font-size: 16px; font-weight: 700; color: #333; margin-bottom: 20px;">Ничего не найдено</div>
-                    <div class="grid-3-btns">
-                        <button class="b-cell wa" onclick="currentPreparedText='${searchTxt}'; submitFinal('wa')"><span>WhatsApp</span></button>
-                        <button class="b-cell tg" onclick="currentPreparedText='${searchTxt}'; submitFinal('tg')"><span>Telegram</span></button>
-                        <button class="b-cell other" onclick="openContactForm('${searchTxt}')"><span>Другое</span></button>
+                <div style="padding: 20px 10px;">
+                    <div style="border: 1px solid var(--p); border-radius: 8px; background: #fff; padding: 30px 20px; text-align: center;">
+                        
+                        <div style="font-size: 24px; color: #000; margin-bottom: 15px; letter-spacing: 2px;">
+                            ...
+                        </div>
+
+                        <div style="font-size: 16px; font-weight: 700; color: #000; margin-bottom: 15px; text-transform: uppercase;">
+                            Нет совпадений
+                        </div>
+
+                        <div style="font-size: 15px; color: #333; line-height: 1.5; margin-bottom: 25px;">
+                            Текущая база ежедневно дополняется.<br><br>
+                            Напишите — мы проведем поиск по базе аптеки и вернемся к Вам с результатом.
+                        </div>
+
+                        <div class="grid-3-btns">
+                            <button class="b-cell wa" onclick="currentPreparedText='${searchTxt}'; submitFinal('wa')"><span>WhatsApp</span></button>
+                            <button class="b-cell tg" onclick="currentPreparedText='${searchTxt}'; submitFinal('tg')"><span>Telegram</span></button>
+                            <button class="b-cell other" onclick="openContactForm('${searchTxt}')"><span>Другое</span></button>
+                        </div>
+
                     </div>
                 </div>`;
             return;
@@ -460,99 +478,135 @@ function render(isNewSearch = false) {
     }
 
     /* =========================================
-       BLOCK 5: ЛОГИКА КОРЗИНЫ (ЧИСТАЯ)
-       ========================================= */
-    function modQty(pzn, d, event) { 
-        const index = cart.findIndex(i => i.pzn === pzn);
-        if (index === -1) { 
-            if (d > 0) cart.push({ pzn: pzn, qty: 1 }); 
-        } else { 
-            let newQty = cart[index].qty + d; 
-            if (newQty <= 0) cart.splice(index, 1); 
-            else cart[index].qty = newQty; 
-        }
-        localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+   BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
+   ========================================= */
+function modQty(pzn, d, event) { 
+    // МГНОВЕННО СБРАСЫВАЕМ ДАТУ ВОССТАНОВЛЕНИЯ
+    restoredDate = ""; 
 
-        updateBar(); 
-        render(false); 
-
-        // ЕСЛИ ЕСТЬ СОБЫТИЕ КЛИКА — ЗАПУСКАЕМ АНИМАЦИЮ И ЗВУК
-        if (event) {
-            const btn = event.currentTarget || event.target;
+    if (event) {
+        event.stopPropagation();
+        const btn = event.target.closest('button') || event.currentTarget;
+        if (btn) {
             const rect = btn.getBoundingClientRect();
             const product = db.find(r => r.PZN === pzn);
-            
-            // Запуск полета и звука (Блок 8)
             animateFly(rect, d < 0, product ? product.Size : 0);
-        }
-
-        if (document.getElementById('modal').classList.contains('active')) {
-            renderCartItems(); 
         }
     }
 
+    const index = cart.findIndex(i => i.pzn === pzn);
+    if (index === -1) { 
+        if (d > 0) cart.push({ pzn: pzn, qty: 1 }); 
+    } else { 
+        let newQty = cart[index].qty + d; 
+        if (newQty <= 0) {
+            cart.splice(index, 1); 
+            if (cart.length === 0) closeModal();
+        } else {
+            cart[index].qty = newQty; 
+        }
+    }
+    localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+    updateBar(); 
+    render(false); 
+    if (document.getElementById('modal').classList.contains('active')) renderCartItems(); 
+}
     /* =========================================
-       BLOCK 6: МИНИ-ЧЕК (ОБНОВЛЕНИЕ)
-       ========================================= */
-    function updateBar() {
+   BLOCK 6: МИНИ-ЧЕК (ИСПРАВЛЕННЫЙ)
+   ========================================= */
+/* === ОБНОВЛЕННАЯ ФУНКЦИЯ МИНИ-КОРЗИНЫ И ЧЕКА === */
+function updateBar() {
     const bar = document.getElementById('miniCart');
     const receipt = document.getElementById('miniReceipt');
     if (!bar || !receipt) return;
 
-    bar.style.display = 'flex'; 
-
     let totalEur = 0, count = 0;
     let activeItems = [];
 
-    cart.forEach(item => {
+    cart.forEach((item, idx) => {
         const dbItem = db.find(r => String(r.PZN) === String(item.pzn));
         if (dbItem) {
             const p = Math.round(parseFloat(dbItem.Price.replace(',', '.')));
             totalEur += p * item.qty;
             count += item.qty;
-            activeItems.push({ name: dbItem.Name_DE, p: p, q: item.qty, sum: p * item.qty });
+            activeItems.push({ num: idx + 1, name: dbItem.Name_DE, p: p, q: item.qty, sum: p * item.qty });
         }
     });
 
     const grandTotalEur = totalEur + (count > 0 ? shipEur : 0);
     const grandTotalRub = getRubPrice(grandTotalEur);
-    const formatEur = grandTotalEur.toLocaleString('ru-RU') + ' €';
-    const formatRub = grandTotalRub.toLocaleString('ru-RU') + ' ₽';
+    const fmtEur = grandTotalEur.toLocaleString('ru-RU');
+    const fmtRub = grandTotalRub.toLocaleString('ru-RU');
 
-    // 1. Мини-корзина (FAB)
     document.getElementById('miniCount').innerText = count;
-    document.getElementById('miniPrice').innerText = formatEur;
-    bar.classList.toggle('active', count > 0);
 
-    // 2. Алгоритм чека (3...2) - Без изменений, работает верно
+    // МИНИ-КНОПКА
+    if (count > 0) {
+        bar.classList.add('active');
+        document.getElementById('miniPrice').innerHTML = 
+            `<b style="color:#000;">${fmtEur}€</b> <span style="font-size:10px; color:#000; opacity:0.6; margin-left:4px;">${fmtRub}₽</span>`;
+    } else {
+        bar.classList.remove('active');
+        document.getElementById('miniPrice').innerText = "0 €";
+    }
+
+    // МИНИ-ЧЕК (С НОВЫМ ИТОГО)
     if (count > 0) {
         let rowsHtml = '';
         let displayItems = (activeItems.length <= 5) ? activeItems : [...activeItems.slice(0, 3), { isSeparator: true }, ...activeItems.slice(-2)];
+        
         displayItems.forEach(item => {
-            if (item.isSeparator) rowsHtml += `<div class="receipt-row" style="justify-content:center; opacity:0.3;">. . . . .</div>`;
-            else rowsHtml += `<div class="receipt-row"><span class="name">${item.name}</span><span class="dots"></span><span class="calc">${item.q > 1 ? item.p + '€×' + item.q + '=' : ''} <b>${item.sum}€</b></span></div>`;
+            if (item.isSeparator) {
+                rowsHtml += `<div class="receipt-row" style="justify-content:center; opacity:0.3; font-size:10px;">• • •</div>`;
+            } else {
+                rowsHtml += `
+                <div class="receipt-row">
+                    <span class="num">${item.num}.</span>
+                    <span class="name">${item.name}</span>
+                    <span class="dots"></span>
+                    <span class="calc">${item.q > 1 ? item.p + '€×' + item.q + '=' : ''} <b>${item.sum}€</b></span>
+                </div>`;
+            }
         });
-        receipt.innerHTML = rowsHtml + `<div class="receipt-divider"></div><div class="receipt-row total-rub-line"><span>ИТОГО:</span><span>${formatRub} ➔</span></div>`;
+
+        receipt.innerHTML = `
+            ${rowsHtml}
+            <div class="receipt-divider" style="height:1px; border-bottom:1px dashed #eee; margin:6px 0;"></div>
+            
+            <div class="receipt-row color-ship" style="color:#666; font-style:normal;">
+                <span class="name">Почтовый тариф</span><span class="dots"></span><span class="calc">${shipEur} €</span>
+            </div>
+            
+            <div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center;">
+                <span>ИТОГО:</span>
+                <div style="text-align:right;">
+                    <span style="font-size:13px; font-weight:400; color:#555; margin-right:4px;">${fmtEur} €</span>
+                    <span style="color:#ccc; font-weight:300;">|</span>
+                    <span style="font-size:15px; margin-left:4px;">${fmtRub} ₽</span>
+                </div>
+            </div>
+        `;
         receipt.style.display = 'flex';
     } else {
         receipt.style.display = 'none';
     }
 
-    // 3. Большая корзина (Футер)
-    // ОБНОВЛЯЕМ ЧЕРЕЗ innerHTML ОДИН РАЗ, НО СОХРАНЯЕМ ID ДЛЯ АНИМАЦИИ
+    // ФУТЕР БОЛЬШОЙ КОРЗИНЫ
     const footerTotalContainer = document.querySelector('.modal-footer-sticky .footer-total-compact');
     if (footerTotalContainer) {
-        footerTotalContainer.style.display = 'flex';
-        footerTotalContainer.style.justifyContent = 'flex-end';
-        footerTotalContainer.style.alignItems = 'baseline';
-        footerTotalContainer.style.gap = '10px';
         footerTotalContainer.innerHTML = `
-            <span style="font-size: 16px; opacity: 0.6; color: #000;">${formatEur}</span>
-            <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
-            <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${formatRub}</span>
+            <div style="width:100%; display:flex; flex-direction:column; align-items:flex-end;">
+                <div style="font-size:11px; color:#999; margin-bottom:4px; font-weight:700;">Всего позиций: ${count}</div>
+                <div style="display:flex; align-items:baseline; gap:8px;">
+                    <span style="font-size: 16px; opacity: 0.6; color: #000;">${fmtEur} €</span>
+                    <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
+                    <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${fmtRub} ₽</span>
+                </div>
+                <div style="font-size:11px; color:#999; margin-top:2px;">С учетом всех расходов</div>
+            </div>
         `;
     }
-
+    
     if(document.getElementById('cartRate')) document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
 }
 
@@ -612,17 +666,30 @@ function render(isNewSearch = false) {
         container.innerHTML = `<span class="status-mini-badge new">Ваш заказ</span>`;
     }
 
-    function renderCartItems() {
+    /* === ОБНОВЛЕННАЯ ФУНКЦИЯ ОТРИСОВКИ КОРЗИНЫ === */
+/* === ОБНОВЛЕННАЯ ОТРИСОВКА БОЛЬШОЙ КОРЗИНЫ (С НУМЕРАЦИЕЙ) === */
+function renderCartItems() {
     const div = document.getElementById('cartItems'); 
     if (!div) return;
     div.innerHTML = '';
     
+    // 1. ПЛАШКА ВОССТАНОВЛЕНИЯ (Блок был пропущен)
+    if (restoredDate && cart.length > 0) {
+        div.innerHTML += `
+            <div style="border: 1px solid #feb2b2; background: #fff5f5; border-radius: 12px; padding: 15px; margin-bottom: 20px; color: #c53030; font-size: 14px; text-align: center; line-height: 1.4;">
+                <div style="font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Ваша сохраненная корзина</div>
+                Этот список позиций был собран <b>${restoredDate}</b>.<br>
+                <span style="font-size: 11px; opacity: 0.8;">Цены и курс обновлены на текущий момент.</span>
+            </div>
+        `;
+    }
+
     if (cart.length === 0) { 
         div.innerHTML = '<div style="text-align:center; padding:40px 0; color:#ccc; font-size:14px;">Корзина пуста</div>'; 
         return;
     }
 
-    // 1. Отрисовка товаров
+    // 2. Отрисовка товаров
     cart.forEach((item, index) => {
         const r = db.find(x => String(x.PZN) === String(item.pzn));
         if (r) {
@@ -632,10 +699,17 @@ function render(isNewSearch = false) {
             
             div.innerHTML += `
             <div class="m-row-interactive" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f2f2f2;">
-                <div style="flex: 1; padding-right: 10px;">
-                    <div style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.2;">${r.Name_DE}</div>
-                    <div style="font-size: 11px; color: #999;">${r.Hersteller}</div>
+                <div style="flex: 1; padding-right: 10px; display:flex; gap:8px;">
+                    <div style="font-size: 12px; color: #aaa; font-weight: 600; padding-top: 2px; min-width: 18px;">
+                        ${index + 1}.
+                    </div>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 600; color: #333; line-height: 1.2;">${r.Name_DE}</div>
+                        <div style="font-size: 11px; color: #999; margin-top: 2px;">${r.Hersteller}</div>
+                        <div style="font-size: 10px; color: #bbb;">PZN ${r.PZN}</div>
+                    </div>
                 </div>
+
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div class="qty-capsule" style="background: #f5f5f5; border-radius: 20px; display: flex; align-items: center; padding: 2px;">
                         <button class="q-btn" onclick="modQty('${item.pzn}', -1, event)" style="width:24px; height:24px; border:none; background:none; font-size:16px; cursor:pointer;">−</button>
@@ -651,42 +725,87 @@ function render(isNewSearch = false) {
         }
     });
 
-    // 2. Строка Почтового тарифа (всегда в конце списка)
+    // 3. Строка Почтового тарифа
     const shipRub = getRubPrice(shipEur);
     div.innerHTML += `
     <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid #eee; background: #fff;">
-        <div style="font-size: 14px; font-weight: 600; color: #666;">Почтовый тариф (Германия)</div>
+        <div style="font-size: 14px; font-weight: 600; color: #666; padding-left: 26px;">Почтовый тариф (Германия)</div>
         <div style="text-align: right; min-width: 70px;">
             <div style="font-size: 14px; font-weight: 400; color: #000;">${shipEur} €</div>
             <div style="font-size: 16px; font-weight: 700; color: #000;">${shipRub.toLocaleString('ru-RU')} ₽</div>
         </div>
     </div>`;
+
+    // 4. Ссылка "Добавить еще" (БЕЗ ЛУПЫ)
+    div.innerHTML += `
+        <div class="add-more-link" onclick="addMoreItems()">
+            Добавим еще позиции?
+        </div>
+    `;
+}
+
+/* === ФУНКЦИЯ ДЛЯ ССЫЛКИ "ДОБАВИМ ЕЩЕ" === */
+function addMoreItems() {
+    closeModal();
+    
+    setTimeout(() => {
+        const input = document.getElementById('search');
+        if (input) {
+            // РАСКОММЕНТИРУЙ ЭТО ДЛЯ УДОБСТВА:
+            input.value = ''; 
+            filters.search = ''; 
+            render(); // Сбрасываем список на "Интро"
+            
+            input.focus(); // Ставим курсор, клавиатура открывается
+        }
+    }, 300);
 }
 
     // --- 7.4 ОТКРЫТИЕ / ЗАКРЫТИЕ ---
 
     let scrollPos = 0;
 
+/* === УМНОЕ ОТКРЫТИЕ КОРЗИНЫ === */
 function openCart() { 
-    // Находим внутри openCart():
-const newID = generateOrderID(); 
-const idEl = document.getElementById('modalOrderId');
+    // 1. ЕСЛИ ПУСТО — ВЕДЕМ К ПОИСКУ
+    if (cart.length === 0) {
+        // Плавный скролл наверх
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        const searchWrap = document.querySelector('.inp-wrap');
+        const searchInp = document.getElementById('search');
 
-// ЗАМЕНЯЕМ СТРОКУ (используем обратные кавычки ` ):
-if (idEl) idEl.innerText = `Заказ: ${newID}`;
+        if (searchWrap && searchInp) {
+            // Небольшая задержка, чтобы скролл успел доехать
+            setTimeout(() => {
+                searchInp.focus(); // Ставим курсор
+                
+                // Запускаем анимацию встряски
+                searchWrap.classList.remove('attention-please');
+                void searchWrap.offsetWidth; // Магия перезапуска CSS анимации
+                searchWrap.classList.add('attention-please');
+                
+                // Убираем класс после завершения
+                setTimeout(() => searchWrap.classList.remove('attention-please'), 600);
+            }, 300);
+        }
+        return; // ПРЕРЫВАЕМ ФУНКЦИЮ (Модалку не открываем)
+    }
+
+    // 2. ЕСЛИ ЕСТЬ ТОВАРЫ — ОТКРЫВАЕМ МОДАЛКУ (Стандартная логика)
+    const newID = generateOrderID(); 
+    const idEl = document.getElementById('modalOrderId');
+
+    if (idEl) idEl.innerText = `Заказ: ${newID}`;
     const modal = document.getElementById('modal');
     if (!modal) return;
 
     closeContact();
     closeInfo();
 
-    // 1. Сначала считаем суммы и обновляем заголовок
     updateBar(); 
-    
-    // 2. РИСУЕМ СПИСОК ТОВАРОВ (Вот это мы потеряли)
     renderCartItems(); 
 
-    // 3. Показываем окно
     modal.style.display = 'flex';
     scrollPos = window.pageYOffset;
     document.body.style.overflow = 'hidden';
@@ -806,41 +925,49 @@ if (idEl) idEl.innerText = `Заказ: ${newID}`;
        ========================================= */
 
     // 1. Собираем текст заказа и ссылку на корзину
-    function getOrderTextAndLink() {
-        if (cart.length === 0) return null;
+    /* === ГЕНЕРАЦИЯ ЧЕКА (СТРОГИЙ СТИЛЬ БЕЗ СКОБОК) === */
+function getOrderTextAndLink() {
+    if (cart.length === 0) return null;
+    const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-        // Ищем ID заказа в шапке корзины
-        const idEl = document.getElementById('modalOrderId');
-        let currentID = idEl ? idEl.innerText : `ЗАКАЗ ${generateOrderID()}`;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ru-RU');
+    const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const fullDt = `${dateStr} в ${timeStr}`;
 
-        let text = `📄 ${currentID}\n\n`;
-        let totalEur = 0;
-        
-        cart.forEach((item, idx) => {
-            const r = db.find(x => x.PZN === item.pzn);
-            if (r) {
-                const p = Math.round(parseFloat(r.Price.replace(',', '.')));
-                const sum = p * item.qty;
-                text += `${idx + 1}. ${r.Name_DE}\n   ${item.qty} уп. × ${p}€ = ${sum}€\n`;
-                totalEur += sum;
-            }
-        });
+    let text = `[${dateStr}] Расчетный курс: ${fmt(rateCalc)} ₽\n`;
+    let totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
+    text += `${totalQty} pack\n\n`;
 
-        const grandTotal = totalEur + shipEur;
-        const rubTotal = getRubPrice(grandTotal);
+    let itemsSumEur = 0;
+    let breakdown = []; 
 
-        text += `\n📦 Доставка: ${shipEur}€`;
-        text += `\n💰 ИТОГО: ${grandTotal}€ (~${rubTotal.toLocaleString()}₽)\n`;
+    cart.forEach((item, idx) => {
+        const r = db.find(x => String(x.PZN) === String(item.pzn));
+        if (r) {
+            const price = Math.round(parseFloat(r.Price.replace(',', '.')));
+            const sum = price * item.qty;
+            itemsSumEur += sum;
+            breakdown.push(sum);
+            const sizeStr = r.Size ? ` ${r.Size}` : ''; 
+            const fullDesc = `${r.Name_DE}${sizeStr}, ${r.Hersteller}, PZN ${r.PZN}`;
+            let math = item.qty > 1 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` : `${fmt(sum)}€`;
+            text += `${idx + 1}.\n${fullDesc}...${math}\n\n`;
+        }
+    });
 
-        // Создаем ссылку для восстановления корзины менеджером
-        const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
-        const cleanUrl = window.location.origin + window.location.pathname;
-        const link = `${cleanUrl}?c=${cartStr}`;
-        
-        text += `\n🔗 Состав: ${link}`;
+    text += `Тариф почты из Германии.... ${shipEur}€\n`;
+    const totalEur = itemsSumEur + shipEur;
+    text += `\n${shipEur}+${breakdown.join('+')} = ${fmt(totalEur)}€\n`;
+    const finalRub = Math.floor((totalEur * rateCalc) / 100) * 100;
+    text += `ИТОГО: ${fmt(totalEur)}€ * ${fmt(rateCalc)} = ${fmt(finalRub)} ₽\n`;
 
-        return { text, link };
-    }
+    const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
+    const fullLink = `${window.location.origin}${window.location.pathname}?c=${cartStr}&d=${encodeURIComponent(fullDt)}`;
+
+    text += `\nВаша собранная корзина у Вас под рукой - всегда актуальные цены!\n${fullLink}`;
+    return { text: text, link: fullLink };
+}
 
     // 2. Отправка в выбранное приложение
     function sendToMessenger(app) {
@@ -876,87 +1003,124 @@ if (idEl) idEl.innerText = `Заказ: ${newID}`;
         if (url) window.open(url, '_blank');
     }
 
-    /* =========================================
-       BLOCK 8: АНИМАЦИЯ (БЕЗ ИЗМЕНЕНИЙ)
-       ========================================= */
-    function animateFly(sRect, isRemoving = false, productSize = 0) {
-    // 1. Проверяем, существует ли точка вылета
+   /* =========================================
+   BLOCK 8: АНИМАЦИЯ (МУЛЬТИ + ПОДНЫРИВАНИЕ)
+   ========================================= */
+
+function animateFly(sRect, isRemoving = false, productSize = 0) {
+    // 1. Проверки
     if (!sRect || (sRect.left === 0 && sRect.top === 0)) {
-        console.log("Animation source not found, skipping visual");
-        playSound(isRemoving); // Звук оставляем
+        playSound(isRemoving);
         return;
     }
-
-    playSound(isRemoving);
-
+    
+    // 2. Определяем цель
     const modal = document.getElementById('modal');
     const isModalOpen = modal && modal.classList.contains('active');
-    
-    // ВАЖНО: Если корзина открыта, цель — сумма в футере, если закрыта — FAB
     const targetId = isModalOpen ? 'footerTotalSum' : 'miniCart';
     const targetEl = document.getElementById(targetId);
 
     if (!targetEl) return;
-
     const tRect = targetEl.getBoundingClientRect();
-    createSinglePill(sRect, tRect, isRemoving, targetId);
+
+    // 3. ЛОГИКА КОЛИЧЕСТВА (ГЕЙМИФИКАЦИЯ)
+    let count = 1;
+    
+    const sizeVal = parseInt(productSize) || 0;
+    if (sizeVal >= 150) count = 3;      // Много
+    else if (sizeVal >= 100) count = 2; // Средне
+    else count = 1;                     // Мало
+    
+
+    // 4. ЗАПУСК ОЧЕРЕДИ
+    playSound(isRemoving);
+    
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            createSinglePill(sRect, tRect, isRemoving, targetId);
+        }, i * 150); // Чуть увеличил интервал (150мс), чтобы очередь была заметнее
+    }
 }
 
-    function createSinglePill(sRect, tRect, isRemoving, targetId) {
-        const fly = document.createElement('div');
-        fly.innerHTML = `<div class="pill-3d-visual"></div>`;
-        fly.style.cssText = `position: fixed; z-index: 99999; pointer-events: none; transition: none; left: 0; top: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;`;
+// ФУНКЦИЯ С ТРАЕКТОРИЕЙ "КРЮК"
+function createSinglePill(sRect, tRect, isRemoving, targetId) {
+    const fly = document.createElement('div');
+    fly.innerHTML = `<div class="pill-3d-visual"></div>`;
+    
+    fly.style.cssText = `
+        position: fixed; z-index: 99999; pointer-events: none; 
+        left: 0; top: 0; 
+        display: flex; align-items: center; justify-content: center; 
+        width: 40px; height: 40px;
+    `;
 
-        if (isRemoving) fly.style.filter = 'grayscale(100%) opacity(0.7)';
+    // Координаты
+    const pX = sRect.left + sRect.width/2 - 20; // Товар
+    const pY = sRect.top + sRect.height/2 - 20; 
+    const cX = tRect.left + tRect.width/2 - 20; // Корзина
+    const cY = tRect.top + tRect.height/2 - 20; 
+    
+    // ТОЧКА "ПОДВАЛА" (ниже корзины)
+    const underY = cY + 30; 
 
-        const pX = sRect.left + sRect.width/2 - 20;
-        const pY = sRect.top + sRect.height/2 - 20;
-        const cX = tRect.left + tRect.width/2 - 20;
-        const cY = tRect.top + tRect.height/2 - 20;
-
-        if (isRemoving) {
-            fly.style.transform = `translate(${cX}px, ${cY}px) scale(0.6)`;
-            fly.style.opacity = '0';
-        } else {
-            fly.style.transform = `translate(${pX}px, ${pY}px) scale(0.2)`;
-            fly.style.opacity = '0.5';
-        }
-
+    // --- УДАЛЕНИЕ (ВЫПАЛА -> ПОВИСЕЛА -> УЛЕТЕЛА) ---
+    if (isRemoving) {
+        // 1. Старт в корзине (серая)
+        fly.style.transform = `translate(${cX}px, ${cY}px) scale(0.5)`;
+        fly.style.filter = 'grayscale(100%) opacity(0.8)';
+        
         document.body.appendChild(fly);
         void fly.offsetWidth; 
 
-        if (isRemoving) {
-            fly.style.transition = 'all 0.4s cubic-bezier(0.2, 1, 0.3, 1)';
-            fly.style.opacity = '1';
-            fly.style.transform = `translate(${cX - 15}px, ${cY - 50}px) scale(1.1) rotate(-20deg)`;
-            setTimeout(() => {
-                fly.style.transition = 'all 1.1s cubic-bezier(0.5, 0, 0.5, 1)';
-                fly.style.transform = `translate(${pX}px, ${pY}px) scale(0) rotate(360deg)`;
-                fly.style.opacity = '0';
-            }, 450);
-        } else {
-            fly.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            fly.style.opacity = '1';
-            fly.style.transform = `translate(${cX}px, ${cY}px) scale(1) rotate(720deg)`;
-        }
-
+        // 2. Выпадает вниз
+        fly.style.transition = 'all 0.4s cubic-bezier(0.5, 0, 0.5, 1)';
+        fly.style.transform = `translate(${cX}px, ${underY}px) scale(0.8) rotate(20deg)`;
+        
+        // 3. Висит и улетает домой
         setTimeout(() => {
-            const target = document.getElementById(targetId);
-            if (target) {
-                const blinkClass = isRemoving ? 'pulse-remove' : 'pulse';
-                target.classList.add(blinkClass);
-                setTimeout(() => target.classList.remove(blinkClass), 800);
-            }
-            if (!isRemoving) {
-                 fly.style.transition = 'all 0.2s ease';
-                 fly.style.transform += ' scale(0)';
-                 setTimeout(() => fly.remove(), 200);
-            } else {
-                 setTimeout(() => fly.remove(), 1100);
-            }
-        }, isRemoving ? 1400 : 650);
-    }
+            fly.style.transition = 'all 0.8s ease-in-out';
+            fly.style.transform = `translate(${pX}px, ${pY}px) scale(0.4) rotate(-90deg)`;
+            fly.style.opacity = '0';
+            
+            setTimeout(() => fly.remove(), 800);
+        }, 1000); // Пауза внизу
+    } 
     
+    // --- ДОБАВЛЕНИЕ (НЫРНУЛА ПОД КОРЗИНУ -> ПРЫГНУЛА) ---
+    else {
+        // 1. Старт от товара
+        fly.style.transform = `translate(${pX}px, ${pY}px) scale(0.3)`;
+        fly.style.opacity = '0.8';
+        fly.style.filter = 'none';
+        
+        document.body.appendChild(fly);
+        void fly.offsetWidth;
+
+        // 2. Летит ПОД корзину
+        fly.style.transition = 'all 0.5s ease-in';
+        fly.style.transform = `translate(${cX}px, ${underY}px) scale(1) rotate(20deg)`;
+        fly.style.opacity = '1';
+
+        // 3. Прыжок вверх ("Чпоньк")
+        setTimeout(() => {
+            fly.style.transition = 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            fly.style.transform = `translate(${cX}px, ${cY}px) scale(0.2) rotate(720deg)`;
+            fly.style.opacity = '0';
+            
+            // Удар об корзину
+            setTimeout(() => {
+                const target = document.getElementById(targetId);
+                if (target) {
+                    const blinkClass = 'pulse';
+                    target.classList.add(blinkClass);
+                    setTimeout(() => target.classList.remove(blinkClass), 300);
+                }
+                fly.remove();
+            }, 200); 
+            
+        }, 800); // Пауза перед прыжком
+    }
+}
 
     /* =========================================
        BLOCK 9: КОПИРОВАНИЕ И ЗАПУСК
@@ -1011,8 +1175,36 @@ if (idEl) idEl.innerText = `Заказ: ${newID}`;
         }
     }
 
+    /* === ВОССТАНОВЛЕНИЕ КОРЗИНЫ ИЗ ССЫЛКИ === */
+function tryRestoreCartFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const cartParam = params.get('c');
+    const dateParam = params.get('d'); 
+    
+    if (cartParam) {
+        try {
+            const items = cartParam.split(',');
+            const newCart = [];
+            items.forEach(pair => {
+                const [pzn, qtyStr] = pair.split(':');
+                const qty = parseInt(qtyStr);
+                if (pzn && qty > 0) newCart.push({ pzn: pzn, qty: qty });
+            });
+
+            if (newCart.length > 0) {
+                cart = newCart;
+                localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+                if (dateParam) restoredDate = decodeURIComponent(dateParam);
+                window.history.replaceState({}, '', window.location.origin + window.location.pathname);
+                return true; 
+            }
+        } catch (e) { console.error("Restore Error", e); }
+    }
+    return false;
+}
+
     // ЗАПУСК ПРИЛОЖЕНИЯ
-    init();
+        init();
 
 </script>
 </body>
