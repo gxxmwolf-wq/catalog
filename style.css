@@ -77,7 +77,18 @@ body {
     height: 100%; align-items: center; cursor: pointer; user-select: none;
 }
 .rx-part { color: var(--rx); border: 1.5px solid var(--rx); font-weight: 900; font-size: 10px; padding: 0 3px; border-radius: 4px; }
-.de-part { font-weight: 900; font-size: 13px; }
+/* Плавный переход для букв, чтобы не дергалось */
+.de-part { transition: color 0.2s ease; }
+
+/* Мигание DE зеленым (1 клик) */
+.flash-green .de-part { 
+    color: var(--ok) !important; 
+}
+
+/* Мигание DE желтым (2 клика) */
+.flash-yellow .de-part { 
+    color: #ffc107 !important; /* Яркий желтый */
+}
 
 .search-input { 
     flex: 1; height: 100%; border: none; background: transparent; 

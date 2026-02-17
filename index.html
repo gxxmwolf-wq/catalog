@@ -27,7 +27,7 @@
     </div>
 
     <div class="inp-wrap">
-        <div class="embedded-logo" onclick="handleLogoClick()">
+        <div class="embedded-logo" onmousedown="handleLogoClick(event)">
             <span class="rx-part">RX</span><span class="de-part">DE</span>
         </div>
         <input type="text" id="search" class="search-input" placeholder="Поиск (рус / lat)..." oninput="handleInput()" onkeydown="checkEnter(event)" autocomplete="off">
@@ -70,9 +70,9 @@
             </div>
             
             <div class="grid-3-btns">
-                <button class="b-cell wa" onclick="currentPreparedText = getOrderTextAndLink().text; submitFinal('wa')"><span>WhatsApp</span></button>
-                <button class="b-cell tg" onclick="currentPreparedText = getOrderTextAndLink().text; submitFinal('tg')"><span>Telegram</span></button>
-                <button class="b-cell other" onclick="currentPreparedText = getOrderTextAndLink().text; openContactForm(currentPreparedText)"><span>Другое</span></button>
+                 <button class="b-cell wa" onclick="currentPreparedText = getShortOrderLink(); submitFinal('wa')"><span>WhatsApp</span></button>
+                 <button class="b-cell tg" onclick="currentPreparedText = getShortOrderLink(); submitFinal('tg')"><span>Telegram</span></button>
+                 <button class="b-cell other" onclick="openContactForm(getShortOrderLink())"><span>Другое</span></button>
             </div>
         </div>
     </div>
@@ -136,74 +136,7 @@ const audioAdd = new Audio("sounds/add.mp3");
        BLOCK 2: УНИВЕРСАЛЬНАЯ ЛОГИКА СВЯЗИ
        ========================================= */
     
-    function openQuestion() {
-        const overlay = document.getElementById('contactOverlay');
-        document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
-        document.getElementById('manualMsgInput').style.display = 'block';
-        document.getElementById('manualMsgInput').value = "Здравствуйте RxDE, у меня вопрос: ";
-        document.getElementById('contactDetailsInput').style.display = 'none';
-        document.getElementById('contactButtonsGrid').style.display = 'grid';
-        document.getElementById('btnOtherSend').style.display = 'none';
-        overlay.style.display = 'flex';
-        setTimeout(() => document.getElementById('manualMsgInput').focus(), 100);
-    }
-
-    function openContactForm(preparedText) {
-        currentPreparedText = preparedText;
-        switchToContactForm();
-        document.getElementById('contactOverlay').style.display = 'flex';
-    }
-
-    function switchToContactForm() {
-        document.getElementById('contactTitle').innerText = "ОСТАВИТЬ КОНТАКТ";
-        document.getElementById('manualMsgInput').style.display = 'none';
-        document.getElementById('contactDetailsInput').style.display = 'block';
-        document.getElementById('contactButtonsGrid').style.display = 'none';
-        document.getElementById('btnOtherSend').style.display = 'block';
-        setTimeout(() => document.getElementById('contactDetailsInput').focus(), 100);
-    }
-
-    function submitFinal(app) {
-    const manualInput = document.getElementById('manualMsgInput');
-    const contactInput = document.getElementById('contactDetailsInput');
-    const contactOverlay = document.getElementById('contactOverlay');
-    
-    let finalMsg = "";
-
-    // Шлем "Контакт" только если открыто окно формы связи
-    if (contactOverlay && contactOverlay.style.display === 'flex') {
-        if (manualInput && manualInput.style.display !== 'none') {
-            finalMsg = manualInput.value.trim();
-        } else {
-            finalMsg = currentPreparedText + "\n\nКонтакт: " + contactInput.value.trim();
-        }
-    } else {
-        // Из корзины шлем только чистый чек
-        finalMsg = currentPreparedText;
-    }
-
-    if (app === 'wa') {
-        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-    } else if (app === 'tg') {
-        try { navigator.clipboard.writeText(finalMsg); } catch(e){}
-        window.open(`https://t.me/${TG_USER}`, '_blank');
-    } else {
-        showSuccess(generateOrderID(), contactInput.value.trim());
-    }
-    closeContact();
-}
-    
-    // Удалите старые копии handleUniversalSubmit и let currentPreparedText ниже по коду!
-
-    function closeContact() {
-        const overlay = document.getElementById('contactOverlay');
-        if (overlay) overlay.style.display = 'none';
-    }
-
-    function checkInputState() {
-        const val = document.getElementById('contactDetailsInput').value.trim();
-        document.getElementById('btnOtherSend').disabled = val.length < 3;
-    }
+   
 
    /* =========================================
        BLOCK 3: ДАННЫЕ, КУРСЫ И УМНЫЙ ПОИСК
@@ -239,24 +172,31 @@ const audioAdd = new Audio("sounds/add.mp3");
     // --- 2. ЛОГИКА КУРСА (ОБНОВЛЕНО) ---
 
     function calculateFinalLogic() {
-    // Если база еще не приехала, не считаем
     if (!db || db.length === 0) return;
 
     let gRate = parseFloat(googleSettings?.Current_Rate?.replace(',', '.') || 0);
     let gSmena = parseFloat(googleSettings?.Bank_Smena?.replace(',', '.') || 0);
     
-    // Прямая проверка: если есть данные от Google или ЦБ — берем их. Если всё по нулям — тогда 100.
+    // 1. Определяем базовый курс
     let baseRate = gRate > 0 ? gRate : (cbrRateData > 0 ? cbrRateData : KURS_FALLBACK);
     
-    rateCalc = Math.floor(baseRate + gSmena); 
+    // 2. Считаем расчетный курс (округляем вниз до целого и принудительно ставим .00)
+    rateCalc = (Math.floor(baseRate + gSmena)).toFixed(2); 
 
-    // Выводим в шапку (Главный экран)
-    // Стало (показывает baseRate - а он у нас берется из Гугла, если Гугл загрузился):
-    if(document.getElementById('cbrRate')) document.getElementById('cbrRate').innerText = baseRate.toFixed(2);
-    if(document.getElementById('finalRate')) document.getElementById('finalRate').innerText = rateCalc; 
+    // 3. Выводим в шапку сайта (Главный экран)
+    // .toFixed(2) заставит 91 превратиться в 91.00
+    if(document.getElementById('cbrRate')) {
+        document.getElementById('cbrRate').innerText = parseFloat(baseRate).toFixed(2);
+    }
     
-    // Выводим в корзину (Модальное окно)
-    if(document.getElementById('cartRate')) document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
+    if(document.getElementById('finalRate')) {
+        document.getElementById('finalRate').innerText = rateCalc; 
+    }
+    
+    // 4. Выводим в корзину (Модальное окно)
+    if(document.getElementById('cartRate')) {
+        document.getElementById('cartRate').innerText = rateCalc;
+    }
     
     updateBar();
     render(); 
@@ -300,189 +240,148 @@ const audioAdd = new Audio("sounds/add.mp3");
         if (event.target == contact) closeContact();
     }
 
-    // --- 4. УМНЫЙ ПОИСК (ТВОЯ ЛОГИКА БЕЗ ИЗМЕНЕНИЙ) ---
+/* =========================================
+   BLOCK 4: УМНЫЙ ДВИЖОК (NAME + CAT + PZN)
+   ========================================= */
 
-    function getSearchVariations(word) {
-        const w = word.toLowerCase();
-        const ru2en = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya' };
-        const en2ru = { 'a':'а','b':'б','v':'в','g':'г','d':'д','e':'е','z':'з','i':'и','k':'к','l':'л','m':'м','n':'н','o':'о','p':'п','r':'р','s':'с','t':'т','u':'у','f':'ф','h':'х','c':'ц','y':'ы','x':'х','w':'в' }; 
-        const layEn = "qwertyuiop[]asdfghjkl;'zxcvbnm,.`", layRu = "йцукенгшщзхъфывапролджэячсмитьбюё";
-        let resTranslit = '', resLayout = '';
-        for(let i = 0; i < w.length; i++) {
-            const char = w[i];
-            if (ru2en[char]) resTranslit += ru2en[char];
-            else if (en2ru[char]) resTranslit += en2ru[char];
-            else resTranslit += char;
-            const idxEn = layEn.indexOf(char), idxRu = layRu.indexOf(char);
-            if (idxEn !== -1) resLayout += layRu[idxEn];
-            else if (idxRu !== -1) resLayout += layEn[idxRu];
-            else resLayout += char;
-        }
-        return [w, resTranslit, resLayout];
+function getSearchVariations(word) {
+    if (!word) return [""];
+    const w = word.toLowerCase();
+    const ru2en = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'yo','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'kh','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya' };
+    const en2ru = { 'a':'а','b':'б','v':'в','g':'г','d':'д','e':'е','z':'з','i':'и','k':'к','l':'л','m':'м','n':'н','o':'о','p':'п','r':'р','s':'с','t':'т','u':'у','f':'ф','h':'х','c':'ц','y':'ы','x':'х','w':'в' }; 
+    const layEn = "qwertyuiop[]asdfghjkl;'zxcvbnm,.`", layRu = "йцукенгшщзхъфывапролджэячсмитьбюё";
+    let resT = '', resL = '';
+    for(let i = 0; i < w.length; i++) {
+        const char = w[i];
+        if (ru2en[char]) resT += ru2en[char]; else if (en2ru[char]) resT += en2ru[char]; else resT += char;
+        const iE = layEn.indexOf(char), iR = layRu.indexOf(char);
+        if (iE !== -1) resL += layRu[iE]; else if (iR !== -1) resL += layEn[iR]; else resL += char;
     }
+    return [...new Set([w, resT, resL])];
+}
 
-    function checkEnter(e) { if (e.key === 'Enter') document.getElementById('search').blur(); }
-
-    function handleInput(updateUrl = true) {
-        const input = document.getElementById('search');
-        filters.search = input.value.trim(); 
-        document.getElementById('clearBtn').style.display = filters.search ? 'flex' : 'none';
-        if (updateUrl) {
-            const url = new URL(window.location);
-            if (filters.search) url.searchParams.set('q', filters.search);
-            else url.searchParams.delete('q');
-            window.history.replaceState({}, '', url);
-        }
-        render(true); 
-        renderSuggestions(input.value);
+function handleInput(updateUrl = true) {
+    const input = document.getElementById('search');
+    filters.search = input.value;
+    document.getElementById('clearBtn').style.display = input.value.trim() ? 'flex' : 'none';
+    if (updateUrl) {
+        const url = new URL(window.location);
+        if (input.value.trim()) url.searchParams.set('q', input.value.trim());
+        else url.searchParams.delete('q');
+        window.history.replaceState({}, '', url);
     }
-    
-    function clearSearch() { 
-        const input = document.getElementById('search');
-        input.value = ''; handleInput(); input.focus(); 
-    }
+    render(true); 
+    renderSuggestions(input.value);
+}
 
-    function renderSuggestions(inputText) {
-        const box = document.getElementById('suggestRow');
-        box.innerHTML = ''; if (!inputText) return;
-        const userWords = inputText.toLowerCase().split(/\s+/);
-        const targetIndex = userWords.length - 1;
-        const targetFragment = userWords[targetIndex]; 
-        let nextWordsSet = new Set();
-        db.forEach(r => {
-            const cleanName = (r.Name_DE + ' ' + (r.Name_RU||'') + ' ' + (r.Substance||'') + ' ' + (r.Substance_RU||'') + ' ' + (r.Form||'') + ' ' + r.Hersteller).replace(/[.,()]/g, '').toLowerCase();
-            const productWords = cleanName.split(/\s+/).filter(w => w.length > 0);
-            let isMatchChain = true;
-            for (let i = 0; i < targetIndex; i++) {
-                const variations = getSearchVariations(userWords[i]);
-                if (!productWords[i] || !variations.some(v => productWords[i].includes(v))) { isMatchChain = false; break; }
-            }
-            if (isMatchChain) {
-                const candidateWord = productWords[targetIndex];
-                const targetVariations = getSearchVariations(targetFragment);
-                if (candidateWord && targetVariations.some(v => candidateWord.startsWith(v))) {
-                    if (!targetVariations.some(v => v === candidateWord) || targetFragment === '') nextWordsSet.add(candidateWord);
-                }
-            }
-        });
-        Array.from(nextWordsSet).sort().slice(0, 8).forEach(word => {
-            const chip = document.createElement('div');
-            chip.className = 's-chip'; chip.innerText = word;
-            chip.onclick = () => applySuggestionChain(word, userWords, targetIndex);
-            box.appendChild(chip);
-        });
-    }
-
-    function applySuggestionChain(selectedWord, currentWordsArr, indexToReplace) {
-        const input = document.getElementById('search');
-        currentWordsArr[indexToReplace] = selectedWord;
-        input.value = currentWordsArr.join(' ') + ' ';
-        input.focus(); handleInput();
-    }
-    /* =========================================
-       BLOCK 4: РЕНДЕР (ЖЕЛЕЗНЫЙ ВАРИАНТ)
-       ========================================= */
-    
-    // 1. Создаем глобальную функцию для обработки ошибок картинок
-    // Это самый надежный способ, кавычки больше не будут ломать сайт
-    window.handleImgError = function(img) {
-        const div = document.createElement('div');
-        div.className = 'product-thumb';
-        div.style.cssText = 'background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:24px;';
-        div.innerText = '📷';
-        img.replaceWith(div);
-    };
-
-    function getQty(pzn) { const item = cart.find(i => i.pzn === pzn); return item ? item.qty : 0; }
-
-// Добавляем параметр isNewSearch
 function render(isNewSearch = false) {
-        const list = document.getElementById('list'); 
-        const intro = document.getElementById('introBlock');
-        if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
+    const list = document.getElementById('list'); 
+    if (!list) return;
+    if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
+    list.innerHTML = '';
+    const query = filters.search.trim().toLowerCase();
+    if (!query) { document.getElementById('introBlock').style.display = 'block'; return; }
+    document.getElementById('introBlock').style.display = 'none';
 
-        list.innerHTML = '';
-        if (!filters.search) { intro.style.display = 'block'; return; }
-        intro.style.display = 'none';
+    const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+    const wordVars = queryWords.map(w => getSearchVariations(w));
 
-        const results = db.filter(r => {
-            if (!r || !r.Name_DE) return false;
-            const text = (r.Name_DE + ' ' + (r.Name_RU||'') + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
-            return text.includes(filters.search.toLowerCase());
-        });
+    const results = db.filter(r => {
+        if (!r || !r.Name_DE) return false;
+        // ДОБАВЛЕНО: r.Category в пул поиска
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${r.PZN}`.toLowerCase();
+        return wordVars.every(vars => vars.some(v => pool.includes(v)));
+    });
 
-        // --- БЛОК "НИЧЕГО НЕ НАЙДЕНО" С ПОРОГОМ В 3 СИМВОЛА ---
-        // --- БЛОК "НИЧЕГО НЕ НАЙДЕНО" (Professional Style) ---
-        // --- БЛОК "НИЧЕГО НЕ НАЙДЕНО" (СТРОГИЙ СТИЛЬ) ---
-        if (results.length === 0) {
-            if (filters.search.length < 3) return;
-
-            const searchTxt = "Здравствуйте RxDE, ищу: " + filters.search;
-            
-            list.innerHTML = `
-                <div style="padding: 20px 10px;">
-                    <div style="border: 1px solid var(--p); border-radius: 8px; background: #fff; padding: 30px 20px; text-align: center;">
-                        
-                        <div style="font-size: 24px; color: #000; margin-bottom: 15px; letter-spacing: 2px;">
-                            ...
-                        </div>
-
-                        <div style="font-size: 16px; font-weight: 700; color: #000; margin-bottom: 15px; text-transform: uppercase;">
-                            Нет совпадений
-                        </div>
-
-                        <div style="font-size: 15px; color: #333; line-height: 1.5; margin-bottom: 25px;">
-                            Текущая база ежедневно дополняется.<br><br>
-                            Напишите — мы проведем поиск по базе аптеки и вернемся к Вам с результатом.
-                        </div>
-
-                        <div class="grid-3-btns">
-                            <button class="b-cell wa" onclick="currentPreparedText='${searchTxt}'; submitFinal('wa')"><span>WhatsApp</span></button>
-                            <button class="b-cell tg" onclick="currentPreparedText='${searchTxt}'; submitFinal('tg')"><span>Telegram</span></button>
-                            <button class="b-cell other" onclick="openContactForm('${searchTxt}')"><span>Другое</span></button>
-                        </div>
-
-                    </div>
-                </div>`;
-            return;
-        }
-
-        // Отрисовка карточек
-        results.forEach(r => {
-            const price = parseFloat(r.Price.replace(',','.'));
-            const q = getQty(r.PZN);
-            const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
-            
-            let btnHtml = q > 0 
-                ? `<div class="qty-capsule">
-                     <button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button>
-                     <span class="q-val">${q}</span>
-                     <button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button>
-                   </div>`
-                : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`;
-
-            const sumHtml = q > 0 
-                ? `<div class="s-eur">${Math.round(price * q)}€</div><div class="s-rub">${getRubPrice(price * q).toLocaleString()}₽</div>` 
-                : '';
-
-            list.innerHTML += `
-            <div class="card ${q > 0 ? 'selected' : ''}">
-                <img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)">
-                <div class="card-body">
-                    <div class="c-title">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div>
-                    <div class="card-bottom">
-                        <div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div>
-                        <div class="c-ctrl">
-                            <div class="u-price">${Math.round(price)} €</div>
-                            <div class="qty-capsule-wrap">${btnHtml}</div>
-                            <div class="sum-box">${sumHtml}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        });
+    if (results.length === 0) {
+        if (query.length < 3) return;
+        list.innerHTML = `<div style="text-align:center; padding:40px 20px; color:#666;">По запросу ничего не найдено.</div>`;
+        return;
     }
 
+    results.forEach(r => {
+        if (!r.Price) return;
+        const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
+        const q = getQty(r.PZN);
+        const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
+        let btn = q > 0 ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`;
+        const sum = q > 0 ? `<div class="s-eur">${Math.round(p * q)}€</div><div class="s-rub">${getRubPrice(p * q).toLocaleString()}₽</div>` : '';
+        list.innerHTML += `<div class="card ${q > 0 ? 'selected' : ''}"><img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)"><div class="card-body"><div class="c-title">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div><div class="card-bottom"><div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div><div class="c-ctrl"><div class="u-price">${Math.round(p)} €</div><div class="qty-capsule-wrap">${btn}</div><div class="sum-box">${sum}</div></div></div></div></div>`;
+    });
+}
+
+function renderSuggestions(inputText) {
+    const box = document.getElementById('suggestRow');
+    if (!box) return;
+    box.innerHTML = ''; 
+    const val = inputText.trim().toLowerCase();
+    if (!val) return;
+
+    const isTrailingSpace = inputText.endsWith(' ');
+    const userWords = val.split(/\s+/).filter(w => w.length > 0);
+    const isRussianInput = /[а-яё]/i.test(userWords[0] || "");
+
+    const queryWordsForFilter = isTrailingSpace ? userWords : userWords.slice(0, -1);
+    const queryVars = queryWordsForFilter.map(w => getSearchVariations(w));
+
+    const currentMatches = db.filter(r => {
+        if (!r.Name_DE) return false;
+        // ДОБАВЛЕНО: r.Category в пул фильтрации подсказок
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''}`.toLowerCase();
+        return queryVars.every(vars => vars.some(v => pool.includes(v)));
+    });
+
+    let candidates = new Set();
+    const typedMeanings = new Set();
+    userWords.forEach(w => getSearchVariations(w).forEach(v => typedMeanings.add(v)));
+
+    const lastFragment = isTrailingSpace ? "" : userWords[userWords.length - 1];
+    const lastVars = getSearchVariations(lastFragment);
+
+    currentMatches.forEach(r => {
+        // ДОБАВЛЕНО: r.Category в источник слов для чипсов (перед названием)
+        const sourceText = isRussianInput 
+            ? `${r.Category || ''} ${r.Name_RU || ''}` 
+            : `${r.Category || ''} ${r.Name_DE}`;
+
+        const words = sourceText.replace(/[.,()/]/g, ' ').toLowerCase().split(/\s+/).filter(w => w.length > 1);
+        
+        words.forEach(word => {
+            if (typedMeanings.has(word)) return;
+            const wordVars = getSearchVariations(word);
+            const isMatch = isTrailingSpace ? true : lastVars.some(lv => lv && wordVars.some(wv => wv.startsWith(lv)));
+            if (isMatch) candidates.add(word);
+        });
+    });
+
+    Array.from(candidates).sort((a,b) => (/\d/.test(a) ? -1 : 1) || a.length - b.length).slice(0, 8).forEach(word => {
+        const chip = document.createElement('div');
+        chip.className = 's-chip';
+        chip.innerText = word;
+        chip.onclick = () => {
+            const input = document.getElementById('search');
+            let wordsArr = input.value.trim().split(/\s+/);
+            if (isTrailingSpace) wordsArr.push(word); else wordsArr[wordsArr.length - 1] = word;
+            input.value = wordsArr.join(' ') + ' ';
+            handleInput();
+            input.focus();
+        };
+        box.appendChild(chip);
+    });
+}
+
+window.handleImgError = function(img) {
+    const div = document.createElement('div');
+    div.className = 'product-thumb';
+    div.style.cssText = 'background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:24px;';
+    div.innerText = '📷';
+    img.replaceWith(div);
+};
+
+function getQty(pzn) { 
+    const item = cart.find(i => String(i.pzn) === String(pzn)); 
+    return item ? item.qty : 0; 
+}
     /* =========================================
    BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
    ========================================= */
@@ -652,15 +551,26 @@ function updateBar() {
                     console.log("Курсы получены. Запускаем расчет...");
                     calculateFinalLogic(); 
                     
-                    // Проверка ссылки на корзину
+                    // 1. Сначала подтягиваем поиск из ссылки, если он есть
+                    if (typeof tryRestoreSearchFromUrl === 'function') {
+                        tryRestoreSearchFromUrl();
+                    }
+
+                    // 2. Затем проверяем ссылку на корзину (как и было)
                     if (typeof tryRestoreCartFromUrl === 'function' && tryRestoreCartFromUrl()) {
                         setTimeout(openCart, 500);
                     }
+
+                    // 3. Если поиска в ссылке не было, принудительно рисуем стартовый экран
+                    if (!filters.search) render();
+
                 }).catch(err => {
                     console.error("Ошибка при получении курсов:", err);
-                    calculateFinalLogic(); // Все равно запускаем на дефолтах
+                    calculateFinalLogic(); 
+                    render(); // Рисуем хоть что-то на дефолтах
                 });
             }
+
         });
     }
     // --- 7.3 УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ КОРЗИНЫ ---
@@ -680,12 +590,20 @@ function renderCartItems() {
     div.innerHTML = '';
     
     // 1. ПЛАШКА ВОССТАНОВЛЕНИЯ (Блок был пропущен)
+    // 1. ПЛАШКА ВОССТАНОВЛЕНИЯ (С пометкой менеджера)
+    // 1. ПЛАШКА ВОССТАНОВЛЕНИЯ
+// Вставьте это в начало функции renderCartItems()
     if (restoredDate && cart.length > 0) {
+        const title = isManagerOrder ? '👨‍⚕️ Список подготовлен менеджером' : '🛒 Ваша сохраненная корзина';
+        const borderColor = isManagerOrder ? 'var(--p)' : '#eee';
+        
         div.innerHTML += `
-            <div style="border: 1px solid #feb2b2; background: #fff5f5; border-radius: 12px; padding: 15px; margin-bottom: 20px; color: #c53030; font-size: 14px; text-align: center; line-height: 1.4;">
-                <div style="font-weight: 700; text-transform: uppercase; margin-bottom: 4px;">Ваша сохраненная корзина</div>
-                Этот список позиций был собран <b>${restoredDate}</b>.<br>
-                <span style="font-size: 11px; opacity: 0.8;">Цены и курс обновлены на текущий момент.</span>
+            <div style="border: 2px solid ${borderColor}; background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; color: #333; font-size: 14px; text-align: center; line-height: 1.4;">
+                <div style="font-weight: 900; color: #000; text-transform: uppercase; margin-bottom: 4px; font-size: 12px;">
+                    ${title}
+                </div>
+                Дата: <b>${restoredDate}</b>.<br>
+                <span style="font-size: 11px; color: #888;">Цены и курс евро обновлены на текущий момент.</span>
             </div>
         `;
     }
@@ -858,96 +776,124 @@ function openCart() {
     }
 
     /* =========================================
-       BLOCK 7.5: УНИВЕРСАЛЬНАЯ ЛОГИКА СВЯЗИ
-       ========================================= */
+   BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ
+   ========================================= */
 
-    function generateOrderID() {
+// Генерация номера заказа
+function generateOrderID() {
     const now = new Date();
     const d = String(now.getDate()).padStart(2, '0');
     const m = String(now.getMonth() + 1).padStart(2, '0');
-    const y = now.getFullYear(); // 2026
+    const y = now.getFullYear();
     const h = String(now.getHours()).padStart(2, '0');
     const min = String(now.getMinutes()).padStart(2, '0');
-    
     return `${d}${m}${y}-${h}${min}`;
 }
 
-    // 1. Из меню "ЗАДАТЬ ВОПРОС" (просто открываем поле для текста)
-    function openQuestion() {
-        const overlay = document.getElementById('contactOverlay');
-        document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
-        document.getElementById('manualMsgInput').style.display = 'block';
-        document.getElementById('manualMsgInput').value = "Здравствуйте RxDE, у меня вопрос: ";
-        document.getElementById('contactDetailsInput').style.display = 'none';
-        document.getElementById('contactButtonsGrid').style.display = 'grid';
-        document.getElementById('btnOtherSend').style.display = 'none';
-        overlay.style.display = 'flex';
-        setTimeout(() => document.getElementById('manualMsgInput').focus(), 100);
+// Открытие окна "ВОПРОС" из меню
+function openQuestion() {
+    const overlay = document.getElementById('contactOverlay');
+    document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
+    document.getElementById('manualMsgInput').style.display = 'block';
+    document.getElementById('manualMsgInput').value = "Здравствуйте RxDE, у меня вопрос: ";
+    document.getElementById('contactDetailsInput').style.display = 'none';
+    document.getElementById('contactButtonsGrid').style.display = 'grid';
+    document.getElementById('btnOtherSend').style.display = 'none';
+    overlay.style.display = 'flex';
+    setTimeout(() => document.getElementById('manualMsgInput').focus(), 100);
+}
+
+// Открытие формы контакта (кнопка "Другое")
+function openContactForm(preparedText) {
+    currentPreparedText = preparedText;
+    switchToContactForm();
+    document.getElementById('contactOverlay').style.display = 'flex';
+}
+
+function switchToContactForm() {
+    document.getElementById('contactTitle').innerText = "ОСТАВИТЬ КОНТАКТ";
+    document.getElementById('manualMsgInput').style.display = 'none';
+    document.getElementById('contactDetailsInput').style.display = 'block';
+    document.getElementById('contactButtonsGrid').style.display = 'none';
+    document.getElementById('btnOtherSend').style.display = 'block';
+    setTimeout(() => document.getElementById('contactDetailsInput').focus(), 100);
+}
+
+// Закрытие окон связи
+function closeContact() {
+    const overlay = document.getElementById('contactOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// Проверка активности кнопки "Отправить"
+function checkInputState() {
+    const input = document.getElementById('contactDetailsInput');
+    const btn = document.getElementById('btnOtherSend');
+    if (input && btn) {
+        btn.disabled = input.value.trim().length < 3;
     }
+}
 
-    // 2. Когда нужно спросить телефон (для кнопки "Другое")
-    function openContactForm(preparedText) {
-        currentPreparedText = preparedText;
-        switchToContactForm();
-        document.getElementById('contactOverlay').style.display = 'flex';
-    }
+// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
+function submitFinal(app) {
+    const manualInput = document.getElementById('manualMsgInput');
+    const contactInput = document.getElementById('contactDetailsInput');
+    const contactOverlay = document.getElementById('contactOverlay');
+    
+    let finalMsg = "";
 
-    function switchToContactForm() {
-        document.getElementById('contactTitle').innerText = "ОСТАВИТЬ КОНТАКТ";
-        document.getElementById('manualMsgInput').style.display = 'none';
-        document.getElementById('contactDetailsInput').style.display = 'block';
-        document.getElementById('contactButtonsGrid').style.display = 'none';
-        document.getElementById('btnOtherSend').style.display = 'block';
-        setTimeout(() => document.getElementById('contactDetailsInput').focus(), 100);
-    }
+    // Проверяем, открыто ли окно именно ФОРМЫ СВЯЗИ
+    const isContactActive = contactOverlay && contactOverlay.style.display === 'flex';
 
-    // 3. ЕДИНАЯ ТОЧКА ОТПРАВКИ (submitFinal)
-    function submitFinal(app) {
-        const manualInput = document.getElementById('manualMsgInput');
-        const contactInput = document.getElementById('contactDetailsInput');
-        let finalMsg = "";
-
-        if (manualInput.style.display !== 'none') {
-            finalMsg = manualInput.value.trim(); // Текст, который юзер набрал сам
-        } else if (contactInput.style.display !== 'none') {
-            finalMsg = currentPreparedText + "\n\nСвязь со мной: " + contactInput.value.trim();
-        } else {
-            finalMsg = currentPreparedText; // Прямая отправка готового текста
+    if (isContactActive) {
+        if (manualInput && manualInput.style.display !== 'none') {
+            finalMsg = manualInput.value.trim();
+        } else if (contactInput) {
+            finalMsg = currentPreparedText + "\n\nКонтакт: " + contactInput.value.trim();
         }
-
-        if (app === 'wa') {
-            window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-        } else if (app === 'tg') {
-            try { navigator.clipboard.writeText(finalMsg); } catch(e){}
-            window.open(`https://t.me/${TG_USER}`, '_blank');
-        } else {
-            showSuccess(generateOrderID(), contactInput.value.trim());
-        }
-        closeContact();
+    } else {
+        finalMsg = currentPreparedText;
     }
+
+    if (app === 'wa') {
+        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+    } else if (app === 'tg') {
+        try { navigator.clipboard.writeText(finalMsg); } catch(e){}
+        window.open(`https://t.me/${TG_USER}`, '_blank');
+    } else {
+        // Если это успех заказа через "Другое"
+        showSuccess(generateOrderID(), contactInput ? contactInput.value.trim() : '');
+    }
+    closeContact();
+}
 
     /* =========================================
-       BLOCK 7.6: СБОР ДАННЫХ И МЕССЕНДЖЕРЫ
-       ========================================= */
+   BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
+   ========================================= */
 
-    // 1. Собираем текст заказа и ссылку на корзину
-    /* === ГЕНЕРАЦИЯ ЧЕКА (СТРОГИЙ СТИЛЬ БЕЗ СКОБОК) === */
+function getShortOrderLink() {
+    const data = getOrderTextAndLink();
+    if (!data) return "";
+    return "Здравствуйте RxDE! Я собрал корзину, проверьте, пожалуйста:\n\n" + data.link; 
+}
+
 function getOrderTextAndLink() {
     if (cart.length === 0) return null;
     const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
     const now = new Date();
-    const dateStr = now.toLocaleDateString('ru-RU');
-    const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    const fullDt = `${dateStr} в ${timeStr}`;
+    const d = now.toLocaleDateString('ru-RU');
+    const t = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const urlDate = `${d}_${t}`; 
 
-    let text = `[${dateStr}] Расчетный курс: ${fmt(rateCalc)} ₽\n`;
+    // 1. Компактная шапка в скобках
     let totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
-    text += `${totalQty} pack\n\n`;
+    let text = `[${d}] [${totalQty} pack] Расчетный курс: ${rateCalc} ₽\n\n`;
 
     let itemsSumEur = 0;
     let breakdown = []; 
 
+    // 2. Список товаров
     cart.forEach((item, idx) => {
         const r = db.find(x => String(x.PZN) === String(item.pzn));
         if (r) {
@@ -956,9 +902,7 @@ function getOrderTextAndLink() {
             itemsSumEur += sum;
             breakdown.push(sum);
 
-            // СТРОГО: Название, Производитель, PZN
             const fullDesc = `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
-            
             let math = item.qty > 1 
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
@@ -967,59 +911,26 @@ function getOrderTextAndLink() {
         }
     });
 
-    text += `Тариф почты из Германии.... ${shipEur}€\n`;
+    // 3. Итоговая часть (без слова ИТОГО)
+    text += `Тариф почты из Германии до 5кг...${shipEur}€ (12-25 дней)\n\n`;
     const totalEur = itemsSumEur + shipEur;
     
-    // Формула без скобок
-    text += `\n${shipEur}+${breakdown.join('+')} = ${fmt(totalEur)}€\n`;
+    // Сборка формулы (курсив для наглядности здесь не нужен, просто текст)
+    text += `\n${shipEur}+${breakdown.join('+')}=${fmt(totalEur)}€\n`;
     
-    const finalRub = Math.floor((totalEur * rateCalc) / 100) * 100;
-    text += `ИТОГО: ${fmt(totalEur)}€ * ${fmt(rateCalc)} = ${fmt(finalRub)} ₽\n`;
+    const finalRub = Math.floor((totalEur * parseFloat(rateCalc)) / 100) * 100;
+    text += `${fmt(totalEur)}€*${rateCalc}=${fmt(finalRub)} ₽\n`;
 
-    // ССЫЛКА: Берем текущий домен
+    // 4. Генерация ссылки с новым текстом
     const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
     const baseUrl = window.location.origin + window.location.pathname;
-    const fullLink = `${baseUrl}?c=${cartStr}&d=${encodeURIComponent(fullDt)}`;
+    const fullLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
 
-    text += `\nВаша собранная корзина у Вас под рукой - всегда актуальные цены!\n${fullLink}`;
+    text += `\nВаша сохраненная корзина всегда доступна по ссылке:\n${fullLink}`;
     
     currentPreparedText = text; 
-    return { text, link: fullLink };
+    return { text: text, link: fullLink };
 }
-
-    // 2. Отправка в выбранное приложение
-    function sendToMessenger(app) {
-        const data = getOrderTextAndLink();
-        if (!data) {
-            alert("Корзина пуста");
-            return;
-        }
-
-        const intro = app === 'wa' 
-            ? "Здравствуйте RxDE! Хочу оформить заказ:\n\n" 
-            : "Здравствуйте! Оформляю заказ через сайт:\n\n";
-            
-        const fullMessage = intro + data.text;
-        
-        // Резервное копирование в буфер обмена
-        try {
-            navigator.clipboard.writeText(fullMessage);
-        } catch (e) {
-            console.log("Clipboard error");
-        }
-
-        const encodedMsg = encodeURIComponent(fullMessage);
-        let url = "";
-        
-        if (app === 'wa') {
-            url = `https://wa.me/${WA_PHONE}?text=${encodedMsg}`;
-        } else if (app === 'tg') {
-            url = `https://t.me/${TG_USER}`;
-            alert("Текст заказа скопирован в буфер! Вставьте его в чат с менеджером.");
-        }
-
-        if (url) window.open(url, '_blank');
-    }
 
    /* =========================================
    BLOCK 8: АНИМАЦИЯ (МУЛЬТИ + ПОДНЫРИВАНИЕ)
@@ -1141,84 +1052,142 @@ function createSinglePill(sRect, tRect, isRemoving, targetId) {
 }
 
     /* =========================================
-       BLOCK 9: КОПИРОВАНИЕ И ЗАПУСК
-       ========================================= */
-    let clickTimer = null;
-    function handleLogoClick() {
-        if (clickTimer) {
-            clearTimeout(clickTimer); clickTimer = null;
-            copyCartData(); 
-        } else {
-            clickTimer = setTimeout(() => {
-                copyFilterResults(); clickTimer = null;
-            }, 300);
-        }
-    }
+   BLOCK 9: КОПИРОВАНИЕ И ЗАПУСК (ОБНОВЛЕНО)
+   ========================================= */
 
-    function blinkLogo(color) {
-        const logo = document.querySelector('.embedded-logo');
-        const className = color === 'green' ? 'flash-green' : 'flash-yellow';
-        logo.classList.add(className);
-        if (navigator.vibrate) navigator.vibrate(50);
-        setTimeout(() => { logo.classList.remove(className); }, 400);
-    }
+let clickTimer = null;
 
-    function copyFilterResults() {
-        if (!filters.search) return;
-        const tokens = filters.search.toLowerCase().split(/\s+/).map(t => getSearchVariations(t));
-        let currentResults = db.filter(r => {
-             if (!r.Name_DE) return false;
-             const text = (r.Name_DE + ' ' + (r.Name_RU||'') + ' ' + (r.Substance||'') + ' ' + (r.Substance_RU||'') + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
-             return tokens.every(vrs => vrs.some(v => text.includes(v)));
-        });
-        if (currentResults.length === 0) return;
-        currentResults.sort((a, b) => parseFloat(a.Price.replace(',','.')) - parseFloat(b.Price.replace(',','.')));
-        const dateNow = new Date().toLocaleDateString('ru-RU');
-        let text = `Результаты поиска "${filters.search}" [${dateNow}]:\n\n`;
-        currentResults.slice(0, 30).forEach(r => {
-            const p = parseFloat(r.Price.replace(',','.'));
-            text += `🔹 ${r.Name_DE}\n   ${Math.round(p)}€\n\n`;
-        });
-        const cleanUrl = window.location.origin + window.location.pathname;
-        const link = `${cleanUrl}?q=${encodeURIComponent(filters.search)}`;
-        text += `🔗 Ссылка: ${link}`;
-        navigator.clipboard.writeText(text).then(() => blinkLogo('yellow'));
-    }
+function handleLogoClick(e) {
+    if (e) e.preventDefault(); // Это не дает курсору уйти из поиска
 
-    function copyCartData() {
-        if (cart.length === 0) return;
-        const data = getOrderTextAndLink();
-        if(data) {
-            navigator.clipboard.writeText(data.text + `\n` + data.link).then(() => blinkLogo('green'));
-        }
+    if (clickTimer) {
+        // ДВОЙНОЙ КЛИК
+        clearTimeout(clickTimer);
+        clickTimer = null;
+        copyFilterResults(); // Желтый (Фильтр)
+    } else {
+        // ОДИНОЧНЫЙ КЛИК
+        clickTimer = setTimeout(() => {
+            copyCartData();  // Зеленый (Корзина)
+            clickTimer = null;
+        }, 300);
     }
+}
+
+function blinkLogo(color) {
+    const logo = document.querySelector('.embedded-logo');
+    if (!logo) return;
+
+    const className = (color === 'green') ? 'flash-green' : 'flash-yellow';
+    
+    logo.classList.add(className);
+    
+    if (navigator.vibrate) navigator.vibrate(50);
+
+    setTimeout(() => {
+        logo.classList.remove(className);
+    }, 400); // Погорело чуть-чуть и стало снова черным
+}
+function copyCartData() {
+    if (cart.length === 0) {
+        // Если корзина пуста, можно просто мигнуть желтым или ничего не делать
+        return;
+    }
+    const data = getOrderTextAndLink();
+    if(data) {
+        // В data.text уже вшита ссылка, берем целиком
+        navigator.clipboard.writeText(data.text).then(() => blinkLogo('green'));
+    }
+}
+
+function copyFilterResults() {
+    if (!filters.search || filters.search.length < 2) return;
+
+    // 1. Собираем результаты
+    const results = db.filter(r => {
+        if (!r || !r.Name_DE) return false;
+        const text = (r.Name_DE + ' ' + (r.Name_RU||'') + ' ' + (r.Form||'') + ' ' + r.Hersteller + ' ' + r.PZN).toLowerCase();
+        return text.includes(filters.search.toLowerCase());
+    });
+
+    if (results.length === 0) return;
+
+    // Сортируем по цене для порядка
+    results.sort((a, b) => parseFloat(a.Price.replace(',','.')) - parseFloat(b.Price.replace(',','.')));
+
+    // Определяем действующее вещество (берем из первого найденного товара)
+    const activeSubstance = results[0].Substance_RU || results[0].Substance || "—";
+    const dateNow = new Date().toLocaleDateString('ru-RU');
+    
+    // 2. Формируем текст (строго по вашему шаблону)
+    let text = `[${filters.search.toUpperCase()}]\n`;
+    text += `[${activeSubstance}]\n`;
+    text += `[${dateNow}]  Расчетный курс: ${rateCalc} ₽\n\n`;
+
+    text += `Тариф почты из Германии до 5кг...${shipEur}€ (12-25 дней)\n\n`;
+
+    // Список товаров: Название, Производитель, PZN...Цена€
+    results.slice(0, 40).forEach(r => {
+        const p = Math.round(parseFloat(r.Price.replace(',','.')));
+        text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${p}€\n`;
+    });
+
+    // Ссылка внизу
+    const siteUrl = window.location.origin + window.location.pathname;
+    text += `\nссылка на поисковый запрос: ${siteUrl}?q=${encodeURIComponent(filters.search)}`;
+
+    // 3. Копируем и мигаем желтым
+    navigator.clipboard.writeText(text).then(() => blinkLogo('yellow'));
+}
 
     /* === ВОССТАНОВЛЕНИЕ КОРЗИНЫ ИЗ ССЫЛКИ === */
+
+/* === ВОССТАНОВЛЕНИЕ КОРЗИНЫ (РАБОЧЕЕ + ЛОГИКА МЕНЕДЖЕРА) === */
+let isManagerOrder = false; 
+
 function tryRestoreCartFromUrl() {
     const params = new URLSearchParams(window.location.search);
     const cartParam = params.get('c');
     const dateParam = params.get('d'); 
     
     if (cartParam) {
-        try {
-            const items = cartParam.split(',');
-            const newCart = [];
-            items.forEach(pair => {
-                const [pzn, qtyStr] = pair.split(':');
-                const qty = parseInt(qtyStr);
-                if (pzn && qty > 0) newCart.push({ pzn: pzn, qty: qty });
-            });
+        cart = [];
+        const pairs = cartParam.split(',');
+        pairs.forEach(p => {
+            const [pzn, qty] = p.split(':');
+            if (pzn && qty) cart.push({ pzn: pzn.trim(), qty: parseInt(qty) || 1 });
+        });
 
-            if (newCart.length > 0) {
-                cart = newCart;
-                localStorage.setItem('de_cart_arr', JSON.stringify(cart));
-                if (dateParam) restoredDate = decodeURIComponent(dateParam);
-                window.history.replaceState({}, '', window.location.origin + window.location.pathname);
-                return true; 
-            }
-        } catch (e) { console.error("Restore Error", e); }
+        localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+
+        if (dateParam) {
+            const decodedDate = decodeURIComponent(dateParam);
+            isManagerOrder = !decodedDate.includes('_') && !decodedDate.includes(':');
+            restoredDate = decodedDate.replace('_', ' в ');
+        }
+
+        // --- МАГИЯ ОЧИСТКИ URL ---
+        // Убираем параметры из строки, чтобы F5 не приводил к повторному восстановлению
+        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        return cart.length > 0; 
     }
     return false;
+}
+function tryRestoreSearchFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get('q'); 
+
+    if (query) {
+        const input = document.getElementById('search');
+        const searchVal = decodeURIComponent(query);
+        if (input) {
+            input.value = searchVal; // Ставим текст в инпут
+            filters.search = searchVal; // Обновляем глобальный фильтр
+            render(true); // Запускаем отрисовку результатов
+        }
+    }
 }
 
     // ЗАПУСК ПРИЛОЖЕНИЯ
