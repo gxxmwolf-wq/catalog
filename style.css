@@ -61,21 +61,57 @@ body {
     min-width: 70px; cursor: default;
 }
 
-/* ОБОЛОЧКА ПОИСКА */
+/* Обертка поиска */
 .inp-wrap {
-    position: relative; /* База для абсолютного крестика */
+    position: relative;
     display: flex;
     align-items: center;
     background: #fff;
     border-radius: 12px;
-    padding: 0 10px;
     height: 50px;
     border: 1px solid #eee;
+    padding-left: 10px; /* Отступ для логотипа */
+    overflow: hidden;
 }
 
-.embedded-logo { 
-    padding: 0 12px; display: flex; gap: 4px; border-right: 1px solid #ddd; 
-    height: 100%; align-items: center; cursor: pointer; user-select: none;
+/* КРЕСТИК: Жестко справа, поверх всего */
+.cls-btn {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    width: 45px !important;
+    height: 100% !important;
+    display: flex !important; /* Всегда виден */
+    align-items: center;
+    justify-content: center;
+    z-index: 100 !important;
+    color: #bbb;
+    font-size: 18px;
+    cursor: pointer;
+    background: #fff; /* Белый фон, чтобы текст не просвечивал */
+}
+
+/* ИНПУТ: Теперь он занимает всё место между лого и крестиком */
+.search-input {
+    flex: 1;
+    border: none !important;
+    outline: none !important;
+    height: 100%;
+    padding: 0 45px 0 10px !important; /* Резервируем 45px справа под крестик */
+    font-size: 16px;
+}
+
+/* ЛОГОТИП: Возвращаем размер */
+.embedded-logo {
+    display: flex;
+    align-items: center;
+    font-weight: 900;
+    font-size: 18px; /* Тот самый крупный размер */
+    cursor: pointer;
+    user-select: none;
+    padding-right: 10px;
+    border-right: 1px solid #eee; /* Разделитель, если был */
+    height: 30px;
 }
 .rx-part { color: var(--rx); border: 1.5px solid var(--rx); font-weight: 900; font-size: 10px; padding: 0 3px; border-radius: 4px; }
 /* Плавный переход для букв, чтобы не дергалось */
@@ -97,22 +133,20 @@ body {
 }
 
 /* КРЕСТИК (Всегда сверху и кликабелен) */
-.cls-btn { 
-    position: absolute;
-    right: 5px;
-    top: 0;
-    width: 40px; 
-    height: 100%; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 18px; 
-    font-weight: bold; 
-    color: #bbb; 
+.cls-btn {
+    position: absolute !important;
+    right: 0 !important;
+    top: 0 !important;
+    width: 45px !important;
+    height: 100% !important;
+    display: flex !important; /* Всегда гибкий блок */
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    z-index: 20; /* Выше всех подсказок */
-    background: #fff; /* Чтобы текст под ним не просвечивал */
-    border-radius: 0 12px 12px 0;
+    z-index: 100 !important; /* Поверх поиска и чипсов */
+    color: #bbb;
+    font-size: 18px;
+    background: transparent;
 }
 
 /* ПОДСКАЗКИ (Чипсы) */
@@ -217,9 +251,29 @@ body {
 
 .q-val { padding: 0 8px; min-width: 18px; text-align: center; font-weight: 800; font-size: 14px; }
 
-.sum-box { width: 60px; text-align: right; }
-.s-eur { font-weight: 900; font-size: 14px; }
-.s-rub { font-size: 10px; color: #777; }
+/* Единый блок цен */
+.sum-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    min-width: 85px;
+    line-height: 1.2;
+}
+
+/* Евро: Верхняя строка, крупнее */
+.s-eur {
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+}
+
+/* Рубли: Нижняя строка, чуть меньше */
+.s-rub {
+    font-size: 14px;
+    font-weight: 500;
+    color: #000; /* Строго черный */
+}
 
 /* =========================================
    BLOCK 4: КОРЗИНА "SMART PILL" (ФИНАЛ)
