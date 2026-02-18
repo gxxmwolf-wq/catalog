@@ -409,6 +409,30 @@ function getQty(pzn) {
     const item = cart.find(i => String(i.pzn) === String(pzn)); 
     return item ? item.qty : 0; 
 }
+
+function clearSearch() {
+    const input = document.getElementById('search');
+    const clearBtn = document.getElementById('clearBtn');
+    const suggestRow = document.getElementById('suggestRow');
+
+    if (input) {
+        input.value = ''; // Стираем текст
+        filters.search = ''; // Очищаем глобальный фильтр
+        
+        // Сбрасываем URL (убираем параметр q=...)
+        const url = new URL(window.location);
+        url.searchParams.delete('q');
+        window.history.replaceState({}, '', url);
+
+        // Прячем кнопку и очищаем чипсы
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (suggestRow) suggestRow.innerHTML = '';
+
+        // Возвращаем стартовый экран
+        render(true);
+        input.focus(); 
+    }
+}
     /* =========================================
    BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
    ========================================= */
@@ -631,15 +655,24 @@ function renderCartItems() {
         const title = isManagerOrder ? '👨‍⚕️ Список подготовлен менеджером' : '🛒 Ваша сохраненная корзина';
         const borderColor = isManagerOrder ? 'var(--p)' : '#eee';
         
-        div.innerHTML += `
-            <div style="border: 2px solid ${borderColor}; background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; color: #333; font-size: 14px; text-align: center; line-height: 1.4;">
-                <div style="font-weight: 900; color: #000; text-transform: uppercase; margin-bottom: 4px; font-size: 12px;">
-                    ${title}
-                </div>
-                Дата: <b>${restoredDate}</b>.<br>
-                <span style="font-size: 11px; color: #888;">Цены и курс евро обновлены на текущий момент.</span>
-            </div>
-        `;
+        /* Внутри цикла cart.forEach в функции renderCartItems */
+div.innerHTML += `
+<div class="m-row-interactive" style="display: flex; align-items: stretch; padding: 18px 0; border-bottom: 1px solid #f2f2f2; min-height: 110px;">
+    <div style="flex: 1; display: flex; gap: 10px;">
+        <span style="font-size: 12px; color: #ccc; font-weight: 700;">${index + 1}.</span>
+        <div>
+            <div style="font-size: 15px; font-weight: 700; color: #333; line-height: 1.2;">${r.Name_DE}</div>
+            <div style="font-size: 11px; color: #999; margin-top: 4px;">${r.Hersteller}</div>
+            <div style="font-size: 18px; font-weight: 900; color: #000; margin-top: 10px;">${sumRub.toLocaleString()} ₽</div>
+        </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; background: #f5f5f5; border-radius: 12px; width: 48px; margin-left: 10px; border: 1px solid #eee;">
+        <button onclick="modQty('${item.pzn}', 1, event)" style="flex: 1; width: 100%; border: none; background: none; font-size: 24px; color: var(--p); cursor: pointer;">+</button>
+        <span style="font-size: 15px; font-weight: 900; padding: 5px 0; color: #333;">${item.qty}</span>
+        <button onclick="modQty('${item.pzn}', -1, event)" style="flex: 1; width: 100%; border: none; background: none; font-size: 24px; color: #bbb; cursor: pointer;">−</button>
+    </div>
+</div>`;;
     }
 
     if (cart.length === 0) { 
