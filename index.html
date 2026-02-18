@@ -324,11 +324,32 @@ function render(isNewSearch = false) {
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
-    if (results.length === 0) {
-        if (query.length < 3) return;
-        list.innerHTML = `<div style="text-align:center; padding:40px 20px; color:#666;">По запросу ничего не найдено.</div>`;
-        return;
-    }
+    // Найдите внутри функции render() проверку if (results.length === 0)
+ if (results.length === 0) {
+    if (query.length < 2) return;
+    
+    // 1. Формируем текст для передачи в сквозные кнопки
+    const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
+
+    list.innerHTML = `
+        <div style="margin: 30px 15px; padding: 25px 15px; border: 1px solid #007bff; border-radius: 12px; background: #fff; text-align: center;">
+            <div style="font-size: 14px; color: #000; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                По вашему запросу ничего не найдено
+            </div>
+            <div style="font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 20px;">
+                Мы можем найти нужный препарат в аптеках Германии в ручном режиме. <br>
+                Пожалуйста, отправьте запрос специалисту:
+            </div>
+            
+            <div class="grid-3-btns">
+                <button class="b-cell wa" onclick="currentPreparedText='${failText}'; submitFinal('wa')"><span>WhatsApp</span></button>
+                <button class="b-cell tg" onclick="currentPreparedText='${failText}'; submitFinal('tg')"><span>Telegram</span></button>
+                <button class="b-cell other" onclick="openContactForm('${failText}')"><span>Другое</span></button>
+            </div>
+        </div>
+    `;
+    return;
+}
 
     results.forEach(r => {
         if (!r.Price) return;
