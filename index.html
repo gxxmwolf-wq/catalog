@@ -12,17 +12,17 @@
 <body>
 <div class="cont">
         <div class="sticky">
-    <div class="top-menu-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background: #fff; border-bottom: 1px solid #f0f0f0;">
+    <div class="top-menu-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #fff; border-bottom: 1px solid #f0f0f0;">
         
-        <div style="display: flex; gap: 15px; font-weight: 700; font-size: 13px; color: var(--p);">
+        <div style="display: flex; gap: 10px; font-weight: 700; font-size: 12px; color: var(--p);">
             <div class="tm-item" onclick="showInfo('faq')" style="cursor: pointer;">FAQ</div>
             <div class="tm-item" onclick="openQuestion()" style="cursor: pointer;">ВОПРОС</div>
             <div class="tm-item" onclick="showInfo('exp')" style="cursor: pointer;">ОПЫТ</div>
         </div>
 
-        <div class="rates-compact" style="font-size: 11px; color: #999; text-align: right; line-height: 1.2; min-width: 70px;">
+        <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
             <div style="white-space: nowrap;">ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
-            <div style="white-space: nowrap;">Расчётный: <span id="finalRate" style="color:#000; font-weight:700">0</span></div>
+            <div style="white-space: nowrap;">Курс: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
         </div>
     </div>
 
@@ -54,18 +54,18 @@
 
 <div id="modal" class="modal" onclick="closeModal()">
     <div class="m-box" onclick="event.stopPropagation()">
-        <div class="modal-head">
-    <div class="m-head-add-more" onclick="addMoreItems()">
-        <span class="m-chevron">‹</span>
-        <span class="m-add-txt">Добавить</span>
-    </div>
+        <div class="modal-head" style="align-items: flex-end; padding-bottom: 8px;">
+            <div class="m-head-add-more" onclick="addMoreItems()" style="margin-bottom: -4px;">
+                <span class="m-chevron">‹</span>
+                <span class="m-add-txt">Добавить</span>
+            </div>
 
-    <div class="m-head-info">
-        <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase;">Заказ: ...</div>
-        <div style="font-size: 13px; color: #000; font-weight: 400;">Курс: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
-    </div>
+            <div class="m-head-info">
+                <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase;">Заказ: ...</div>
+                <div style="font-size: 13px; color: #000; font-weight: 400;">Курс: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
+            </div>
 
-    <div onclick="closeModal()" class="close-x">✕</div>
+            <div onclick="closeModal()" class="close-x" style="margin-bottom: -8px;">✕</div>
 </div>
         <div class="m-scroll-area" style="padding: 0 20px; flex: 1; overflow-y: auto;">
     <div id="cartItems"></div>
@@ -314,42 +314,56 @@ function render(isNewSearch = false) {
     if (!query) { document.getElementById('introBlock').style.display = 'block'; return; }
     document.getElementById('introBlock').style.display = 'none';
 
-    const queryWords = query.split(/\s+/).filter(w => w.length > 0);
+    // ГИБКОСТЬ 1: Убираем двоеточия, тире, точки из запроса пользователя
+    const cleanQuery = query.replace(/[:.,\-№#]/g, ' ');
+    const queryWords = cleanQuery.split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
     const results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        // ДОБАВЛЕНО: r.Category в пул поиска
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${r.PZN}`.toLowerCase();
+        
+        // ГИБКОСТЬ 2: Защита от потерянного нуля (подстраховка от Excel)
+        let pznStr = '';
+        if (r.PZN) {
+            const pznNum = String(r.PZN).replace(/\D/g, ''); 
+            if (pznNum) {
+                const noZeros = parseInt(pznNum, 10).toString(); // Вариант без нулей (8767020)
+                const full8 = noZeros.padStart(8, '0'); // Вариант строго 8 цифр (08767020)
+                pznStr = `pzn pzn${full8} ${full8} pzn${noZeros} ${noZeros}`;
+            }
+        }
+        
+        // Собираем текст в единый пул
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${pznStr}`.toLowerCase();
+        
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
-    // Найдите внутри функции render() проверку if (results.length === 0)
- if (results.length === 0) {
-    if (query.length < 2) return;
-    
-    // 1. Формируем текст для передачи в сквозные кнопки
-    const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
+    if (results.length === 0) {
+// ... дальше ваш код без изменений ( failText, кнопка Добавить, карточки товара и т.д.)
+        if (query.length < 2) return;
+        
+        const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
 
-    list.innerHTML = `
-        <div style="margin: 30px 15px; padding: 25px 15px; border: 1px solid #007bff; border-radius: 12px; background: #fff; text-align: center;">
-            <div style="font-size: 14px; color: #000; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-                По вашему запросу ничего не найдено
+        list.innerHTML = `
+            <div style="margin: 30px 15px; padding: 25px 15px; border: 1px solid #007bff; border-radius: 12px; background: #fff; text-align: center;">
+                <div style="font-size: 14px; color: #000; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    По вашему запросу ничего не найдено
+                </div>
+                <div style="font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 20px;">
+                    Мы можем найти нужный препарат в аптеках Германии в ручном режиме. <br>
+                    Пожалуйста, отправьте запрос специалисту:
+                </div>
+                
+                <div class="grid-3-btns">
+                    <button class="b-cell wa" onclick="currentPreparedText='${failText}'; submitFinal('wa')"><span>WhatsApp</span></button>
+                    <button class="b-cell tg" onclick="currentPreparedText='${failText}'; submitFinal('tg')"><span>Telegram</span></button>
+                    <button class="b-cell other" onclick="openContactForm('${failText}')"><span>Другое</span></button>
+                </div>
             </div>
-            <div style="font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 20px;">
-                Мы можем найти нужный препарат в аптеках Германии в ручном режиме. <br>
-                Пожалуйста, отправьте запрос специалисту:
-            </div>
-            
-            <div class="grid-3-btns">
-                <button class="b-cell wa" onclick="currentPreparedText='${failText}'; submitFinal('wa')"><span>WhatsApp</span></button>
-                <button class="b-cell tg" onclick="currentPreparedText='${failText}'; submitFinal('tg')"><span>Telegram</span></button>
-                <button class="b-cell other" onclick="openContactForm('${failText}')"><span>Другое</span></button>
-            </div>
-        </div>
-    `;
-    return;
-}
+        `;
+        return;
+    }
 
     results.forEach(r => {
         if (!r.Price) return;
@@ -357,12 +371,13 @@ function render(isNewSearch = false) {
         const q = getQty(r.PZN);
         const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
         let btn = q > 0 ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`;
-        // Внутри цикла results.forEach в функции render():
+        
         const sum = q > 0 ? 
             `<div class="sum-box">
                 <div class="s-eur">${Math.round(p * q)} €</div>
                 <div class="s-rub">${getRubPrice(p * q).toLocaleString()} ₽</div>
             </div>` : '';
+            
         list.innerHTML += `<div class="card ${q > 0 ? 'selected' : ''}"><img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)"><div class="card-body"><div class="c-title">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div><div class="card-bottom"><div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div><div class="c-ctrl"><div class="u-price">${Math.round(p)} €</div><div class="qty-capsule-wrap">${btn}</div><div class="sum-box">${sum}</div></div></div></div></div>`;
     });
 }
@@ -383,8 +398,9 @@ function renderSuggestions(inputText) {
 
     const currentMatches = db.filter(r => {
         if (!r.Name_DE) return false;
-        // ДОБАВЛЕНО: r.Category в пул фильтрации подсказок
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''}`.toLowerCase();
+        // Добавляем PZN в пул фильтрации подсказок
+        const pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${pznStr}`.toLowerCase();
         return queryVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
@@ -395,8 +411,20 @@ function renderSuggestions(inputText) {
     const lastFragment = isTrailingSpace ? "" : userWords[userWords.length - 1];
     const lastVars = getSearchVariations(lastFragment);
 
+    // НОВОЕ: Проверяем, ищет ли клиент PZN
+    const isPznSearch = lastFragment.includes('pzn') || /\d/.test(lastFragment);
+    const typedDigits = lastFragment.replace(/\D/g, ''); 
+
     currentMatches.forEach(r => {
-        // ДОБАВЛЕНО: r.Category в источник слов для чипсов (перед названием)
+        // 1. Логика генерации чипсов с номерами PZN
+        if (isPznSearch && r.PZN) {
+            const pznStr = String(r.PZN);
+            if (isTrailingSpace || pznStr.startsWith(typedDigits) || typedDigits === '') {
+                candidates.add(pznStr);
+            }
+        }
+
+        // 2. Стандартная логика для текстовых слов
         const sourceText = isRussianInput 
             ? `${r.Category || ''} ${r.Name_RU || ''}` 
             : `${r.Category || ''} ${r.Name_DE}`;
@@ -407,18 +435,31 @@ function renderSuggestions(inputText) {
             if (typedMeanings.has(word)) return;
             const wordVars = getSearchVariations(word);
             const isMatch = isTrailingSpace ? true : lastVars.some(lv => lv && wordVars.some(wv => wv.startsWith(lv)));
-            if (isMatch) candidates.add(word);
+            if (isMatch && !/\d/.test(word)) { 
+                candidates.add(word);
+            }
         });
     });
 
-    Array.from(candidates).sort((a,b) => (/\d/.test(a) ? -1 : 1) || a.length - b.length).slice(0, 8).forEach(word => {
+    // Ограничиваем до 5 штук и выводим
+    Array.from(candidates).sort((a,b) => (/\d/.test(a) ? -1 : 1) || a.length - b.length).slice(0, 5).forEach(word => {
         const chip = document.createElement('div');
         chip.className = 's-chip';
-        chip.innerText = word;
+        
+        // Красиво форматируем чипс
+        const isDigitOnly = /^\d+$/.test(word);
+        chip.innerText = isDigitOnly ? `PZN ${word}` : word;
+
         chip.onclick = () => {
             const input = document.getElementById('search');
             let wordsArr = input.value.trim().split(/\s+/);
-            if (isTrailingSpace) wordsArr.push(word); else wordsArr[wordsArr.length - 1] = word;
+            const finalWord = isDigitOnly ? `PZN ${word}` : word;
+            
+            if (isTrailingSpace) {
+                wordsArr.push(finalWord); 
+            } else {
+                wordsArr[wordsArr.length - 1] = finalWord;
+            }
             input.value = wordsArr.join(' ') + ' ';
             handleInput();
             input.focus();
@@ -673,10 +714,7 @@ function renderCartItems() {
     if (!div) return;
     div.innerHTML = '';
     
-    // 1. ПЛАШКА ВОССТАНОВЛЕНИЯ (Блок был пропущен)
-    // 1. ПЛАШКА ВОССТАНОВЛЕНИЯ (С пометкой менеджера)
-    // 1. ПЛАШКА ВОССТАНОВЛЕНИЯ
-// Вставьте это в начало функции renderCartItems()
+    // 1. Плашка восстановления корзины
     if (restoredDate && cart.length > 0) {
         const title = isManagerOrder ? '👨‍⚕️ Список подготовлен менеджером' : '🛒 Ваша сохраненная корзина';
         const borderColor = isManagerOrder ? 'var(--p)' : '#eee';
@@ -697,57 +735,56 @@ function renderCartItems() {
         return;
     }
 
-    // 2. Отрисовка товаров
+    // 2. Отрисовка товаров: ПЛОТНЫЙ ЧЕК
     cart.forEach((item, index) => {
-    const r = db.find(x => String(x.PZN) === String(item.pzn));
-    if (r) {
-        const p = Math.round(parseFloat(r.Price.replace(',', '.')));
-        const sumEur = p * item.qty;
-        const sumRub = getRubPrice(sumEur);
-        
-        /* Внутри цикла cart.forEach в функции renderCartItems */
-div.innerHTML += `
-<div class="m-row-interactive" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f2f2f2;">
-    <div style="flex: 1; padding-right: 10px; display:flex; gap:8px;">
-        <div style="font-size: 11px; color: #ccc; font-weight: 600; min-width: 18px;">${index + 1}.</div>
-        <div>
-            <div style="font-size: 15px; font-weight: 700; color: #333; line-height: 1.2;">${r.Name_DE}</div>
-            <div style="font-size: 11px; color: #999; margin-top: 3px;">${r.Hersteller}</div>
-        </div>
-    </div>
+        const r = db.find(x => String(x.PZN) === String(item.pzn));
+        if (r) {
+            const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
+            const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
+            
+            let btn = `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${item.pzn}',-1, event)">−</button><span class="q-val">${item.qty}</span><button class="q-btn" onclick="modQty('${item.pzn}',1, event)">+</button></div>`;
+            
+            const sum = `
+                <div class="sum-box" style="min-width: 65px;">
+                    <div class="s-eur">${Math.round(p * item.qty)} €</div>
+                    <div class="s-rub">${getRubPrice(p * item.qty).toLocaleString()} ₽</div>
+                </div>`;
 
-    <div style="display: flex; align-items: center; gap: 15px;">
-        <div style="font-size: 16px; font-weight: 700; color: #000; min-width: 45px; text-align: right;">${p} €</div>
+            // Жесткая структура: никаких пустых строк между названием и производителем
+            div.innerHTML += `
+            <div style="display: flex; padding: 12px 0; border-bottom: 1px solid #f5f5f5; align-items: center;">
+                <div style="font-size: 13px; color: #999; font-weight: 700; width: 22px; flex-shrink: 0;">${index + 1}.</div>
+                
+                <div style="flex: 1; min-width: 0; padding-right: 8px;">
+                    <div class="c-title" style="font-size: 14px; margin-bottom: 2px; line-height: 1.1;">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div>
+                    <div style="font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${r.Hersteller} <span style="opacity:0.5; margin:0 4px;">|</span> PZN: ${r.PZN}
+                    </div>
+                </div>
 
-        <div class="qty-capsule" style="background: #f5f5f5; border-radius: 20px; display: flex; align-items: center; padding: 3px 5px;">
-            <button class="q-btn" onclick="modQty('${item.pzn}', -1, event)" style="width:26px; height:26px; border:none; background:none; font-size:18px; cursor:pointer;">−</button>
-            <span class="q-val" style="min-width: 24px; text-align: center; font-size: 14px; font-weight: 900;">${item.qty}</span>
-            <button class="q-btn" onclick="modQty('${item.pzn}', 1, event)" style="width:26px; height:26px; border:none; background:none; font-size:18px; cursor:pointer;">+</button>
-        </div>
+                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                    <div style="font-size: 14px; font-weight: 700; color: #000;">${Math.round(p)} €</div>
+                    <div class="qty-capsule-wrap">${btn}</div>
+                    ${sum}
+                </div>
+            </div>`;
+        }
+    });
 
-        <div class="sum-box">
-            <div class="s-eur">${sumEur} €</div>
-            <div class="s-rub">${sumRub.toLocaleString('ru-RU')} ₽</div>
-        </div>
-    </div>
-</div>`;;
-    }
-});;
-
-    // 3. Строка Почтового тарифа
+    // 3. Строка почтового тарифа
     const shipRub = getRubPrice(shipEur);
     div.innerHTML += `
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid #eee; background: #fff;">
-        <div style="font-size: 14px; font-weight: 600; color: #666; padding-left: 26px;">Почтовый тариф (Германия)</div>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid #eee; background: #fff; margin-top: 5px;">
+        <div style="font-size: 14px; font-weight: 600; color: #666; padding-left: 22px;">Почтовый тариф (Германия)</div>
         <div style="text-align: right; min-width: 70px;">
             <div style="font-size: 14px; font-weight: 400; color: #000;">${shipEur} €</div>
             <div style="font-size: 16px; font-weight: 700; color: #000;">${shipRub.toLocaleString('ru-RU')} ₽</div>
         </div>
     </div>`;
 
-    // 4. Ссылка "Добавить еще" (БЕЗ ЛУПЫ)
+    // 4. Ссылка на добавление
     div.innerHTML += `
-        <div class="add-more-link" onclick="addMoreItems()">
+        <div class="add-more-link" onclick="addMoreItems()" style="padding-top: 20px;">
             Добавим еще позиции?
         </div>
     `;
