@@ -22,7 +22,7 @@
 
         <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
             <div style="white-space: nowrap;">ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
-            <div style="white-space: nowrap;">Курс: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
+            <div style="white-space: nowrap;">Расчетный: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
         </div>
     </div>
 
@@ -54,18 +54,20 @@
 
 <div id="modal" class="modal" onclick="closeModal()">
     <div class="m-box" onclick="event.stopPropagation()">
-        <div class="modal-head" style="align-items: flex-end; padding-bottom: 8px;">
-            <div class="m-head-add-more" onclick="addMoreItems()" style="margin-bottom: -4px;">
-                <span class="m-chevron">‹</span>
-                <span class="m-add-txt">Добавить</span>
-            </div>
+<div class="modal-head" style="align-items: flex-end; padding-bottom: 8px; display: flex; justify-content: space-between;">
+    
+    <div class="m-head-add-more" onclick="addMoreItems()" style="margin-bottom: -4px; flex: 1.5; display: flex; align-items: center;">
+        <span class="m-chevron" style="font-size: 28px; margin-right: 3px; line-height: 0.8;">‹</span>
+        <span class="m-add-txt" style="letter-spacing: 0.5px;">ДОБАВИТЬ ПОЗИЦИИ</span>
+    </div>
 
-            <div class="m-head-info">
-                <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase;">Заказ: ...</div>
-                <div style="font-size: 13px; color: #000; font-weight: 400;">Курс: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
-            </div>
+    <div class="m-head-info" style="flex: 1; text-align: center;">
+        <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase;">Заказ: ...</div>
+        <div style="font-size: 13px; color: #000; font-weight: 400;">Расчетный: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
+    </div>
 
-            <div onclick="closeModal()" class="close-x" style="margin-bottom: -8px;">✕</div>
+    <div onclick="closeModal()" class="close-x" style="margin-bottom: -8px; flex: 0.8; justify-content: flex-end;">✕</div>
+    
 </div>
         <div class="m-scroll-area" style="padding: 0 20px; flex: 1; overflow-y: auto;">
     <div id="cartItems"></div>
@@ -98,6 +100,8 @@
     <div class="info-box contact-box" onclick="event.stopPropagation()">
         <div id="contactTitle" class="info-title">СВЯЗАТЬСЯ</div>
         
+        <textarea id="manualMsgInput" class="universal-textarea" style="display:none;" placeholder="Напишите ваш вопрос..."></textarea>
+        
         <div id="contactButtonsGrid" class="grid-3-btns">
             <button class="b-cell wa" onclick="submitFinal('wa')"><span>WhatsApp</span></button>
             <button class="b-cell tg" onclick="submitFinal('tg')"><span>Telegram</span></button>
@@ -105,26 +109,26 @@
         </div>
 
         <div id="phoneFormWrap" style="display:none; text-align: center;">
-    <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
-        Укажите номер телефона. Мы свяжемся с вами для уточнения деталей заказа.
-    </p>
-    
-    <div style="position: relative; margin-bottom: 15px;">
-        <input type="tel" id="contactDetailsInput" class="cp-input-inline" 
-               placeholder="+79001234567" 
-               onfocus="setCursorPosition(this)"
-               style="width:100%; height: 55px; font-size: 22px; text-align: center; border: none; background: #f2f2f2; border-radius: 12px; outline: none; transition: 0.2s;">
-        
-        <div id="phoneHint" style="font-size: 11px; color: #aaa; margin-top: 8px; font-weight: 400;">
-            Введите только цифры (11 цифр)
+            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                Укажите номер телефона. Мы свяжемся с вами для уточнения деталей.
+            </p>
+            
+            <div style="position: relative; margin-bottom: 15px;">
+                <input type="tel" id="contactDetailsInput" class="cp-input-inline" 
+                       placeholder="+79001234567" 
+                       onfocus="setCursorPosition(this)"
+                       style="width:100%; height: 55px; font-size: 22px; text-align: center; border: none; background: #f2f2f2; border-radius: 12px; outline: none; transition: 0.2s;">
+                
+                <div id="phoneHint" style="font-size: 11px; color: #aaa; margin-top: 8px; font-weight: 400;">
+                    Введите только цифры (11 цифр)
+                </div>
+            </div>
+            
+            <button id="btnOtherSend" class="cp-submit-full" 
+                    onclick="submitFinal('other')" 
+                    style="background: var(--p); color: #fff; border: none; width: 100%; height: 50px; border-radius: 12px; font-weight: 700; transition: 0.3s; cursor: pointer; opacity: 0.5;" 
+                    disabled>ОТПРАВИТЬ ЗАЯВКУ</button>
         </div>
-    </div>
-    
-    <button id="btnOtherSend" class="cp-submit-full" 
-            onclick="submitFinal('other')" 
-            style="background: var(--p); color: #fff; border: none; width: 100%; height: 50px; border-radius: 12px; font-weight: 700; transition: 0.3s; cursor: pointer; opacity: 0.5;" 
-            disabled>ОТПРАВИТЬ ЗАЯВКУ</button>
-</div>
 
         <button onclick="closeContact()" class="s-close-btn" style="background:none; color:#888; margin-top:15px; width: 100%;">ОТМЕНА</button>
     </div>
@@ -132,9 +136,12 @@
 
 <div id="successPopup" class="success-popup">
     <div class="s-head-icon">✅</div>
-    <div class="s-title">Запрос принят!</div>
-    <div id="succID" class="s-order-id">#0000</div>
-    <button onclick="closeSuccess()" class="s-close-btn">ЗАКРЫТЬ</button>
+    <div id="succTitle" class="s-title">Успешно!</div>
+    
+    <div id="succSubTitle" style="font-size: 14px; color: #555; margin-bottom: 15px; line-height: 1.4;"></div>
+    
+    <div id="succID" class="s-order-id" style="display: none;">#0000</div>
+    <button onclick="closeSuccess()" class="s-close-btn">ПОНЯТНО</button>
 </div>
 <script>
     /* =========================================
@@ -236,29 +243,59 @@ const audioAdd = new Audio("sounds/add.mp3");
     // --- 3. ИНФО-ОКНА (FAQ / ОПЫТ) ---
 
     function showInfo(type) {
-        const overlay = document.getElementById('infoOverlay');
-        if (!overlay || type === 'none' || !type) { 
-            if(overlay) overlay.style.display = 'none'; 
-            return; 
-        }
-        
-        const data = {
-            faq: { 
-                t: 'Частые вопросы', 
-                c: '• Доставка: 14-21 день из Германии.<br>• Гарантии: Оригинальные чеки аптек.<br>• Оплата: СБП, QR, карты РФ.' 
-            },
-            exp: { 
-                t: 'Наш опыт', 
-                c: '• 5 лет работы на рынке.<br>• 10,000+ доставленных заказов.<br>• Прямые закупки в аптеках Берлина.' 
-            }
-        };
-        if (!data[type]) return;
-        document.getElementById('infoTitle').innerText = data[type].t;
-        document.getElementById('infoContent').innerHTML = data[type].c;
-        overlay.style.display = 'flex';
+    const overlay = document.getElementById('infoOverlay');
+    if (!overlay || type === 'none' || !type) { 
+        if(overlay) overlay.style.display = 'none'; 
+        return; 
     }
+    
+    const data = {
+        faq: { 
+            t: 'ЧАСТЫЕ ВОПРОСЫ', 
+            c: `<div style="font-size: 13px; line-height: 1.5; color: #444; display: flex; flex-direction: column; gap: 12px;">
+                    <div><b style="color: #000;">Откуда препараты?</b><br>Мы закупаем товары исключительно в физических лицензированных аптеках Германии. Никаких сомнительных складов или посредников.</div>
+                    <div><b style="color: #000;">Какие гарантии?</b><br>Вы оплачиваете заказ безналичным переводом — у вас всегда остается банковская выписка с подтверждением платежа (в отличие от передачи «денег в конверте»). Мы гарантируем 100% подлинность препаратов и предоставляем международный трек-номер для отслеживания.</div>
+                    <div><b style="color: #000;">Сроки и тарифы доставки?</b><br>Посылки идут почтой от 12 до 25 дней. Почтовый тариф фиксированный — ${shipEur} €, независимо от количества позиций (до 5 кг).</div>
+                    <div><b style="color: #000;">Как оплатить?</b><br>Оплата принимается в рублях (перевод на карту РФ или по СБП). Расчетный курс фиксируется в момент согласования заявки с менеджером.</div>
+                </div>` 
+        },
+        exp: { 
+            t: 'НАШ ОПЫТ', 
+            c: `<div style="font-size: 13px; line-height: 1.5; color: #444; display: flex; flex-direction: column; gap: 12px;">
+                    <div style="text-align: center; margin-bottom: 5px;">
+                        <span style="font-size: 30px;">🇩🇪</span>
+                    </div>
+                    <div><b style="color: var(--p);">RxDE.online</b> — это сервис бережной доставки лекарств из Германии с <b>опытом работы более 10 лет</b>. Мы знаем специфику закупки редких рецептурных (RX) препаратов и обеспечиваем их надежную транспортировку.</div>
+                    <div>Наша главная задача — в вашем лице приобрести постоянного клиента и получать искренние рекомендации. Мы не используем однодневные схемы со сменой контактов, телефонов или карт.</div>
+                    <div>Мы работаем открыто: указанная стоимость в Евро <b>уже включает все расходы</b> сервиса. Вы видите финальную цену и понятный расчетный курс.</div>
+                </div>` 
+        }
+    };
+    
+    if (!data[type]) return;
 
-    function closeInfo() { document.getElementById('infoOverlay').style.display = 'none'; }
+    // --- ОБНОВЛЕНИЕ АДРЕСНОЙ СТРОКИ (Для копирования ссылки) ---
+    const url = new URL(window.location);
+    url.searchParams.set(type, ''); // Добавляет ?faq или ?exp
+    window.history.replaceState({}, '', url);
+
+    document.getElementById('infoTitle').innerText = data[type].t;
+    document.getElementById('infoContent').innerHTML = data[type].c;
+    overlay.style.display = 'flex';
+}
+
+    function closeInfo() { 
+    document.getElementById('infoOverlay').style.display = 'none'; 
+    
+    // Очищаем адресную строку полностью
+    const url = new URL(window.location);
+    url.searchParams.delete('faq');
+    url.searchParams.delete('exp');
+    
+    // Если после удаления параметров остался пустой поиск, убираем и знак вопроса
+    const cleanUrl = url.pathname + (url.search ? url.search : '');
+    window.history.replaceState({}, document.title, cleanUrl);
+}
 
     window.onclick = function(event) {
         const modal = document.getElementById('modal');
@@ -691,12 +728,34 @@ function updateBar() {
                     console.error("Ошибка при получении курсов:", err);
                     calculateFinalLogic(); 
                     render(); // Рисуем хоть что-то на дефолтах
+                    // Код внутри init -> Papa.parse -> complete
+                    // Добавьте этот фрагмент в самый конец блока .then(() => { ... })
+
+                    // ПРОВЕРКА ГИПЕРССЫЛОК НА ОКНА (faq / exp)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    if (urlParams.has('faq')) {
+                        setTimeout(() => showInfo('faq'), 800); // Небольшая задержка для красоты
+                    } else if (urlParams.has('exp')) {
+                        setTimeout(() => showInfo('exp'), 800);
+                    }
+
+
                 });
             }
 
             
 
         });
+        // Код внутри init -> Papa.parse -> complete -> .then(() => { ... })
+
+        // ПРОВЕРКА ПАРАМЕТРОВ URL ПРИ ЗАГРУЗКЕ
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('faq')) {
+            setTimeout(() => showInfo('faq'), 500); // Откроет FAQ через полсекунды
+        } else if (urlParams.has('exp')) {
+            setTimeout(() => showInfo('exp'), 500); // Откроет ОПЫТ
+        }
+
     }
     // --- 7.3 УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ КОРЗИНЫ ---
     
@@ -714,18 +773,25 @@ function renderCartItems() {
     if (!div) return;
     div.innerHTML = '';
     
-    // 1. Плашка восстановления корзины
+    // 1. КОМПАКТНАЯ ПЛАШКА ВОССТАНОВЛЕНИЯ (Ужата до 1 строчки)
+    // 1. КОМПАКТНАЯ ПЛАШКА ВОССТАНОВЛЕНИЯ (С текущей датой)
     if (restoredDate && cart.length > 0) {
-        const title = isManagerOrder ? '👨‍⚕️ Список подготовлен менеджером' : '🛒 Ваша сохраненная корзина';
-        const borderColor = isManagerOrder ? 'var(--p)' : '#eee';
+        const title = isManagerOrder ? '👨‍⚕️ Заказ от менеджера' : '🛒 Сохраненная корзина';
+        const borderColor = isManagerOrder ? 'var(--p)' : '#ccc';
+        const bgColor = isManagerOrder ? '#e3f2fd' : '#f8f9fa';
+        
+        // Генерируем сегодняшнюю дату
+        const dateNow = new Date().toLocaleDateString('ru-RU'); 
         
         div.innerHTML += `
-            <div style="border: 2px solid ${borderColor}; background: #fff; border-radius: 12px; padding: 15px; margin-bottom: 20px; color: #333; font-size: 14px; text-align: center; line-height: 1.4;">
-                <div style="font-weight: 900; color: #000; text-transform: uppercase; margin-bottom: 4px; font-size: 12px;">
-                    ${title}
+            <div style="background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="line-height: 1.2;">
+                    <div style="font-weight: 800; color: #000; font-size: 11px; text-transform: uppercase;">${title}</div>
+                    <div style="font-size: 10px; color: #666; margin-top: 2px;">Составлен ${restoredDate}</div>
                 </div>
-                Дата: <b>${restoredDate}</b>.<br>
-                <span style="font-size: 11px; color: #888;">Цены и курс евро обновлены на текущий момент.</span>
+                <div style="text-align: right; font-size: 10px; color: #888; line-height: 1.2;">
+                    Текущие цены и курс<br>на <b style="color:#555;">${dateNow}</b>
+                </div>
             </div>
         `;
     }
@@ -735,7 +801,7 @@ function renderCartItems() {
         return;
     }
 
-    // 2. Отрисовка товаров: ПЛОТНЫЙ ЧЕК
+    // 2. ОТРИСОВКА ТОВАРОВ (Плотный чек)
     cart.forEach((item, index) => {
         const r = db.find(x => String(x.PZN) === String(item.pzn));
         if (r) {
@@ -750,7 +816,6 @@ function renderCartItems() {
                     <div class="s-rub">${getRubPrice(p * item.qty).toLocaleString()} ₽</div>
                 </div>`;
 
-            // Жесткая структура: никаких пустых строк между названием и производителем
             div.innerHTML += `
             <div style="display: flex; padding: 12px 0; border-bottom: 1px solid #f5f5f5; align-items: center;">
                 <div style="font-size: 13px; color: #999; font-weight: 700; width: 22px; flex-shrink: 0;">${index + 1}.</div>
@@ -771,24 +836,32 @@ function renderCartItems() {
         }
     });
 
-    // 3. Строка почтового тарифа
+// 3// 3. УМНЫЙ БЛОК: ТАРИФ + АПСЕЙЛ (ДЕЛОВОЙ СТИЛЬ, БЕЗ ЭМОДЗИ)
     const shipRub = getRubPrice(shipEur);
     div.innerHTML += `
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 2px solid #eee; background: #fff; margin-top: 5px;">
-        <div style="font-size: 14px; font-weight: 600; color: #666; padding-left: 22px;">Почтовый тариф (Германия)</div>
-        <div style="text-align: right; min-width: 70px;">
-            <div style="font-size: 14px; font-weight: 400; color: #000;">${shipEur} €</div>
-            <div style="font-size: 16px; font-weight: 700; color: #000;">${shipRub.toLocaleString('ru-RU')} ₽</div>
+    <div onclick="addMoreItems()" style="margin-top: 15px; margin-bottom: 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: 0.2s;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            
+            <div style="flex: 1; padding-right: 12px;">
+                <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px;">Тариф почты из Германии</div>
+                <div style="font-size: 11px; color: #888; margin-bottom: 12px;">12–25 дней</div>
+                
+                <div style="font-size: 12px; font-weight: 800; color: var(--p); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
+                    Добавить позиции ›
+                </div>
+                <div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: 400; letter-spacing: 0.2px;">
+                    Стоимость доставки не изменится
+                </div>
+            </div>
+            
+            <div style="text-align: right; flex-shrink: 0;">
+                <div style="font-size: 16px; font-weight: 800; color: #000;">${shipEur} €</div>
+                <div style="font-size: 13px; font-weight: 500; color: #666; margin-top: 2px;">${shipRub.toLocaleString('ru-RU')} ₽</div>
+            </div>
+            
         </div>
     </div>`;
-
-    // 4. Ссылка на добавление
-    div.innerHTML += `
-        <div class="add-more-link" onclick="addMoreItems()" style="padding-top: 20px;">
-            Добавим еще позиции?
-        </div>
-    `;
-}
+} // <-- Конец функции renderCartItems
 
 /* === ФУНКЦИЯ ДЛЯ ССЫЛКИ "ДОБАВИМ ЕЩЕ" === */
 function addMoreItems() {
@@ -813,6 +886,7 @@ function addMoreItems() {
 
 /* === УМНОЕ ОТКРЫТИЕ КОРЗИНЫ === */
 function openCart() { 
+    isQuestionMode = false; // <-- ДОБАВИТЬ ЭТО: Жестко включаем режим "ЗАКАЗ"
     // 1. ЕСЛИ ПУСТО — ВЕДЕМ К ПОИСКУ
     if (cart.length === 0) {
         // Плавный скролл наверх
@@ -912,17 +986,102 @@ function generateOrderID() {
     return `${d}${m}${y}-${h}${min}`;
 }
 
-// Открытие окна "ВОПРОС" из меню
+// Глобальный флаг режима (добавьте его мысленно, он будет работать и так)
+let isQuestionMode = false; 
+
+// 1. Открытие окна "ВОПРОС" из меню
 function openQuestion() {
+    isQuestionMode = true; // Скрипт запомнил: мы задаем вопрос!
+    
     const overlay = document.getElementById('contactOverlay');
     document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
-    document.getElementById('manualMsgInput').style.display = 'block';
-    document.getElementById('manualMsgInput').value = "Здравствуйте RxDE, у меня вопрос: ";
-    document.getElementById('contactDetailsInput').style.display = 'none';
+    
+    const manualInput = document.getElementById('manualMsgInput');
+    if (manualInput) {
+        manualInput.style.display = 'block';
+        // Если поле пустое или там старый текст, ставим приветствие
+        if (manualInput.value.length < 10) {
+            manualInput.value = "Здравствуйте RxDE, у меня вопрос:\n";
+        }
+    }
+    
+    document.getElementById('phoneFormWrap').style.display = 'none';
     document.getElementById('contactButtonsGrid').style.display = 'grid';
-    document.getElementById('btnOtherSend').style.display = 'none';
+    
     overlay.style.display = 'flex';
-    setTimeout(() => document.getElementById('manualMsgInput').focus(), 100);
+    setTimeout(() => { if (manualInput) manualInput.focus(); }, 100);
+}
+
+// 2. Открытие формы контакта для Корзины (кнопка "Другое" в корзине)
+function openContactForm(preparedText) {
+    isQuestionMode = false; // Скрипт запомнил: мы оформляем заказ!
+    currentPreparedText = preparedText;
+    
+    switchToContactForm();
+    document.getElementById('contactOverlay').style.display = 'flex';
+}
+
+// Переключение на ввод телефона
+function switchToContactForm() {
+    document.getElementById('contactTitle').innerText = "ВАШ ТЕЛЕФОН";
+    document.getElementById('contactButtonsGrid').style.display = 'none';
+    
+    const manualInput = document.getElementById('manualMsgInput');
+    if (manualInput) manualInput.style.display = 'none';
+    
+    document.getElementById('phoneFormWrap').style.display = 'block';
+    document.getElementById('btnOtherSend').style.display = 'block'; 
+    
+    const phoneInput = document.getElementById('contactDetailsInput');
+    setTimeout(() => phoneInput.focus(), 100);
+}
+
+// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (Теперь без сбоев)
+// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (СТРОГО РАЗДЕЛЕННАЯ)
+function submitFinal(app) {
+    const manualInput = document.getElementById('manualMsgInput');
+    const contactInput = document.getElementById('contactDetailsInput');
+    
+    let finalMsg = "";
+
+    // 1. Берем текст в зависимости от текущего режима (Заказ или Вопрос)
+    if (isQuestionMode) {
+         finalMsg = manualInput ? manualInput.value.trim() : "Вопрос";
+    } else {
+         finalMsg = currentPreparedText || getShortOrderLink(); // Надежно забираем корзину
+    }
+
+    // 2. Логика отправки
+    if (app === 'other') {
+        const phone = contactInput.value.trim();
+        finalMsg += "\n\nКонтакт для связи: " + phone;
+        
+        // Фоновая отправка 
+        if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ "text": finalMsg, "phone": phone })
+            }).catch(e => console.log("Отправлено в фон"));
+        }
+        
+        // ВОТ ЗДЕСЬ РАЗДЕЛЕНИЕ СОБЫТИЙ: Передаем тип в окно успеха!
+        if (typeof showSuccess === 'function') {
+            showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, finalMsg);
+        }
+        
+        // Очищаем поле вопроса
+        if (manualInput) manualInput.value = "";
+        
+    } else if (app === 'wa') {
+        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+    } else if (app === 'tg') {
+        try { navigator.clipboard.writeText(finalMsg); } catch(e){}
+        window.open(`https://t.me/${TG_USER}`, '_blank');
+    }
+    
+    closeContact();
 }
 
 // Открытие формы контакта (кнопка "Другое")
@@ -1040,32 +1199,50 @@ function initPhoneMask() {
     });
 }
 
-// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
+
+// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (Теперь без сбоев)
 function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
     const contactInput = document.getElementById('contactDetailsInput');
-    const contactOverlay = document.getElementById('contactOverlay');
     
     let finalMsg = "";
-    const isContactActive = contactOverlay && contactOverlay.style.display === 'flex';
+
+    // Берем текст в зависимости от режима (Флаг, который мы поставили выше)
+    if (isQuestionMode) {
+         finalMsg = manualInput ? manualInput.value.trim() : "Вопрос";
+    } else {
+         finalMsg = currentPreparedText;
+    }
 
     if (app === 'other') {
-        finalMsg = currentPreparedText + "\n\nКонтакт для связи: " + contactInput.value.trim();
-        showSuccess(generateOrderID(), contactInput.value.trim());
-    } else {
-        if (manualInput && manualInput.style.display !== 'none' && manualInput.value.length > 25) {
-             finalMsg = manualInput.value.trim();
-        } else {
-             finalMsg = currentPreparedText;
+        const phone = contactInput.value.trim();
+        finalMsg += "\n\nКонтакт для связи: " + phone;
+        
+        // Фоновая отправка 
+        if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ "text": finalMsg, "phone": phone })
+            }).catch(e => console.log("Отправлено в фон"));
         }
-
-        if (app === 'wa') {
-            window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-        } else if (app === 'tg') {
-            try { navigator.clipboard.writeText(finalMsg); } catch(e){}
-            window.open(`https://t.me/${TG_USER}`, '_blank');
+        
+        // ВОТ ЗДЕСЬ ИЗМЕНЕНИЕ: Передаем текст вопроса (finalMsg) в окно успеха!
+        if (typeof showSuccess === 'function') {
+            showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, finalMsg);
         }
+        
+        // Очищаем поле вопроса после успешной отправки
+        if (manualInput) manualInput.value = "";
+        
+    } else if (app === 'wa') {
+        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+    } else if (app === 'tg') {
+        try { navigator.clipboard.writeText(finalMsg); } catch(e){}
+        window.open(`https://t.me/${TG_USER}`, '_blank');
     }
+    
     closeContact();
 }
 
@@ -1337,6 +1514,59 @@ function copyFilterResults() {
     // 3. Копируем и мигаем желтым
     navigator.clipboard.writeText(text).then(() => blinkLogo('yellow'));
 }
+
+/* =========================================
+   BLOCK 10: УМНОЕ ОКНО УСПЕХА
+   ========================================= */
+
+function showSuccess(type, orderId, phone, msg = "") {
+    const popup = document.getElementById('successPopup');
+    const titleEl = document.getElementById('succTitle');
+    const subTitleEl = document.getElementById('succSubTitle');
+    const idEl = document.getElementById('succID');
+    
+    if (popup && titleEl && subTitleEl && idEl) {
+        if (type === 'order') {
+            const dateNow = new Date().toLocaleDateString('ru-RU');
+            titleEl.innerText = "Успешно!";
+            subTitleEl.innerHTML = `Ваш заказ <b style="color:#000;">#${orderId}</b> от ${dateNow} принят в работу.<br><br>Мы свяжемся с вами по номеру<br><b style="color:#000; font-size:16px;">${phone}</b><br>для подтверждения деталей.`;
+            idEl.style.display = 'none'; 
+            
+            cart = [];
+            localStorage.removeItem('de_cart_arr');
+            updateBar();
+            render();
+            
+        } else {
+            titleEl.innerText = "Вопрос отправлен!";
+            
+            // 1. Очищаем текст от мусора
+            let cleanMsg = msg.replace("Здравствуйте RxDE, у меня вопрос:", "").replace(/Контакт для связи:.*/g, "").trim();
+            if (!cleanMsg) cleanMsg = "Вопрос специалисту";
+            
+            // 2. ЖЁСТКАЯ ОБРЕЗКА (максимум 60 символов)
+            if (cleanMsg.length > 60) cleanMsg = cleanMsg.substring(0, 60).trim() + "...";
+
+            // 3. Вывод с защитой от разрыва окна (word-break: break-word)
+            subTitleEl.innerHTML = `
+                <div style="background: #f5f7fa; padding: 10px 12px; border-radius: 8px; font-style: italic; font-size: 13px; color: #666; margin-bottom: 15px; border-left: 3px solid var(--p); text-align: left; word-break: break-word;">
+                    «${cleanMsg}»
+                </div>
+                Наш специалист свяжется с вами по номеру<br><b style="color:#000; font-size:16px;">${phone}</b><br>в ближайшее время.`;
+            idEl.style.display = 'none'; 
+        }
+        popup.classList.add('show');
+    }
+}
+
+function closeSuccess() {
+    const popup = document.getElementById('successPopup');
+    if (popup) {
+        popup.classList.remove('show');
+        closeModal(); // Закрываем большую корзину
+    }
+}
+
 
     /* === ВОССТАНОВЛЕНИЕ КОРЗИНЫ ИЗ ССЫЛКИ === */
 

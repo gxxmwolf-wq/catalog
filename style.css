@@ -615,8 +615,24 @@ body {
 }
 .cp-submit-full:disabled { background: #ccc; }
 
-.s-close-btn { background: #333; color: #fff; border:none; padding: 10px 20px; border-radius: 8px; font-weight: bold; width: 100%; margin-top: 15px; }
+.s-close-btn { 
+    background: #333; 
+    color: #fff; 
+    border: none; 
+    padding: 10px 20px; 
+    border-radius: 8px; 
+    font-weight: bold; 
+    width: 100%; 
+    margin-top: 15px; 
+    cursor: pointer; /* ДОБАВЛЕНО: курсор-рука при наведении */
+    transition: background 0.2s; /* Плавное нажатие */
+}
 
+/* Добавим легкую реакцию на нажатие для красоты */
+.s-close-btn:active {
+    background: #555;
+    transform: scale(0.98);
+}
 /* Успех */
 .success-popup { 
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); 
