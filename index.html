@@ -205,6 +205,56 @@ const audioAdd = new Audio("sounds/add.mp3");
         });
     }
 
+    // --- ЗАГРУЗКА НОВОСТЕЙ ИЗ ГУГЛ ТАБЛИЦЫ ---
+const GOOGLE_NEWS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=1952028184&single=true&output=csv';
+let newsDB = [];
+let newsToShow = 5;
+
+// --- УМНАЯ ЗАГРУЗКА НОВОСТЕЙ (ФОН + КЭШ) ---
+function fetchNews() {
+    // 1. Пытаемся мгновенно показать старые новости из памяти телефона
+    try {
+        const cached = localStorage.getItem('rxde_news_cache');
+        if (cached) {
+            newsDB = JSON.parse(cached);
+            // Отрисовываем кэш, только если строка поиска пуста
+            if (!document.getElementById('search').value.trim()) {
+                renderNewsFeed();
+            }
+        }
+    } catch(e) {}
+
+    // 2. Идем в Гугл за свежими данными (в фоне, не мешая сайту)
+    Papa.parse(GOOGLE_NEWS_URL + '&t=' + Date.now(), {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: res => {
+            if (res.data && res.data.length > 0) {
+                let validNews = res.data.filter(item => item.Date && item.Text);
+                
+                // Сортируем по дате (свежие сверху)
+                validNews.sort((a, b) => {
+                    const dateA = a.Date.split('.').reverse().join(''); 
+                    const dateB = b.Date.split('.').reverse().join(''); 
+                    return dateB.localeCompare(dateA); 
+                });
+                
+                newsDB = validNews;
+                
+                // Сохраняем свежие данные в память телефона для следующего раза
+                localStorage.setItem('rxde_news_cache', JSON.stringify(newsDB));
+                
+                // Тихо обновляем экран, только если клиент все еще на стартовом экране
+                const currentQuery = document.getElementById('search') ? document.getElementById('search').value.trim() : '';
+                if (!currentQuery) {
+                    renderNewsFeed();
+                }
+            }
+        }
+    });
+}
+
     // --- 2. ЛОГИКА КУРСА (ОБНОВЛЕНО) ---
 
     function calculateFinalLogic() {
@@ -301,9 +351,12 @@ const audioAdd = new Audio("sounds/add.mp3");
         const modal = document.getElementById('modal');
         const info = document.getElementById('infoOverlay');
         const contact = document.getElementById('contactOverlay');
+        const tgOver = document.getElementById('tgOverlay'); // <--- Добавили
+        
         if (event.target == modal) closeModal();
         if (event.target == info) closeInfo();
         if (event.target == contact) closeContact();
+        if (event.target == tgOver) closeTgOverlay(); // <--- Добавили
     }
 
 /* =========================================
@@ -348,8 +401,58 @@ function render(isNewSearch = false) {
     if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
     list.innerHTML = '';
     const query = filters.search.trim().toLowerCase();
-    if (!query) { document.getElementById('introBlock').style.display = 'block'; return; }
+    
+    // ЕСЛИ ПОИСК ПУСТЫЙ: показываем блок и рисуем внутри него новости
+    if (!query) { 
+        document.getElementById('introBlock').style.display = 'block'; 
+        renderNewsFeed(); 
+        return; 
+    }
+    
+    // ЕСЛИ КЛИЕНТ ИЩЕТ: прячем новости
     document.getElementById('introBlock').style.display = 'none';
+    // --- ВЫВОДИМ СВЕРНУТЫЕ АЛЕРТЫ СВЕРХУ ПОИСКА ---
+    // Ищем новости ТОЛЬКО если введено 3 и более символов!
+    if (query.length >= 3) {
+        const relevantNews = newsDB.filter(n => n.Text && n.Text.toLowerCase().includes(query));
+        
+        if (relevantNews.length > 0) {
+            let newsHtml = ``;
+            relevantNews.forEach(n => {
+                let originalIndex = newsDB.indexOf(n); 
+                
+                // Умный подбор иконки в зависимости от текста тега
+                let tagText = n.Tag || 'Информация';
+                let tagLower = tagText.toLowerCase();
+                let icon = "📌"; // Значок по умолчанию
+                
+                if (tagLower.includes("важн")) icon = "⚠️";
+                else if (tagLower.includes("инфо")) icon = "🔵";
+                else if (tagLower.includes("доставк")) icon = "📦";
+                else if (tagLower.includes("курс")) icon = "💱";
+                
+                // Если вы случайно ввели смайлик прямо в Гугл Таблицу, очищаем его,
+                // чтобы наш скрипт подставил свой ровный и красивый значок
+                let cleanTag = tagText.replace(/[⚠️🔵📦💱📌ℹ️]/g, '').trim();
+
+                newsHtml += `
+                    <div class="mini-alert" onclick="this.classList.toggle('open')">
+                        <div class="mini-alert-head">
+                            <span>${icon} ${cleanTag.toUpperCase()}</span>
+                            <span class="ma-chevron">▼</span>
+                        </div>
+                        <div class="mini-alert-body">
+                            ${formatNewsText(n.Text, originalIndex)} 
+                            <div style="margin-top:8px; font-size:10px; color:#aaa;">
+                                Обновлено: ${n.Date || ''} (${getRelativeTime(n.Date)})
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML += newsHtml;
+        }
+    }
 
     // ГИБКОСТЬ 1: Убираем двоеточия, тире, точки из запроса пользователя
     const cleanQuery = query.replace(/[:.,\-№#]/g, ' ');
@@ -699,9 +802,11 @@ function updateBar() {
                 
                 // 3. СТРОГИЙ ПОРЯДОК: Сначала ждем ВСЕ данные, потом считаем
                 // Функции в Блоке 3 должны быть обернуты в Promise (см. ниже)
+// 3. СТРОГИЙ ПОРЯДОК: Сначала ждем ВСЕ данные, потом считаем
                 Promise.all([
                     fetchCbrRate(), 
-                    fetchGoogleSettings()
+                    fetchGoogleSettings(),
+                    
                 ]).then(() => {
                     console.log("Курсы получены. Запускаем расчет...");
                     calculateFinalLogic(); 
@@ -746,6 +851,9 @@ function updateBar() {
             
 
         });
+
+        // Запускаем загрузку новостей абсолютно независимо, в фоне!
+                fetchNews();
         // Код внутри init -> Papa.parse -> complete -> .then(() => { ... })
 
         // ПРОВЕРКА ПАРАМЕТРОВ URL ПРИ ЗАГРУЗКЕ
@@ -822,7 +930,7 @@ function renderCartItems() {
                 
                 <div style="flex: 1; min-width: 0; padding-right: 8px;">
                     <div class="c-title" style="font-size: 14px; margin-bottom: 2px; line-height: 1.1;">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div>
-                    <div style="font-size: 11px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="font-size: 11px; color: #888; line-height: 1.3; word-break: break-word;">
                         ${r.Hersteller} <span style="opacity:0.5; margin:0 4px;">|</span> PZN: ${r.PZN}
                     </div>
                 </div>
@@ -939,21 +1047,22 @@ function openCart() {
 }
 
     function closeModal() {
-    const modal = document.getElementById('modal');
-    if (!modal) return;
+        const modal = document.getElementById('modal');
+        if (!modal) return;
 
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    window.scrollTo(0, scrollPos);
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        window.scrollTo(0, scrollPos);
 
-    modal.classList.remove('open');
-    setTimeout(() => { 
-        modal.classList.remove('active'); 
-        modal.style.display = 'none';
-        // Принудительно вызываем updateBar, чтобы мини-корзина "проснулась"
-        updateBar(); 
-    }, 300);
-}
+        modal.classList.remove('open');
+        
+        // Ждем 500мс, чтобы красивый CSS-эффект скольжения успел завершиться
+        setTimeout(() => { 
+            modal.classList.remove('active'); 
+            modal.style.display = 'none';
+            updateBar(); 
+        }, 500); // <--- БЫЛО 300, СТАЛО 500
+    }
 
     function addMoreItems() {
         // Просто вызываем штатное закрытие
@@ -1038,6 +1147,9 @@ function switchToContactForm() {
 
 // 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (Теперь без сбоев)
 // ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (СТРОГО РАЗДЕЛЕННАЯ)
+// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (ЕДИНАЯ ДЛЯ ВСЕХ)
+// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (ЕДИНАЯ ДЛЯ ВСЕХ)
+// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (СТРОГО РАЗДЕЛЕННАЯ)
 function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
     const contactInput = document.getElementById('contactDetailsInput');
@@ -1045,10 +1157,18 @@ function submitFinal(app) {
     let finalMsg = "";
 
     // 1. Берем текст в зависимости от текущего режима (Заказ или Вопрос)
+    // 1. Берем текст в зависимости от текущего режима
     if (isQuestionMode) {
-         finalMsg = manualInput ? manualInput.value.trim() : "Вопрос";
+         // Если человек пришел из новости, берем заготовленный текст с контекстом
+         if (typeof currentNewsContext !== 'undefined' && currentNewsContext !== "") {
+             finalMsg = currentNewsContext;
+             currentNewsContext = ""; // Сразу очищаем память для будущих обычных вопросов
+         } else {
+             // Иначе это обычный вопрос из верхнего меню
+             finalMsg = manualInput && manualInput.value.trim() ? manualInput.value.trim() : "Вопрос";
+         }
     } else {
-         finalMsg = currentPreparedText || getShortOrderLink(); // Надежно забираем корзину
+         finalMsg = currentPreparedText || getShortOrderLink(); 
     }
 
     // 2. Логика отправки
@@ -1066,23 +1186,52 @@ function submitFinal(app) {
             }).catch(e => console.log("Отправлено в фон"));
         }
         
-        // ВОТ ЗДЕСЬ РАЗДЕЛЕНИЕ СОБЫТИЙ: Передаем тип в окно успеха!
+        // Передаем тип в окно успеха!
         if (typeof showSuccess === 'function') {
             showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, finalMsg);
         }
         
-        // Очищаем поле вопроса
         if (manualInput) manualInput.value = "";
-        
+        closeContact();
+
     } else if (app === 'wa') {
         window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+        closeContact();
+        closeModal(); // <--- ДОБАВЛЕНО: Закрываем корзину при переходе в WA
+
     } else if (app === 'tg') {
-        try { navigator.clipboard.writeText(finalMsg); } catch(e){}
-        window.open(`https://t.me/${TG_USER}`, '_blank');
+        // --- TELEGRAM (УПРАВЛЯЕМЫЙ ПЕРЕХОД) ---
+        try { 
+            navigator.clipboard.writeText(finalMsg); 
+        } catch(e) { console.log("Копирование недоступно"); }
+        
+        const tgOverlay = document.getElementById('tgOverlay');
+        const titleEl = document.getElementById('tgOverlayTitle');
+        const previewEl = document.getElementById('tgOverlayPreview');
+        
+        if (tgOverlay && titleEl && previewEl) {
+            // Ставим нужный заголовок
+            titleEl.innerText = isQuestionMode ? "ВОПРОС СКОПИРОВАН" : "ЗАКАЗ СКОПИРОВАН";
+            
+            // Чистим текст для превью
+            let cleanMsg = finalMsg;
+            if (isQuestionMode) cleanMsg = cleanMsg.replace("Здравствуйте RxDE, у меня вопрос:\n", "");
+            
+            previewEl.innerText = cleanMsg; 
+            
+            closeContact(); // Прячем меню выбора связи
+            closeModal();   // <--- ДОБАВЛЕНО: Прячем саму корзину!
+            
+            tgOverlay.style.display = 'flex'; // Показываем окно перехода
+            return;
+        } else {
+             window.open(`https://t.me/${TG_USER}`, '_blank');
+             closeContact();
+             closeModal(); // <--- ДОБАВЛЕНО
+        }
     }
-    
-    closeContact();
 }
+
 
 // Открытие формы контакта (кнопка "Другое")
 function openContactForm(preparedText) {
@@ -1115,6 +1264,16 @@ function closeContact() {
             phoneInput.style.textAlign = 'center';
         }, 300);
     }
+}
+
+function closeTgOverlay() {
+    const overlay = document.getElementById('tgOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function goToTelegram() {
+    closeTgOverlay(); // Закрываем окно
+    window.open(`https://t.me/${TG_USER}`, '_blank'); // Открываем телеграм
 }
 
 // 1. Принудительный старт с +7
@@ -1200,51 +1359,6 @@ function initPhoneMask() {
 }
 
 
-// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (Теперь без сбоев)
-function submitFinal(app) {
-    const manualInput = document.getElementById('manualMsgInput');
-    const contactInput = document.getElementById('contactDetailsInput');
-    
-    let finalMsg = "";
-
-    // Берем текст в зависимости от режима (Флаг, который мы поставили выше)
-    if (isQuestionMode) {
-         finalMsg = manualInput ? manualInput.value.trim() : "Вопрос";
-    } else {
-         finalMsg = currentPreparedText;
-    }
-
-    if (app === 'other') {
-        const phone = contactInput.value.trim();
-        finalMsg += "\n\nКонтакт для связи: " + phone;
-        
-        // Фоновая отправка 
-        if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ "text": finalMsg, "phone": phone })
-            }).catch(e => console.log("Отправлено в фон"));
-        }
-        
-        // ВОТ ЗДЕСЬ ИЗМЕНЕНИЕ: Передаем текст вопроса (finalMsg) в окно успеха!
-        if (typeof showSuccess === 'function') {
-            showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, finalMsg);
-        }
-        
-        // Очищаем поле вопроса после успешной отправки
-        if (manualInput) manualInput.value = "";
-        
-    } else if (app === 'wa') {
-        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-    } else if (app === 'tg') {
-        try { navigator.clipboard.writeText(finalMsg); } catch(e){}
-        window.open(`https://t.me/${TG_USER}`, '_blank');
-    }
-    
-    closeContact();
-}
 
     /* =========================================
    BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
@@ -1566,7 +1680,44 @@ function closeSuccess() {
         closeModal(); // Закрываем большую корзину
     }
 }
+/* =========================================
+   BLOCK 11: ПЕРЕХВАТ ЖЕСТА "НАЗАД" (ANDROID)
+   ========================================= */
 
+// 1. При загрузке сайта добавляем "фиктивный" шаг в историю браузера
+window.history.pushState({ noExit: true }, "");
+
+// 2. Слушаем событие свайпа "Назад" (popstate)
+window.addEventListener('popstate', function(event) {
+    
+    // СЦЕНАРИЙ А: Если открыта Корзина -> просто закрываем её (не выходя из приложения)
+    const modal = document.getElementById('modal');
+    if (modal && modal.classList.contains('active')) {
+        closeModal();
+        window.history.pushState({ noExit: true }, ""); // Восстанавливаем ловушку
+        return;
+    }
+
+    // СЦЕНАРИЙ Б: Если открыты окна Связи или FAQ -> закрываем их
+    const contact = document.getElementById('contactOverlay');
+    const info = document.getElementById('infoOverlay');
+    if ((contact && contact.style.display === 'flex') || (info && info.style.display === 'flex')) {
+        closeContact();
+        closeInfo();
+        window.history.pushState({ noExit: true }, "");
+        return;
+    }
+
+    // СЦЕНАРИЙ В: Если всё закрыто, спрашиваем пользователя, хочет ли он уйти
+    const userWantsToExit = confirm("Вы точно хотите выйти из магазина?");
+    if (!userWantsToExit) {
+        // Пользователь передумал — снова ставим ловушку
+        window.history.pushState({ noExit: true }, "");
+    } else {
+        // Пользователь подтвердил выход — закрываем страницу
+        window.history.back();
+    }
+});
 
     /* === ВОССТАНОВЛЕНИЕ КОРЗИНЫ ИЗ ССЫЛКИ === */
 
@@ -1618,9 +1769,295 @@ function tryRestoreSearchFromUrl() {
     }
 }
 
+// --- ВЫЧИСЛЕНИЕ ОТНОСИТЕЛЬНОГО ВРЕМЕНИ (X ДНЕЙ НАЗАД) ---
+// --- 1. УМНЫЙ СЧЕТЧИК ДНЕЙ (ВЧЕРА, СЕГОДНЯ, X ДНЕЙ НАЗАД) ---
+function getRelativeTime(dateStr) {
+    if (!dateStr) return "";
+    
+    // Разбиваем дату вида "22.02.2026"
+    const parts = dateStr.split('.');
+    if (parts.length !== 3) return "";
+    
+    const newsDate = new Date(parts[2], parts[1] - 1, parts[0]);
+    const today = new Date();
+    
+    newsDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = today - newsDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "сегодня";
+    if (diffDays === 1) return "вчера";
+    if (diffDays < 0) return "в будущем"; 
+    
+    let word = "дней";
+    const lastDigit = diffDays % 10;
+    const lastTwoDigits = diffDays % 100;
+    
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        word = "дней";
+    } else if (lastDigit === 1) {
+        word = "день";
+    } else if (lastDigit >= 2 && lastDigit <= 4) {
+        word = "дня";
+    }
+    
+    return `${diffDays} ${word} назад`;
+}
+
+// --- 2. ПОЛНАЯ ФИНАЛЬНАЯ ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (БЛОКНОТ) ---
+function renderNewsFeed() {
+    const introBlock = document.getElementById('introBlock');
+    if (!introBlock) return;
+
+ let html = `
+        <div style="text-align:center; margin: 10px 0 15px 0;">
+            <h2 style="font-size: 18px; margin-bottom: 2px; color: #333;">Deutsche Qualität</h2>
+            <p style="font-size: 13px; color: #888; margin: 0;">Поиск по базе лекарств из Германии</p>
+        </div>
+    `;
+
+    if (!newsDB || newsDB.length === 0) {
+        introBlock.innerHTML = html;
+        return;
+    }
+
+    html += `
+        <div class="notepad-wrap">
+            <div class="notepad-header">Заметки сервиса</div>
+    `;
+
+    const visibleNews = newsDB.slice(0, newsToShow);
+    
+    visibleNews.forEach((item, index) => {
+        if (!item.Text) return; 
+        
+        // А) Подбор иконок и проверка на "Важность"
+        let tagText = item.Tag || 'ИНФО';
+        let tagLower = tagText.toLowerCase();
+        let icon = "📌"; 
+        let isImportant = false;
+        
+        if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
+        else if (tagLower.includes("инфо")) icon = "🔵";
+        else if (tagLower.includes("доставк")) icon = "📦";
+        else if (tagLower.includes("курс")) icon = "💱";
+        
+        let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
+        let tagStyle = isImportant ? 'background: #ffebee; color: #d32f2f;' : '';
+
+        // Б) Получаем красивое относительное время (например, "2 дня назад")
+        let relativeTime = getRelativeTime(item.Date);
+
+        // В) Собираем строку HTML с нашими новыми классами дат и тегов
+        html += `
+            <div class="notepad-item">
+                <div class="np-date-row">
+                    <span class="np-date-text">
+                        ${item.Date || ''} 
+                        <span style="color:#aaa; font-weight:normal; font-size:11px; margin-left:5px;">(${relativeTime})</span>
+                    </span>
+                    <span class="np-tag-top" style="${tagStyle}">${icon} ${cleanTag.toUpperCase()}</span>
+                </div>
+                <div class="np-body">
+                    ${formatNewsText(item.Text, index)} 
+                </div>
+            </div>
+        `;
+    });
+
+    if (newsToShow < newsDB.length) {
+        html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
+    }
+
+    html += `</div>`;
+    introBlock.innerHTML = html;
+}
+// --- ОТРИСОВКА ЖИВОЙ ЛЕНТЫ ---
+// --- ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (СТИЛЬ БЛОКНОТА) ---
+
+// --- УМНЫЙ ФОРМАТИРОВЩИК НОВОСТЕЙ ---
+// --- УМНЫЙ ФОРМАТИРОВЩИК НОВОСТЕЙ ---
+
+
+function formatNewsText(text, index = -1) {
+    if (!text) return "";
+    let formatted = text;
+    
+    // 1. Ищем [vopros] (регистр не важен) и передаем индекс новости
+    formatted = formatted.replace(/\[vopros\]/gi, `<span class="n-inline-btn" onclick="openQuestionFromNews(${index}); event.stopPropagation();">💬 Задать вопрос</span>`);
+    
+    // 2. Ищем #Слова
+    formatted = formatted.replace(/#([a-zA-Zа-яА-ЯёЁ0-9_]+)/g, `<span class="n-hashtag" onclick="setSearchFromNews('$1'); event.stopPropagation();">#$1</span>`);
+    
+    return formatted;
+}
+
+window.setSearchFromNews = function(word) {
+    const input = document.getElementById('search');
+    if (input) {
+        input.value = word;
+        handleInput(); 
+        window.scrollTo(0, 0); 
+    }
+};
+
+let currentNewsContext = ""; // Глобальная память для текста вопроса
+
+// Что происходит при клике на кнопку вопроса в новости
+window.openQuestionFromNews = function(index) {
+    isQuestionMode = true; 
+    
+    // Собираем красивый текст для мессенджера
+    if (index >= 0 && newsDB[index]) {
+        let date = newsDB[index].Date || '';
+        // Убираем сам тег [vopros] из копируемого текста
+        let cleanText = newsDB[index].Text.replace(/\[vopros\]/gi, '').trim();
+        currentNewsContext = `Здравствуйте! У меня вопрос по новости от ${date}:\n«${cleanText}»\n\nМой вопрос: `;
+    } else {
+        currentNewsContext = "";
+    }
+
+    const contactOverlay = document.getElementById('contactOverlay');
+    if (contactOverlay) {
+        contactOverlay.style.display = 'flex'; 
+    }
+};
+
+// --- ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (БЛОКНОТ БЕЗ ДУБЛЕЙ ТЕГОВ) ---
+// --- 1. УМНЫЙ СЧЕТЧИК ДНЕЙ (ВЧЕРА, СЕГОДНЯ, X ДНЕЙ НАЗАД) ---
+function getRelativeTime(dateStr) {
+    if (!dateStr) return "";
+    
+    // Разбиваем дату вида "22.02.2026"
+    const parts = dateStr.split('.');
+    if (parts.length !== 3) return "";
+    
+    const newsDate = new Date(parts[2], parts[1] - 1, parts[0]);
+    const today = new Date();
+    
+    newsDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = today - newsDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "сегодня";
+    if (diffDays === 1) return "вчера";
+    if (diffDays < 0) return "в будущем"; 
+    
+    let word = "дней";
+    const lastDigit = diffDays % 10;
+    const lastTwoDigits = diffDays % 100;
+    
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        word = "дней";
+    } else if (lastDigit === 1) {
+        word = "день";
+    } else if (lastDigit >= 2 && lastDigit <= 4) {
+        word = "дня";
+    }
+    
+    return `${diffDays} ${word} назад`;
+}
+
+// --- 2. ПОЛНАЯ ФИНАЛЬНАЯ ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (БЛОКНОТ) ---
+function renderNewsFeed() {
+    const introBlock = document.getElementById('introBlock');
+    if (!introBlock) return;
+
+    let html = `
+        <h2>Deutsche Qualität.</h2>
+        <p>Введите название препарата в поиске выше.</p>
+    `;
+
+    if (!newsDB || newsDB.length === 0) {
+        introBlock.innerHTML = html;
+        return;
+    }
+
+    html += `
+        <div class="notepad-wrap">
+            <div class="notepad-header">Заметки сервиса</div>
+    `;
+
+    const visibleNews = newsDB.slice(0, newsToShow);
+    
+    visibleNews.forEach((item, index) => {
+        if (!item.Text) return; 
+        
+        // А) Подбор иконок и проверка на "Важность"
+        let tagText = item.Tag || 'ИНФО';
+        let tagLower = tagText.toLowerCase();
+        let icon = "📌"; 
+        let isImportant = false;
+        
+        if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
+        else if (tagLower.includes("инфо")) icon = "🔵";
+        else if (tagLower.includes("доставк")) icon = "📦";
+        else if (tagLower.includes("курс")) icon = "💱";
+        
+        let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
+        let tagStyle = isImportant ? 'background: #ffebee; color: #d32f2f;' : '';
+
+        // Б) Получаем красивое относительное время (например, "2 дня назад")
+        let relativeTime = getRelativeTime(item.Date);
+
+        // В) Собираем строку HTML
+        html += `
+            <div class="notepad-item">
+                <div class="np-date-row">
+                    <span class="np-date-text">
+                        ${item.Date || ''} 
+                        <span style="color:#aaa; font-weight:normal; font-size:11px; margin-left:5px;">(${relativeTime})</span>
+                    </span>
+                    <span class="np-tag-top" style="${tagStyle}">${icon} ${cleanTag.toUpperCase()}</span>
+                </div>
+                <div class="np-body">
+                    ${formatNewsText(item.Text, index)} 
+                </div>
+            </div>
+        `;
+    });
+
+    if (newsToShow < newsDB.length) {
+        html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
+    }
+
+    html += `</div>`;
+    introBlock.innerHTML = html;
+}
+
+function showOldNews() {
+    newsToShow += 5; // Добавляем еще 5 старых постов
+    renderNewsFeed(); 
+}
+
     // ЗАПУСК ПРИЛОЖЕНИЯ
         init();
+        
 
 </script>
+<div id="tgOverlay" class="info-overlay" onclick="closeTgOverlay()">
+    <div class="info-box" onclick="event.stopPropagation()">
+        <div id="tgOverlayTitle" class="info-title" style="color: #0088cc;">СКОПИРОВАНО</div>
+        
+        <div id="tgOverlayPreview" style="background: #f0f4f8; padding: 12px; border-radius: 8px; font-size: 12px; color: #555; margin-bottom: 15px; border-left: 3px solid #0088cc; text-align: left; max-height: 80px; overflow-y: auto; word-break: break-word; line-height: 1.4;">
+        </div>
+        
+        <p style="font-size: 14px; color: #333; margin-bottom: 20px; line-height: 1.4; text-align: center;">
+            Текст находится в буфере обмена.<br>
+            Нажмите кнопку ниже, чтобы открыть чат, и <b>вставьте</b> скопированный текст в поле ввода.
+        </p>
+        
+        <button onclick="goToTelegram()" class="cp-submit-full" style="background: #0088cc; display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; cursor: pointer;">
+            <span style="font-size:18px;">✈️</span> ПЕРЕЙТИ В ТЕЛЕГРАМ
+        </button>
+        
+        <button onclick="closeTgOverlay()" class="s-close-btn" style="background:none; color:#888; margin-top:10px; width: 100%;">ОТМЕНА</button>
+    </div>
+</div>
+
 </body>
 </html>
