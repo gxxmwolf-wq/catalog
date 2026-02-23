@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="theme-color" content="#ffffff">
+    
     <title>RXDE.online — сервис доставки лекарств из Германии</title>
+    <meta name="description" content="Сервис доставки аптечных препаратов из Германии. Заказ онлайн, гарантия подлинности.">
+    
     <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="RXDE.online — Доставка лекарств из Германии">
+    <meta property="og:description" content="Поиск препаратов в лицензированных аптеках Германии. Понятный расчетный курс, почтовая доставка.">
+    <meta property="og:url" content="https://rxde.online/">
+    <meta property="og:site_name" content="RXDE">
+    <meta property="og:image" content="https://rxde.online/og-image.jpg"> 
+
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 </head>
@@ -362,6 +376,24 @@ function fetchNews() {
 /* =========================================
    BLOCK 4: УМНЫЙ ДВИЖОК (NAME + CAT + PZN)
    ========================================= */
+// --- АЛГОРИТМ ЛЕВЕНШТЕЙНА (Вычисление опечаток) ---
+function levenshtein(a, b) {
+    if (a.length === 0) return b.length;
+    if (b.length === 0) return a.length;
+    let matrix = [];
+    for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+    for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) == a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
 
 function getSearchVariations(word) {
     if (!word) return [""];
@@ -413,38 +445,70 @@ function render(isNewSearch = false) {
     document.getElementById('introBlock').style.display = 'none';
     // --- ВЫВОДИМ СВЕРНУТЫЕ АЛЕРТЫ СВЕРХУ ПОИСКА ---
     // Ищем новости ТОЛЬКО если введено 3 и более символов!
+    // --- ВЫВОДИМ СВЕРНУТЫЕ АЛЕРТЫ СВЕРХУ ПОИСКА ---
     if (query.length >= 3) {
-        const relevantNews = newsDB.filter(n => n.Text && n.Text.toLowerCase().includes(query));
+        // 1. Подключаем умный транслитератор (rus/lat) к поиску по новостям!
+        const newsWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+        const newsVars = newsWords.map(w => getSearchVariations(w));
+
+        // 2. Ищем новости с учетом всех возможных раскладок клавиатуры
+        const relevantNews = newsDB.filter(n => {
+            if (!n.Text) return false;
+            const textPool = n.Text.toLowerCase();
+            return newsVars.every(vars => vars.some(v => textPool.includes(v)));
+        });
         
         if (relevantNews.length > 0) {
             let newsHtml = ``;
             relevantNews.forEach(n => {
                 let originalIndex = newsDB.indexOf(n); 
                 
-                // Умный подбор иконки в зависимости от текста тега
                 let tagText = n.Tag || 'Информация';
                 let tagLower = tagText.toLowerCase();
-                let icon = "📌"; // Значок по умолчанию
+                let icon = "📌"; 
+                let isImportant = false;
                 
-                if (tagLower.includes("важн")) icon = "⚠️";
-                else if (tagLower.includes("инфо")) icon = "🔵";
-                else if (tagLower.includes("доставк")) icon = "📦";
-                else if (tagLower.includes("курс")) icon = "💱";
+                let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
+
+                // 1. Считаем возраст новости
+                let ageDays = getNewsAge(n.Date);
+
+                // 2. Умная логика (Архив или Свежая)
+                if (ageDays > 30) {
+                    icon = "⚪"; 
+                    cleanTag = "АРХИВ";
+                    isImportant = false; // Отключаем красную тревогу
+                } else {
+                    // Ставим единые кружки для свежих новостей
+                    if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
+                    else if (tagLower.includes("инфо")) { icon = "🔵"; }
+                    else if (tagLower.includes("доставк")) { icon = "📦"; }
+                    else if (tagLower.includes("курс")) { icon = "💱"; }
+                }
+
+                // 3. Красим фон и заголовок плашки
+                let alertBg = '';
+                let headColor = '';
                 
-                // Если вы случайно ввели смайлик прямо в Гугл Таблицу, очищаем его,
-                // чтобы наш скрипт подставил свой ровный и красивый значок
-                let cleanTag = tagText.replace(/[⚠️🔵📦💱📌ℹ️]/g, '').trim();
+                if (isImportant) {
+                    alertBg = 'background: #fff5f5; border-color: #ffcdd2;'; // Красноватый для ВАЖНО
+                    headColor = 'color: #d32f2f;';
+                } else if (ageDays > 30) {
+                    alertBg = 'background: #fdfdfd; border-color: #eee;'; // Бледный для АРХИВА
+                    headColor = 'color: #999;';
+                }
 
                 newsHtml += `
-                    <div class="mini-alert" onclick="this.classList.toggle('open')">
-                        <div class="mini-alert-head">
+                    <div class="mini-alert" onclick="this.classList.toggle('open')" style="${alertBg}">
+                        <div class="mini-alert-head" style="${headColor}">
                             <span>${icon} ${cleanTag.toUpperCase()}</span>
                             <span class="ma-chevron">▼</span>
                         </div>
                         <div class="mini-alert-body">
                             ${formatNewsText(n.Text, originalIndex)} 
-                            <div style="margin-top:8px; font-size:10px; color:#aaa;">
-                                Обновлено: ${n.Date || ''} (${getRelativeTime(n.Date)})
+                           <div style="margin-top:10px; font-size:11px; color:#444;">
+                                Обновлено: <span style="color:#000; font-weight:700;">${n.Date || ''}</span> 
+                                <span style="color:#000; font-weight:700; text-decoration: underline; text-underline-offset: 2px;">(${getRelativeTime(n.Date)})</span>
                             </div>
                         </div>
                     </div>
@@ -455,32 +519,62 @@ function render(isNewSearch = false) {
     }
 
     // ГИБКОСТЬ 1: Убираем двоеточия, тире, точки из запроса пользователя
+   // ГИБКОСТЬ 1: Убираем двоеточия, тире, точки из запроса пользователя
     const cleanQuery = query.replace(/[:.,\-№#]/g, ' ');
     const queryWords = cleanQuery.split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
-    const results = db.filter(r => {
+    let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
         
-        // ГИБКОСТЬ 2: Защита от потерянного нуля (подстраховка от Excel)
         let pznStr = '';
         if (r.PZN) {
             const pznNum = String(r.PZN).replace(/\D/g, ''); 
             if (pznNum) {
-                const noZeros = parseInt(pznNum, 10).toString(); // Вариант без нулей (8767020)
-                const full8 = noZeros.padStart(8, '0'); // Вариант строго 8 цифр (08767020)
+                const noZeros = parseInt(pznNum, 10).toString();
+                const full8 = noZeros.padStart(8, '0');
                 pznStr = `pzn pzn${full8} ${full8} pzn${noZeros} ${noZeros}`;
             }
         }
         
-        // Собираем текст в единый пул
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${pznStr}`.toLowerCase();
         
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
+    // --- МАГИЯ 3: НЕЧЕТКИЙ ПОИСК (ЕСЛИ СТРОГИЙ НИЧЕГО НЕ НАШЕЛ) ---
+    let isFuzzyMatch = false;
+    if (results.length === 0 && queryWords.length > 0) {
+        const firstWord = queryWords[0].toLowerCase(); // Берем главное введенное слово
+        
+        // Включаем спасение только для слов от 4 букв
+        if (firstWord.length >= 4) {
+            const fuzzyMatches = db.filter(r => {
+                if (!r || !r.Name_DE) return false;
+                
+                // Проверяем опечатки только в названиях (чтобы не цеплять категории)
+                const nameWords = `${r.Name_DE} ${r.Name_RU||''}`.toLowerCase().replace(/[.,()/]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+                
+                return nameWords.some(w => {
+                    // Отсекаем слова, которые сильно отличаются по длине
+                    if (Math.abs(w.length - firstWord.length) > 2) return false; 
+                    
+                    let dist = levenshtein(firstWord, w);
+                    
+                    // Жесткое правило: 1 опечатка для слов до 6 букв, 2 опечатки для длинных
+                    let allowed = firstWord.length <= 6 ? 1 : 2; 
+                    return dist <= allowed;
+                });
+            });
+
+            if (fuzzyMatches.length > 0) {
+                results = fuzzyMatches;
+                isFuzzyMatch = true;
+            }
+        }
+    }
+
     if (results.length === 0) {
-// ... дальше ваш код без изменений ( failText, кнопка Добавить, карточки товара и т.д.)
         if (query.length < 2) return;
         
         const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
@@ -505,7 +599,17 @@ function render(isNewSearch = false) {
         return;
     }
 
+    // ВЫВОДИМ ПРЕДУПРЕЖДЕНИЕ, ЕСЛИ СРАБОТАЛА КОРРЕКЦИЯ ОПЕЧАТКИ
+    if (isFuzzyMatch) {
+        list.innerHTML += `
+            <div style="margin: 10px 10px 15px 10px; padding: 12px; background: #fffdf5; border: 1px solid #ffeb3b; border-radius: 8px; font-size: 13px; color: #b99d00; text-align: center; font-weight: 600;">
+                 Точного совпадения нет. Возможно, вы искали это:
+            </div>
+        `;
+    }
+
     results.forEach(r => {
+        // ... (дальше идет ваш стандартный вывод карточек товаров, ничего не меняем)
         if (!r.Price) return;
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
@@ -538,7 +642,6 @@ function renderSuggestions(inputText) {
 
     const currentMatches = db.filter(r => {
         if (!r.Name_DE) return false;
-        // Добавляем PZN в пул фильтрации подсказок
         const pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${pznStr}`.toLowerCase();
         return queryVars.every(vars => vars.some(v => pool.includes(v)));
@@ -551,20 +654,19 @@ function renderSuggestions(inputText) {
     const lastFragment = isTrailingSpace ? "" : userWords[userWords.length - 1];
     const lastVars = getSearchVariations(lastFragment);
 
-    // НОВОЕ: Проверяем, ищет ли клиент PZN
     const isPznSearch = lastFragment.includes('pzn') || /\d/.test(lastFragment);
     const typedDigits = lastFragment.replace(/\D/g, ''); 
 
     currentMatches.forEach(r => {
-        // 1. Логика генерации чипсов с номерами PZN
+        // 1. Подсказки для PZN (добавляем сразу с префиксом)
         if (isPznSearch && r.PZN) {
             const pznStr = String(r.PZN);
             if (isTrailingSpace || pznStr.startsWith(typedDigits) || typedDigits === '') {
-                candidates.add(pznStr);
+                candidates.add(`PZN ${pznStr}`);
             }
         }
 
-        // 2. Стандартная логика для текстовых слов
+        // 2. Подсказки для слов (ТЕПЕРЬ ПРОПУСКАЮТ ДОЗИРОВКИ!)
         const sourceText = isRussianInput 
             ? `${r.Category || ''} ${r.Name_RU || ''}` 
             : `${r.Category || ''} ${r.Name_DE}`;
@@ -572,34 +674,40 @@ function renderSuggestions(inputText) {
         const words = sourceText.replace(/[.,()/]/g, ' ').toLowerCase().split(/\s+/).filter(w => w.length > 1);
         
         words.forEach(word => {
-            if (typedMeanings.has(word)) return;
+            if (typedMeanings.has(word)) return; // Слово уже введено
+            
             const wordVars = getSearchVariations(word);
             const isMatch = isTrailingSpace ? true : lastVars.some(lv => lv && wordVars.some(wv => wv.startsWith(lv)));
-            if (isMatch && !/\d/.test(word)) { 
-                candidates.add(word);
+            
+            // Пропускаем только если слово один-в-один совпадает с номером PZN, чтобы не дублировать
+            if (isMatch && word !== String(r.PZN)) { 
+                candidates.add(word); // <-- Убрали блокировку цифр!
             }
         });
     });
 
-    // Ограничиваем до 5 штук и выводим
-    Array.from(candidates).sort((a,b) => (/\d/.test(a) ? -1 : 1) || a.length - b.length).slice(0, 5).forEach(word => {
+    // Сортируем: сначала номера PZN, затем самые короткие слова
+    Array.from(candidates).sort((a,b) => {
+        const isPznA = a.startsWith('PZN');
+        const isPznB = b.startsWith('PZN');
+        if (isPznA && !isPznB) return -1;
+        if (!isPznA && isPznB) return 1;
+        return a.length - b.length;
+    }).slice(0, 5).forEach(word => {
         const chip = document.createElement('div');
         chip.className = 's-chip';
-        
-        // Красиво форматируем чипс
-        const isDigitOnly = /^\d+$/.test(word);
-        chip.innerText = isDigitOnly ? `PZN ${word}` : word;
+        chip.innerText = word; // "50mg", "filmtabletten" и т.д.
 
         chip.onclick = () => {
             const input = document.getElementById('search');
             let wordsArr = input.value.trim().split(/\s+/);
-            const finalWord = isDigitOnly ? `PZN ${word}` : word;
             
             if (isTrailingSpace) {
-                wordsArr.push(finalWord); 
+                wordsArr.push(word); 
             } else {
-                wordsArr[wordsArr.length - 1] = finalWord;
+                wordsArr[wordsArr.length - 1] = word;
             }
+            
             input.value = wordsArr.join(' ') + ' ';
             handleInput();
             input.focus();
@@ -1769,18 +1877,30 @@ function tryRestoreSearchFromUrl() {
     }
 }
 
-// --- ВЫЧИСЛЕНИЕ ОТНОСИТЕЛЬНОГО ВРЕМЕНИ (X ДНЕЙ НАЗАД) ---
-// --- 1. УМНЫЙ СЧЕТЧИК ДНЕЙ (ВЧЕРА, СЕГОДНЯ, X ДНЕЙ НАЗАД) ---
+/* =========================================
+   BLOCK 12: ЖИВАЯ ЛЕНТА И НОВОСТИ (ЧИСТОВИК)
+   ========================================= */
+
+// --- ВЫЧИСЛЕНИЕ ВОЗРАСТА НОВОСТИ В ДНЯХ ---
+function getNewsAge(dateStr) {
+    if (!dateStr) return 0;
+    const parts = dateStr.split('.');
+    if (parts.length !== 3) return 0;
+    const newsDate = new Date(parts[2], parts[1] - 1, parts[0]);
+    const today = new Date();
+    newsDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return Math.floor((today - newsDate) / (1000 * 60 * 60 * 24));
+}
+
+// 1. Умный счетчик дней
 function getRelativeTime(dateStr) {
     if (!dateStr) return "";
-    
-    // Разбиваем дату вида "22.02.2026"
     const parts = dateStr.split('.');
     if (parts.length !== 3) return "";
     
     const newsDate = new Date(parts[2], parts[1] - 1, parts[0]);
     const today = new Date();
-    
     newsDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
     
@@ -1795,23 +1915,52 @@ function getRelativeTime(dateStr) {
     const lastDigit = diffDays % 10;
     const lastTwoDigits = diffDays % 100;
     
-    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
-        word = "дней";
-    } else if (lastDigit === 1) {
-        word = "день";
-    } else if (lastDigit >= 2 && lastDigit <= 4) {
-        word = "дня";
-    }
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) { word = "дней"; } 
+    else if (lastDigit === 1) { word = "день"; } 
+    else if (lastDigit >= 2 && lastDigit <= 4) { word = "дня"; }
     
     return `${diffDays} ${word} назад`;
 }
 
-// --- 2. ПОЛНАЯ ФИНАЛЬНАЯ ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (БЛОКНОТ) ---
+// 2. Форматировщик текста (хештеги и вопросы)
+function formatNewsText(text, index = -1) {
+    if (!text) return "";
+    let formatted = text;
+    formatted = formatted.replace(/\[vopros\]/gi, `<span class="n-inline-btn" onclick="openQuestionFromNews(${index}); event.stopPropagation();">💬 Задать вопрос</span>`);
+    formatted = formatted.replace(/#([a-zA-Zа-яА-ЯёЁ0-9_]+)/g, `<span class="n-hashtag" onclick="setSearchFromNews('$1'); event.stopPropagation();">#$1</span>`);
+    return formatted;
+}
+
+window.setSearchFromNews = function(word) {
+    const input = document.getElementById('search');
+    if (input) {
+        input.value = word;
+        handleInput(); 
+        window.scrollTo(0, 0); 
+    }
+};
+
+let currentNewsContext = ""; 
+window.openQuestionFromNews = function(index) {
+    isQuestionMode = true; 
+    if (index >= 0 && newsDB[index]) {
+        let date = newsDB[index].Date || '';
+        let cleanText = newsDB[index].Text.replace(/\[vopros\]/gi, '').trim();
+        currentNewsContext = `Здравствуйте! У меня вопрос по новости от ${date}:\n«${cleanText}»\n\nМой вопрос: `;
+    } else {
+        currentNewsContext = "";
+    }
+    const contactOverlay = document.getElementById('contactOverlay');
+    if (contactOverlay) contactOverlay.style.display = 'flex'; 
+};
+
+// 3. Главная отрисовка ленты с КОМПАКТНОЙ шапкой
 function renderNewsFeed() {
     const introBlock = document.getElementById('introBlock');
     if (!introBlock) return;
 
- let html = `
+    // Компактная шапка
+    let html = `
         <div style="text-align:center; margin: 10px 0 15px 0;">
             <h2 style="font-size: 18px; margin-bottom: 2px; color: #333;">Deutsche Qualität</h2>
             <p style="font-size: 13px; color: #888; margin: 0;">Поиск по базе лекарств из Германии</p>
@@ -1833,30 +1982,45 @@ function renderNewsFeed() {
     visibleNews.forEach((item, index) => {
         if (!item.Text) return; 
         
-        // А) Подбор иконок и проверка на "Важность"
         let tagText = item.Tag || 'ИНФО';
         let tagLower = tagText.toLowerCase();
         let icon = "📌"; 
         let isImportant = false;
         
-        if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
-        else if (tagLower.includes("инфо")) icon = "🔵";
-        else if (tagLower.includes("доставк")) icon = "📦";
-        else if (tagLower.includes("курс")) icon = "💱";
-        
         let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
-        let tagStyle = isImportant ? 'background: #ffebee; color: #d32f2f;' : '';
+        
+        // Считаем возраст новости
+        let ageDays = getNewsAge(item.Date);
 
-        // Б) Получаем красивое относительное время (например, "2 дня назад")
+        // ЛОГИКА АРХИВАЦИИ
+        if (ageDays > 30) {
+            icon = "⚪"; 
+            cleanTag = "АРХИВ";
+            isImportant = false; // Снимаем статус "Важно"
+        } else {
+            // Если новость свежая (до 30 дней)
+            if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
+            else if (tagLower.includes("инфо")) icon = "🔵";
+            else if (tagLower.includes("доставк")) icon = "📦";
+            else if (tagLower.includes("курс")) icon = "💱";
+        }
+        
+        // Красим рамку и текст в зависимости от статуса (для газетного стиля)
+        let tagStyle = '';
+        if (isImportant) {
+            tagStyle = 'color: #d32f2f; border-color: #ffcdd2; background: #fff5f5 !important;'; // Ярко-красный
+        } else if (ageDays > 30) {
+            tagStyle = 'color: #aaa; border-color: #eee;'; // Блекло-серый для архива
+        }
+
         let relativeTime = getRelativeTime(item.Date);
 
-        // В) Собираем строку HTML с нашими новыми классами дат и тегов
         html += `
             <div class="notepad-item">
                 <div class="np-date-row">
-                    <span class="np-date-text">
+                 <span class="np-date-text" style="color: #333;">
                         ${item.Date || ''} 
-                        <span style="color:#aaa; font-weight:normal; font-size:11px; margin-left:5px;">(${relativeTime})</span>
+                        <span style="color:#000; font-weight:800; font-size:11px; margin-left:5px; text-decoration: underline; text-underline-offset: 2px;">(${relativeTime})</span>
                     </span>
                     <span class="np-tag-top" style="${tagStyle}">${icon} ${cleanTag.toUpperCase()}</span>
                 </div>
@@ -1865,161 +2029,7 @@ function renderNewsFeed() {
                 </div>
             </div>
         `;
-    });
-
-    if (newsToShow < newsDB.length) {
-        html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
-    }
-
-    html += `</div>`;
-    introBlock.innerHTML = html;
-}
-// --- ОТРИСОВКА ЖИВОЙ ЛЕНТЫ ---
-// --- ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (СТИЛЬ БЛОКНОТА) ---
-
-// --- УМНЫЙ ФОРМАТИРОВЩИК НОВОСТЕЙ ---
-// --- УМНЫЙ ФОРМАТИРОВЩИК НОВОСТЕЙ ---
-
-
-function formatNewsText(text, index = -1) {
-    if (!text) return "";
-    let formatted = text;
-    
-    // 1. Ищем [vopros] (регистр не важен) и передаем индекс новости
-    formatted = formatted.replace(/\[vopros\]/gi, `<span class="n-inline-btn" onclick="openQuestionFromNews(${index}); event.stopPropagation();">💬 Задать вопрос</span>`);
-    
-    // 2. Ищем #Слова
-    formatted = formatted.replace(/#([a-zA-Zа-яА-ЯёЁ0-9_]+)/g, `<span class="n-hashtag" onclick="setSearchFromNews('$1'); event.stopPropagation();">#$1</span>`);
-    
-    return formatted;
-}
-
-window.setSearchFromNews = function(word) {
-    const input = document.getElementById('search');
-    if (input) {
-        input.value = word;
-        handleInput(); 
-        window.scrollTo(0, 0); 
-    }
-};
-
-let currentNewsContext = ""; // Глобальная память для текста вопроса
-
-// Что происходит при клике на кнопку вопроса в новости
-window.openQuestionFromNews = function(index) {
-    isQuestionMode = true; 
-    
-    // Собираем красивый текст для мессенджера
-    if (index >= 0 && newsDB[index]) {
-        let date = newsDB[index].Date || '';
-        // Убираем сам тег [vopros] из копируемого текста
-        let cleanText = newsDB[index].Text.replace(/\[vopros\]/gi, '').trim();
-        currentNewsContext = `Здравствуйте! У меня вопрос по новости от ${date}:\n«${cleanText}»\n\nМой вопрос: `;
-    } else {
-        currentNewsContext = "";
-    }
-
-    const contactOverlay = document.getElementById('contactOverlay');
-    if (contactOverlay) {
-        contactOverlay.style.display = 'flex'; 
-    }
-};
-
-// --- ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (БЛОКНОТ БЕЗ ДУБЛЕЙ ТЕГОВ) ---
-// --- 1. УМНЫЙ СЧЕТЧИК ДНЕЙ (ВЧЕРА, СЕГОДНЯ, X ДНЕЙ НАЗАД) ---
-function getRelativeTime(dateStr) {
-    if (!dateStr) return "";
-    
-    // Разбиваем дату вида "22.02.2026"
-    const parts = dateStr.split('.');
-    if (parts.length !== 3) return "";
-    
-    const newsDate = new Date(parts[2], parts[1] - 1, parts[0]);
-    const today = new Date();
-    
-    newsDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    
-    const diffTime = today - newsDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) return "сегодня";
-    if (diffDays === 1) return "вчера";
-    if (diffDays < 0) return "в будущем"; 
-    
-    let word = "дней";
-    const lastDigit = diffDays % 10;
-    const lastTwoDigits = diffDays % 100;
-    
-    if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
-        word = "дней";
-    } else if (lastDigit === 1) {
-        word = "день";
-    } else if (lastDigit >= 2 && lastDigit <= 4) {
-        word = "дня";
-    }
-    
-    return `${diffDays} ${word} назад`;
-}
-
-// --- 2. ПОЛНАЯ ФИНАЛЬНАЯ ОТРИСОВКА ЖИВОЙ ЛЕНТЫ (БЛОКНОТ) ---
-function renderNewsFeed() {
-    const introBlock = document.getElementById('introBlock');
-    if (!introBlock) return;
-
-    let html = `
-        <h2>Deutsche Qualität.</h2>
-        <p>Введите название препарата в поиске выше.</p>
-    `;
-
-    if (!newsDB || newsDB.length === 0) {
-        introBlock.innerHTML = html;
-        return;
-    }
-
-    html += `
-        <div class="notepad-wrap">
-            <div class="notepad-header">Заметки сервиса</div>
-    `;
-
-    const visibleNews = newsDB.slice(0, newsToShow);
-    
-    visibleNews.forEach((item, index) => {
-        if (!item.Text) return; 
-        
-        // А) Подбор иконок и проверка на "Важность"
-        let tagText = item.Tag || 'ИНФО';
-        let tagLower = tagText.toLowerCase();
-        let icon = "📌"; 
-        let isImportant = false;
-        
-        if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
-        else if (tagLower.includes("инфо")) icon = "🔵";
-        else if (tagLower.includes("доставк")) icon = "📦";
-        else if (tagLower.includes("курс")) icon = "💱";
-        
-        let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
-        let tagStyle = isImportant ? 'background: #ffebee; color: #d32f2f;' : '';
-
-        // Б) Получаем красивое относительное время (например, "2 дня назад")
-        let relativeTime = getRelativeTime(item.Date);
-
-        // В) Собираем строку HTML
-        html += `
-            <div class="notepad-item">
-                <div class="np-date-row">
-                    <span class="np-date-text">
-                        ${item.Date || ''} 
-                        <span style="color:#aaa; font-weight:normal; font-size:11px; margin-left:5px;">(${relativeTime})</span>
-                    </span>
-                    <span class="np-tag-top" style="${tagStyle}">${icon} ${cleanTag.toUpperCase()}</span>
-                </div>
-                <div class="np-body">
-                    ${formatNewsText(item.Text, index)} 
-                </div>
-            </div>
-        `;
-    });
+    })
 
     if (newsToShow < newsDB.length) {
         html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
@@ -2030,7 +2040,7 @@ function renderNewsFeed() {
 }
 
 function showOldNews() {
-    newsToShow += 5; // Добавляем еще 5 старых постов
+    newsToShow += 5;
     renderNewsFeed(); 
 }
 
