@@ -70,35 +70,34 @@
 
 <div id="modal" class="modal" onclick="closeModal()">
     <div class="m-box" onclick="event.stopPropagation()">
-<<div class="modal-head" style="align-items: flex-end; padding-bottom: 8px; padding-top: calc(env(safe-area-inset-top, 0px) + 25px); display: flex; justify-content: space-between;">>
-    
-    <div class="m-head-add-more" onclick="addMoreItems()" style="margin-bottom: -4px; flex: 1.5; display: flex; align-items: center;">
-        <span class="m-chevron" style="font-size: 28px; margin-right: 3px; line-height: 0.8;">‹</span>
-        <span class="m-add-txt" style="letter-spacing: 0.5px;">ДОБАВИТЬ ПОЗИЦИИ</span>
-    </div>
+        
+        <div class="modal-head">
+            <div class="m-head-add-more" onclick="addMoreItems()" style="flex: 1.5; display: flex; align-items: center; cursor: pointer;">
+                <span class="m-chevron" style="font-size: 26px; margin-right: 4px; line-height: 0.8; color: var(--p);">‹</span>
+                <span class="m-add-txt" style="letter-spacing: 0.5px; color: var(--p); font-weight: 700; font-size: 13px;">ДОБАВИТЬ ПОЗИЦИИ</span>
+            </div>
 
-    <div class="m-head-info" style="flex: 1; text-align: center;">
-        <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase;">Заказ: ...</div>
-        <div style="font-size: 13px; color: #000; font-weight: 400;">Расчетный: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
-    </div>
+            <div class="m-head-info" style="flex: 1; text-align: center;">
+                <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase;">Заказ: ...</div>
+                <div style="font-size: 13px; color: #000; font-weight: 400;">Расчетный: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
+            </div>
 
-    <div onclick="closeModal()" class="close-x" style="margin-bottom: -8px; flex: 0.8; justify-content: flex-end;">✕</div>
-    
-</div>
-        <div class="m-scroll-area" style="padding: 0 20px; flex: 1; overflow-y: auto;">
-    <div id="cartItems"></div>
-</div>
+            <div onclick="closeModal()" class="close-x" style="flex: 0.8; display: flex; justify-content: flex-end; cursor: pointer; font-size: 22px; font-weight: 300; color: #000;">✕</div>
+        </div>
+        <div class="m-scroll-area" style="padding: 0 15px; flex: 1; overflow-y: auto;">
+            <div id="cartItems"></div>
+        </div>
         
         <div class="modal-footer-sticky">
             <div class="footer-total-compact" style="margin-bottom: 15px;">
-                <span>Итого к оплате:</span>
                 <span id="footerTotalSum" style="color:var(--p); font-weight: 900;">0 €</span>
             </div>
             
-           <button onclick="openContactForm(getShortOrderLink())" style="width: 100%; background: var(--p); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: transform 0.2s;">
-                ОФОРМИТЬ ЗАКАЗ <span>›</span>
+            <button onclick="openContactForm(getShortOrderLink())" style="width: 100%; background: var(--p); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: transform 0.2s;">
+                ОФОРМИТЬ ЗАКАЗ <span style="font-size: 18px;">›</span>
             </button>
         </div>
+        
     </div>
 </div>
 
@@ -120,19 +119,42 @@
         <textarea id="manualMsgInput" class="universal-textarea" style="display:none;" placeholder="Напишите ваш вопрос..."></textarea>
         
         <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px;">Для отправки заявки выберите удобный канал связи:</div>
+            <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px;">Для отправки выберите удобный канал связи:</div>
             
-            <button onclick="submitFinal('wa')" style="width: 100%; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; transition: opacity 0.2s;">
+            <button onclick="submitFinal('wa')" style="width: 100%; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;">
                 WhatsApp
             </button>
             
-            <button onclick="submitFinal('tg')" style="width: 100%; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; transition: opacity 0.2s;">
+            <button onclick="submitFinal('tg')" style="width: 100%; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;">
                 Telegram
             </button>
+
+            <button onclick="submitFinal('email')" style="width: 100%; height: 50px; background: #333; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;">
+                E-mail
+            </button>
             
-            <button onclick="switchToContactForm()" style="width: 100%; height: 50px; background: #f8f9fa; color: #333; border: 1px solid #dcdcdc; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+            <button onclick="switchToContactForm()" style="width: 100%; height: 50px; background: #f8f9fa; color: #333; border: 1px solid #dcdcdc; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">
                 Оставить номер телефона
             </button>
+        </div>
+
+        <div id="phoneFormWrap" style="display:none; text-align: center;">
+            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Укажите номер. Мы перезвоним.</p>
+            
+            <div id="phoneInputContainer" style="position: relative; display: flex; align-items: center; background: #f2f2f2; border-radius: 12px; padding: 4px; border: 2px solid transparent; transition: border 0.3s;">
+                
+                <input type="tel" id="contactDetailsInput" class="cp-input-inline" 
+                       placeholder="+7" 
+                       onfocus="setCursorPosition(this)"
+                       style="flex: 1; height: 48px; font-size: 20px; font-weight: 600; text-align: left; padding-left: 15px; border: none; background: transparent; outline: none; letter-spacing: 1px; color: #000;">
+                
+                <button id="btnOtherSend" class="cp-submit-full" 
+                        onclick="submitFinal('other')" 
+                        style="width: 44px; height: 44px; background: #ccc; color: #fff; border: none; border-radius: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: not-allowed; transition: 0.3s; margin: 0;" 
+                        disabled>➔</button>
+            </div>
+            
+            <div id="phoneHint" style="font-size: 11px; color: #aaa; margin-top: 8px; font-weight: 400;">Введите 11 цифр</div>
         </div>
 
         <div id="phoneFormWrap" style="display:none; text-align: center;">
@@ -483,8 +505,8 @@ function render(isNewSearch = false) {
              let ageDays = getNewsAge(n.Date);
                 let capsuleBg = '';
 
-                // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ
-                if (ageDays > 30) {
+                // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ (СМЕСТИЛИ НА 90 ДНЕЙ)
+                if (ageDays > 90) {
                     cleanTag = "АРХИВНАЯ ИНФОРМАЦИЯ";
                     capsuleBg = '#8E8E93'; // Серый
                 } else {
@@ -1287,6 +1309,7 @@ function switchToContactForm() {
 }
 
 // 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
+// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
 function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
     const contactInput = document.getElementById('contactDetailsInput');
@@ -1328,6 +1351,14 @@ function submitFinal(app) {
     } else if (app === 'wa') {
         window.open(`https://wa.me/${typeof WA_PHONE !== 'undefined' ? WA_PHONE : ''}?text=${encodeURIComponent(finalMsg)}`, '_blank');
         closeContact();
+        closeModal(); // Закрываем корзину
+
+    } else if (app === 'email') {
+        // --- НОВАЯ ЛОГИКА ДЛЯ ПОЧТЫ ---
+        const subject = encodeURIComponent(isQuestionMode ? "Вопрос с сайта RxDE" : "Новый заказ RxDE");
+        window.location.href = `mailto:med.zakaz.de@gmail.com?subject=${subject}&body=${encodeURIComponent(finalMsg)}`;
+        closeContact();
+        closeModal(); // Закрываем корзину
 
     } else if (app === 'tg') {
         try { 
@@ -1356,6 +1387,7 @@ function submitFinal(app) {
         } else {
              window.open(`https://t.me/${typeof TG_USER !== 'undefined' ? TG_USER : ''}`, '_blank');
              closeContact();
+             closeModal();
         }
     }
 }
@@ -1412,25 +1444,45 @@ function checkInputState() {
     const input = document.getElementById('contactDetailsInput');
     const btn = document.getElementById('btnOtherSend');
     const hint = document.getElementById('phoneHint');
+    const container = document.getElementById('phoneInputContainer'); // Рамка вокруг поля
     if (!input || !btn) return;
 
     const digits = input.value.replace(/\D/g, ''); 
     const isComplete = digits.length === 11;
 
     btn.disabled = !isComplete;
-    btn.style.opacity = isComplete ? "1" : "0.5";
-    btn.style.transform = isComplete ? "scale(1.02)" : "scale(1)";
 
-    if (hint) {
-        if (digits.length === 0) {
-            hint.innerText = "Введите только цифры (11 цифр)";
-            hint.style.color = "#aaa";
-        } else if (digits.length < 11) {
-            hint.innerText = `Осталось ввести цифр: ${11 - digits.length}`;
-            hint.style.color = "#aaa";
-        } else {
-            hint.innerText = "Номер заполнен верно";
-            hint.style.color = "green";
+    if (isComplete) {
+        // Когда номер введен полностью:
+        btn.style.background = 'var(--p)'; // Синий фирменный цвет
+        btn.style.cursor = 'pointer';
+        btn.innerHTML = '✓'; // Появляется галочка
+        
+        if (container) container.style.borderColor = 'var(--p)'; // Зажигаем рамку
+        
+        if (hint) {
+            hint.innerText = "Готово! Нажмите галочку ➔";
+            hint.style.color = "var(--p)";
+            hint.style.fontWeight = "700";
+        }
+    } else {
+        // Пока номер не полный:
+        btn.style.background = '#ccc';
+        btn.style.cursor = 'not-allowed';
+        btn.innerHTML = '➔';
+        
+        if (container) container.style.borderColor = 'transparent';
+        
+        if (hint) {
+            if (digits.length === 0) {
+                hint.innerText = "Введите 11 цифр";
+                hint.style.color = "#aaa";
+                hint.style.fontWeight = "400";
+            } else {
+                hint.innerText = `Осталось цифр: ${11 - digits.length}`;
+                hint.style.color = "#aaa";
+                hint.style.fontWeight = "400";
+            }
         }
     }
 }
@@ -1975,18 +2027,18 @@ function renderNewsFeed() {
         let capsuleBg = '';
         
         // Считаем возраст новости
-        // Считаем возраст новости
+       // Считаем возраст новости
         let ageDays = getNewsAge(item.Date);
 
-        // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ
-        if (ageDays > 30) {
+        // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ (СМЕСТИЛИ НА 90 ДНЕЙ)
+        if (ageDays > 90) { 
             cleanTag = "АРХИВНАЯ ИНФОРМАЦИЯ";
             capsuleBg = '#8E8E93'; // Серый (Архив)
         } else {
             if (tagLower.includes("важн")) { 
                 capsuleBg = '#D32F2F'; // Темно-красный (Важно)
             } else { 
-                capsuleBg = '#007AFF'; // Синий (Инфо, курс, почта и всё остальное)
+                capsuleBg = '#007AFF'; // Синий (Инфо, курс, почта)
             }
         }
 

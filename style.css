@@ -1139,3 +1139,20 @@ body {
 #miniCart {
     z-index: 9000 !important;
 }
+/* =========================================
+   ПАТЧ: БЕЗОПАСНАЯ ЗОНА ДЛЯ ШАПКИ КОРЗИНЫ (SAMSUNG S24 / iPHONE)
+   ========================================= */
+.modal-head {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    /* МАГИЯ: Берем либо челку iPhone, либо 45px для Android (что больше) */
+    padding-top: max(env(safe-area-inset-top), 45px) !important;
+    padding-bottom: 12px !important;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+    background: #fff !important;
+    border-bottom: 1px solid #eee !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
