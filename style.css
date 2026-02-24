@@ -1119,4 +1119,23 @@ body {
 #search:focus::placeholder {
     opacity: 0.5 !important;
 }
+/* =========================================
+   ПАТЧ: ИЕРАРХИЯ СЛОЕВ (Z-INDEX)
+   ========================================= */
+/* Окна предпросмотра и Telegram всегда выше всех! */
+#contactOverlay, 
+#tgOverlay, 
+#infoOverlay, 
+#successPopup {
+    z-index: 999999 !important;
+}
 
+/* Обычная большая корзина чуть ниже */
+#modal {
+    z-index: 99999 !important;
+}
+
+/* Зеленая плавающая мини-корзина лежит ПОД всеми окнами */
+#miniCart {
+    z-index: 9000 !important;
+}

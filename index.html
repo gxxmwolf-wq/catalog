@@ -1231,6 +1231,10 @@ function openQuestion() {
     
     document.getElementById('contactOverlay').style.display = 'flex';
     setTimeout(() => { if (manualInput) manualInput.focus(); }, 100);
+
+    // --- ПРЯЧЕМ МИНИ-КОРЗИНУ ---
+    const mini = document.getElementById('miniCart');
+    if (mini) mini.style.display = 'none';
 }
 
 // 2. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА (Из корзины)
@@ -1258,6 +1262,10 @@ function openContactForm(preparedText) {
     setTimeout(() => {
         document.getElementById('contactOverlay').style.display = 'flex';
     }, 400); // Ждем плавного закрытия корзины
+
+    // --- ПРЯЧЕМ МИНИ-КОРЗИНУ ---
+    const mini = document.getElementById('miniCart');
+    if (mini) mini.style.display = 'none';
 }
 
 // Переключение на форму ввода телефона
@@ -1340,6 +1348,11 @@ function submitFinal(app) {
             
             closeContact(); 
             tgOverlay.style.display = 'flex'; 
+
+            // --- ПРЯЧЕМ МИНИ-КОРЗИНУ В ТЕЛЕГРАМЕ ---
+            const mini = document.getElementById('miniCart');
+            if (mini) mini.style.display = 'none';
+
         } else {
              window.open(`https://t.me/${typeof TG_USER !== 'undefined' ? TG_USER : ''}`, '_blank');
              closeContact();
@@ -1366,12 +1379,20 @@ function closeContact() {
                 phoneInput.style.textAlign = 'center';
             }
         }, 300);
+
+        // --- ВОЗВРАЩАЕМ МИНИ-КОРЗИНУ ---
+        const mini = document.getElementById('miniCart');
+        if (mini) mini.style.display = '';
     }
 }
 
 function closeTgOverlay() {
     const overlay = document.getElementById('tgOverlay');
     if (overlay) overlay.style.display = 'none';
+
+    // --- ВОЗВРАЩАЕМ МИНИ-КОРЗИНУ ---
+    const mini = document.getElementById('miniCart');
+    if (mini) mini.style.display = '';
 }
 
 function goToTelegram() {
