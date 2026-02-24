@@ -157,28 +157,6 @@
             <div id="phoneHint" style="font-size: 11px; color: #aaa; margin-top: 8px; font-weight: 400;">Введите 11 цифр</div>
         </div>
 
-        <div id="phoneFormWrap" style="display:none; text-align: center;">
-            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
-                Укажите номер телефона. Мы свяжемся с вами для уточнения деталей.
-            </p>
-            
-            <div style="position: relative; margin-bottom: 15px;">
-                <input type="tel" id="contactDetailsInput" class="cp-input-inline" 
-                       placeholder="+79001234567" 
-                       onfocus="setCursorPosition(this)"
-                       style="width:100%; height: 55px; font-size: 22px; text-align: center; border: none; background: #f2f2f2; border-radius: 12px; outline: none; transition: 0.2s;">
-                
-                <div id="phoneHint" style="font-size: 11px; color: #aaa; margin-top: 8px; font-weight: 400;">
-                    Введите только цифры (11 цифр)
-                </div>
-            </div>
-            
-            <button id="btnOtherSend" class="cp-submit-full" 
-                    onclick="submitFinal('other')" 
-                    style="background: var(--p); color: #fff; border: none; width: 100%; height: 50px; border-radius: 12px; font-weight: 700; transition: 0.3s; cursor: pointer; opacity: 0.5;" 
-                    disabled>ОТПРАВИТЬ ЗАЯВКУ</button>
-        </div>
-
         <button onclick="closeContact()" class="s-close-btn" style="background:none; color:#888; margin-top:15px; width: 100%;">НАЗАД К ПОКУПКАМ</button>
     </div>
 </div>
@@ -193,15 +171,21 @@
     <button onclick="closeSuccess()" class="s-close-btn">ПОНЯТНО</button>
 </div>
 <script>
-    /* =========================================
+/* =========================================
    BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
    ========================================= */
 const LOCAL_DB_URL = 'db.csv'; 
 const GOOGLE_SETTINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=23735297&single=true&output=csv';
 const CBR_API_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
-const KURS_FALLBACK = 100, TG_USER = 'remed01', WA_PHONE = '79650302556';
+
+// --- НАШИ НОВЫЕ НАСТРОЙКИ СВЯЗИ ---
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzt5YgGSpMhttps://script.google.com/macros/s/AKfycbxafE-uXAgaGFLN9QENHgNuEWlUVGJbfYXEn4rL0N8MGHXi1pGNbrVSoRByUBMSHgMA/execc-qksd4YqS1Wutni-iJg57a9j5vlDrHcv0TRFhhAgyKWVDRuP_gm8bKvc/exec'; 
+const WA_PHONE = '79650302556'; 
+const TG_USER  = 'remed01'; // Без собачки и кавычек!
+const KURS_FALLBACK = 100;
 
 let db = [], cart = [], rateCalc = 100, shipEur = 50, filters = { search: '' };
+// ... дальше идут ваши let currentPreparedText и т.д.
 let currentPreparedText = ""; // ОБЪЯВЛЕНО ОДИН РАЗ
 let contactMode = 'question';
 let cbrRateData = 0, googleSettings = null; // Добавили недостающие переменные
@@ -911,7 +895,7 @@ function updateBar() {
 
     // --- 7.1 НАСТРОЙКИ ---
     // (Если нужны для Google Sheets, оставьте, если нет - можно убрать)
-    const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/АК.../exec'; 
+   
 
     /* =========================================
        BLOCK 7.2: ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
@@ -1308,14 +1292,14 @@ function switchToContactForm() {
     }
 }
 
-// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
+
 // 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
 function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
     const contactInput = document.getElementById('contactDetailsInput');
     let finalMsg = "";
 
-    // Берем текст
+    // 1. Собираем текст сообщения
     if (isQuestionMode) {
          if (typeof currentNewsContext !== 'undefined' && currentNewsContext !== "") {
              finalMsg = currentNewsContext;
@@ -1327,40 +1311,51 @@ function submitFinal(app) {
          finalMsg = currentPreparedText || getShortOrderLink(); 
     }
 
-    // Распределяем по каналам
-    if (app === 'other') {
-        const phone = contactInput.value.trim();
-        finalMsg += "\n\nКонтакт для связи: " + phone;
-        
+    // Вспомогательная функция для фоновой отправки
+    const sendToBackground = (sourceLabel, phoneNumber = "Без номера (Клик)") => {
         if (typeof GOOGLE_SCRIPT_URL !== 'undefined' && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ "text": finalMsg, "phone": phone })
-            }).catch(e => console.log("Отправлено в фон"));
+                body: new URLSearchParams({ 
+                    "text": `[${sourceLabel}] ${finalMsg}`, 
+                    "phone": phoneNumber 
+                })
+            }).catch(e => console.log("Фоновая отправка не удалась"));
         }
+    };
+
+    // 2. Распределяем по каналам
+    if (app === 'other') {
+        const phone = contactInput.value.trim();
+        const fullMsgWithPhone = finalMsg + "\n\nКонтакт для связи: " + phone;
+        
+        sendToBackground("ПРЯМАЯ ЗАЯВКА", phone); // Отправка в Гугл
         
         if (typeof showSuccess === 'function') {
-            showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, finalMsg);
+            showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, fullMsgWithPhone);
         }
         
         if (manualInput) manualInput.value = "";
         closeContact();
 
     } else if (app === 'wa') {
+        sendToBackground("ПЕРЕХОД В WHATSAPP"); // Фоновый сигнал
         window.open(`https://wa.me/${typeof WA_PHONE !== 'undefined' ? WA_PHONE : ''}?text=${encodeURIComponent(finalMsg)}`, '_blank');
         closeContact();
-        closeModal(); // Закрываем корзину
+        closeModal();
 
     } else if (app === 'email') {
-        // --- НОВАЯ ЛОГИКА ДЛЯ ПОЧТЫ ---
+        sendToBackground("ПЕРЕХОД В EMAIL"); // Фоновый сигнал
         const subject = encodeURIComponent(isQuestionMode ? "Вопрос с сайта RxDE" : "Новый заказ RxDE");
         window.location.href = `mailto:med.zakaz.de@gmail.com?subject=${subject}&body=${encodeURIComponent(finalMsg)}`;
         closeContact();
-        closeModal(); // Закрываем корзину
+        closeModal();
 
     } else if (app === 'tg') {
+        sendToBackground("ПЕРЕХОД В TELEGRAM"); // Фоновый сигнал
+        
         try { 
             navigator.clipboard.writeText(finalMsg); 
         } catch(e) { console.log("Копирование недоступно"); }
@@ -1371,19 +1366,15 @@ function submitFinal(app) {
         
         if (tgOverlay && titleEl && previewEl) {
             titleEl.innerText = isQuestionMode ? "ВОПРОС СКОПИРОВАН" : "ЗАКАЗ СКОПИРОВАН";
-            
             let cleanMsg = finalMsg;
             if (isQuestionMode) cleanMsg = cleanMsg.replace("Здравствуйте RxDE, у меня вопрос:\n", "");
             
             previewEl.innerText = cleanMsg; 
-            
             closeContact(); 
             tgOverlay.style.display = 'flex'; 
 
-            // --- ПРЯЧЕМ МИНИ-КОРЗИНУ В ТЕЛЕГРАМЕ ---
             const mini = document.getElementById('miniCart');
             if (mini) mini.style.display = 'none';
-
         } else {
              window.open(`https://t.me/${typeof TG_USER !== 'undefined' ? TG_USER : ''}`, '_blank');
              closeContact();
