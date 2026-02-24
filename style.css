@@ -51,15 +51,42 @@ body {
     background: #fff;
 }
 
+/* Верхнее меню: кликабельные элементы */
 .tm-item {
     cursor: pointer;
     text-transform: uppercase;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 12px; /* Сделали 12px, чтобы длинная фраза влезла на узких экранах */
     color: var(--p);
-    transition: opacity 0.2s;
+    padding: 4px 6px; /* Добавили отступы для красивой подсветки */
+    border-radius: 6px; /* Слегка скруглили края подсветки */
+    white-space: nowrap; /* Запрещаем тексту переноситься на вторую строку */
+    transition: all 0.2s ease;
+    user-select: none;
 }
-.tm-item:active { opacity: 0.6; }
+
+/* Деловой Hover (мягкая серо-синяя подсветка при наведении мыши) */
+.tm-item:hover { 
+    background-color: #f0f4f8; 
+    color: #004475; 
+}
+
+/* Эффект нажатия пальцем (тап на телефоне) */
+.tm-item:active { 
+    background-color: #e3edf5; 
+    transform: scale(0.98); 
+}
+
+/* Строгий разделитель | */
+.tm-sep {
+    color: #d0d0d0;
+    font-weight: 300;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    margin: 0 2px; /* Микро-отступ вокруг палочки */
+}
 
 .rates-compact {
     font-size: 11px; color: #999; 
@@ -261,32 +288,72 @@ body {
     transition: transform 0.1s, background 0.2s;
 }
 
+/* =========================================
+   КНОПКИ В КАРТОЧКЕ ТОВАРА И КОРЗИНЕ
+   ========================================= */
+
+.btn-capsule-add { 
+    background: var(--p); 
+    color: #fff; 
+    border: none; 
+    padding: 0 14px; 
+    height: 30px; 
+    border-radius: 15px; 
+    font-weight: 700; 
+    font-size: 12px; 
+    cursor: pointer; 
+    transition: transform 0.1s, background 0.2s;
+}
+
 .btn-capsule-add:active { 
     background: #004475; 
     transform: scale(0.95); 
 }
 
-/* Кнопки плюс/минус */
+/* ЗАЩИТА ОТ РАЗРЫВА: Заставляем кнопки всегда стоять в один ряд */
+.qty-capsule {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap; /* Строгий запрет на перенос вниз */
+    white-space: nowrap;
+}
+
+/* Кнопки плюс/минус (Возвращаем стабильную центровку без flex) */
 .q-btn { 
     width: 26px; 
     height: 26px; 
+    box-sizing: border-box; /* Рамка растет внутрь */
     border-radius: 50%; 
-    border: none; 
+    border: 1px solid #333; /* Элегантная черная окантовка */
     background: #fff; 
-    color: var(--p); 
+    color: #333; 
     font-weight: 900; 
     font-size: 16px; 
-    
-    /* КУРСОР-РУКА */
     cursor: pointer; 
+    
+    /* Классическая центровка (надежнее, чем flex) */
+    text-align: center;
+    line-height: 24px; /* 26px общей высоты минус 2px на верхнюю и нижнюю рамку */
+    padding: 0;
+    margin: 0;
+    
+    transition: background 0.2s, transform 0.1s;
 }
 
 .q-btn:active { 
-    background: #e0e0e0; 
+    background: #f0f0f0; 
     transform: scale(0.9); 
 }
 
-.q-val { padding: 0 8px; min-width: 18px; text-align: center; font-weight: 800; font-size: 14px; }
+/* Сама цифра количества */
+.q-val { 
+    padding: 0 8px; 
+    min-width: 18px; 
+    text-align: center; 
+    font-weight: 800; 
+    font-size: 14px; 
+    color: #000; 
+}
 
 /* Единый блок цен */
 .sum-box {
@@ -906,16 +973,20 @@ body {
 }
 
 /* Тег новости (Строгая рамка вместо серой заливки) */
+/* Тег новости (iPhone Капсула) */
+/* Тег новости (iPhone Капсула) */
 .np-tag-top {
     font-size: 10px;
     font-weight: 800;
-    color: #444;
+    color: #ffffff !important; 
     text-transform: uppercase;
-    background: transparent !important; /* Убираем цветные фоны для строгости */
-    border: 1px solid #ccc;
-    padding: 2px 6px;
-    border-radius: 2px;
-}
+    padding: 4px 10px; 
+    border-radius: 12px; 
+    border: none; 
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+}   
 
 /* Текст новости (Главная фишка - шрифт с засечками) */
 .np-body {

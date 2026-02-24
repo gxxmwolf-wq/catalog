@@ -28,11 +28,13 @@
         <div class="sticky">
     <div class="top-menu-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #fff; border-bottom: 1px solid #f0f0f0;">
         
-        <div style="display: flex; gap: 10px; font-weight: 700; font-size: 12px; color: var(--p);">
-            <div class="tm-item" onclick="showInfo('faq')" style="cursor: pointer;">FAQ</div>
-            <div class="tm-item" onclick="openQuestion()" style="cursor: pointer;">ВОПРОС</div>
-            <div class="tm-item" onclick="showInfo('exp')" style="cursor: pointer;">ОПЫТ</div>
-        </div>
+    <div style="display: flex; align-items: center;">
+        <div class="tm-item" onclick="showInfo('exp')">ОПЫТ</div>
+        <span class="tm-sep">|</span>
+        <div class="tm-item" onclick="showInfo('faq')">FAQ</div>
+        <span class="tm-sep">|</span>
+         <div class="tm-item" onclick="openQuestion()">НАПИСАТЬ ВОПРОС</div>
+    </div>      
 
         <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
             <div style="white-space: nowrap;">ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
@@ -93,11 +95,9 @@
                 <span id="footerTotalSum" style="color:var(--p); font-weight: 900;">0 €</span>
             </div>
             
-            <div class="grid-3-btns">
-                 <button class="b-cell wa" onclick="currentPreparedText = getShortOrderLink(); submitFinal('wa')"><span>WhatsApp</span></button>
-                 <button class="b-cell tg" onclick="currentPreparedText = getShortOrderLink(); submitFinal('tg')"><span>Telegram</span></button>
-                 <button class="b-cell other" onclick="openContactForm(getShortOrderLink())"><span>Другое</span></button>
-            </div>
+           <button onclick="openContactForm(getShortOrderLink())" style="width: 100%; background: var(--p); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: transform 0.2s;">
+                ОФОРМИТЬ ЗАКАЗ <span>›</span>
+            </button>
         </div>
     </div>
 </div>
@@ -110,16 +110,29 @@
     </div>
 </div>
 
-<div id="contactOverlay" class="info-overlay" onclick="closeContact()">
-    <div class="info-box contact-box" onclick="event.stopPropagation()">
-        <div id="contactTitle" class="info-title">СВЯЗАТЬСЯ</div>
+<div id="contactOverlay" class="info-overlay" onclick="closeContact()" style="z-index: 9999;">
+    <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;">
+        <div id="contactTitle" class="info-title" style="text-align: center; font-size: 16px;">ПРЕДПРОСМОТР</div>
+        
+        <div id="orderPreviewBox" style="background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; color: #333; margin-bottom: 20px; white-space: pre-wrap; word-break: break-word; line-height: 1.4; max-height: 250px; overflow-y: auto;">
+        </div>
         
         <textarea id="manualMsgInput" class="universal-textarea" style="display:none;" placeholder="Напишите ваш вопрос..."></textarea>
         
-        <div id="contactButtonsGrid" class="grid-3-btns">
-            <button class="b-cell wa" onclick="submitFinal('wa')"><span>WhatsApp</span></button>
-            <button class="b-cell tg" onclick="submitFinal('tg')"><span>Telegram</span></button>
-            <button class="b-cell other" onclick="switchToContactForm()"><span>Другое</span></button>
+        <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px;">Для отправки заявки выберите удобный канал связи:</div>
+            
+            <button onclick="submitFinal('wa')" style="width: 100%; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; transition: opacity 0.2s;">
+                WhatsApp
+            </button>
+            
+            <button onclick="submitFinal('tg')" style="width: 100%; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; letter-spacing: 0.3px; cursor: pointer; transition: opacity 0.2s;">
+                Telegram
+            </button>
+            
+            <button onclick="switchToContactForm()" style="width: 100%; height: 50px; background: #f8f9fa; color: #333; border: 1px solid #dcdcdc; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                Оставить номер телефона
+            </button>
         </div>
 
         <div id="phoneFormWrap" style="display:none; text-align: center;">
@@ -144,7 +157,7 @@
                     disabled>ОТПРАВИТЬ ЗАЯВКУ</button>
         </div>
 
-        <button onclick="closeContact()" class="s-close-btn" style="background:none; color:#888; margin-top:15px; width: 100%;">ОТМЕНА</button>
+        <button onclick="closeContact()" class="s-close-btn" style="background:none; color:#888; margin-top:15px; width: 100%;">НАЗАД К ПОКУПКАМ</button>
     </div>
 </div>
 
@@ -313,25 +326,25 @@ function fetchNews() {
         return; 
     }
     
-    const data = {
+const data = {
         faq: { 
             t: 'ЧАСТЫЕ ВОПРОСЫ', 
-            c: `<div style="font-size: 13px; line-height: 1.5; color: #444; display: flex; flex-direction: column; gap: 12px;">
-                    <div><b style="color: #000;">Откуда препараты?</b><br>Мы закупаем товары исключительно в физических лицензированных аптеках Германии. Никаких сомнительных складов или посредников.</div>
-                    <div><b style="color: #000;">Какие гарантии?</b><br>Вы оплачиваете заказ безналичным переводом — у вас всегда остается банковская выписка с подтверждением платежа (в отличие от передачи «денег в конверте»). Мы гарантируем 100% подлинность препаратов и предоставляем международный трек-номер для отслеживания.</div>
-                    <div><b style="color: #000;">Сроки и тарифы доставки?</b><br>Посылки идут почтой от 12 до 25 дней. Почтовый тариф фиксированный — ${shipEur} €, независимо от количества позиций (до 5 кг).</div>
-                    <div><b style="color: #000;">Как оплатить?</b><br>Оплата принимается в рублях (перевод на карту РФ или по СБП). Расчетный курс фиксируется в момент согласования заявки с менеджером.</div>
+            c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
+                    <div><b style="color: #000; font-size: 16px;">Откуда препараты?</b><br>Мы закупаем товары исключительно в физических лицензированных аптеках Германии. Никаких сомнительных складов или посредников.</div>
+                    <div><b style="color: #000; font-size: 16px;">Какие гарантии?</b><br>Вы оплачиваете заказ безналичным переводом — у вас всегда остается банковская выписка с подтверждением платежа (в отличие от передачи «денег в конверте»). Мы гарантируем 100% подлинность препаратов и предоставляем международный трек-номер для отслеживания.</div>
+                    <div><b style="color: #000; font-size: 16px;">Сроки и тарифы доставки?</b><br>Посылки идут почтой от 12 до 25 дней. Почтовый тариф фиксированный — ${shipEur} €, независимо от количества позиций (до 5 кг).</div>
+                    <div><b style="color: #000; font-size: 16px;">Как оплатить?</b><br>Оплата принимается в рублях (перевод на карту РФ или по СБП). Расчетный курс фиксируется в момент согласования заявки с менеджером.</div>
                 </div>` 
         },
         exp: { 
             t: 'НАШ ОПЫТ', 
-            c: `<div style="font-size: 13px; line-height: 1.5; color: #444; display: flex; flex-direction: column; gap: 12px;">
+            c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
                     <div style="text-align: center; margin-bottom: 5px;">
-                        <span style="font-size: 30px;">🇩🇪</span>
+                        <span style="font-size: 36px;">🇩🇪</span>
                     </div>
-                    <div><b style="color: var(--p);">RxDE.online</b> — это сервис бережной доставки лекарств из Германии с <b>опытом работы более 10 лет</b>. Мы знаем специфику закупки редких рецептурных (RX) препаратов и обеспечиваем их надежную транспортировку.</div>
+                    <div><b style="color: var(--p); font-size: 16px;">RxDE.online</b> — это сервис бережной доставки лекарств из Германии с <b style="color: #000;">опытом работы более 10 лет</b>. Мы знаем специфику закупки редких рецептурных (RX) препаратов и обеспечиваем их надежную транспортировку.</div>
                     <div>Наша главная задача — в вашем лице приобрести постоянного клиента и получать искренние рекомендации. Мы не используем однодневные схемы со сменой контактов, телефонов или карт.</div>
-                    <div>Мы работаем открыто: указанная стоимость в Евро <b>уже включает все расходы</b> сервиса. Вы видите финальную цену и понятный расчетный курс.</div>
+                    <div>Мы работаем открыто: указанная стоимость в Евро <b style="color: #000;">уже включает все расходы</b> сервиса. Вы видите финальную цену и понятный расчетный курс.</div>
                 </div>` 
         }
     };
@@ -463,50 +476,39 @@ function render(isNewSearch = false) {
             relevantNews.forEach(n => {
                 let originalIndex = newsDB.indexOf(n); 
                 
-                let tagText = n.Tag || 'Информация';
+                let tagText = n.Tag || 'ИНФО';
                 let tagLower = tagText.toLowerCase();
-                let icon = "📌"; 
-                let isImportant = false;
-                
                 let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
 
-                // 1. Считаем возраст новости
-                let ageDays = getNewsAge(n.Date);
+             let ageDays = getNewsAge(n.Date);
+                let capsuleBg = '';
 
-                // 2. Умная логика (Архив или Свежая)
+                // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ
                 if (ageDays > 30) {
-                    icon = "⚪"; 
-                    cleanTag = "АРХИВ";
-                    isImportant = false; // Отключаем красную тревогу
+                    cleanTag = "АРХИВНАЯ ИНФОРМАЦИЯ";
+                    capsuleBg = '#8E8E93'; // Серый
                 } else {
-                    // Ставим единые кружки для свежих новостей
-                    if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
-                    else if (tagLower.includes("инфо")) { icon = "🔵"; }
-                    else if (tagLower.includes("доставк")) { icon = "📦"; }
-                    else if (tagLower.includes("курс")) { icon = "💱"; }
+                    if (tagLower.includes("важн")) { 
+                        capsuleBg = '#D32F2F'; // Темно-красный
+                    } else { 
+                        capsuleBg = '#007AFF'; // Синий (всё остальное)
+                    }
                 }
 
-                // 3. Красим фон и заголовок плашки
-                let alertBg = '';
-                let headColor = '';
+                // Сама плашка-аккордеон остается белой и нейтральной
+                let alertBg = 'background: #ffffff; border-color: #e5e5e5;'; 
                 
-                if (isImportant) {
-                    alertBg = 'background: #fff5f5; border-color: #ffcdd2;'; // Красноватый для ВАЖНО
-                    headColor = 'color: #d32f2f;';
-                } else if (ageDays > 30) {
-                    alertBg = 'background: #fdfdfd; border-color: #eee;'; // Бледный для АРХИВА
-                    headColor = 'color: #999;';
-                }
-
                 newsHtml += `
                     <div class="mini-alert" onclick="this.classList.toggle('open')" style="${alertBg}">
-                        <div class="mini-alert-head" style="${headColor}">
-                            <span>${icon} ${cleanTag.toUpperCase()}</span>
-                            <span class="ma-chevron">▼</span>
+                        <div class="mini-alert-head" style="color: #333; padding: 10px 15px;">
+                            <span style="background: ${capsuleBg}; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;">
+                                ${cleanTag.toUpperCase()}
+                            </span>
+                            <span class="ma-chevron" style="color: #999;">▼</span>
                         </div>
                         <div class="mini-alert-body">
                             ${formatNewsText(n.Text, originalIndex)} 
-                           <div style="margin-top:10px; font-size:11px; color:#444;">
+                            <div style="margin-top:10px; font-size:11px; color:#444; font-family: 'Georgia', serif;">
                                 Обновлено: <span style="color:#000; font-weight:700;">${n.Date || ''}</span> 
                                 <span style="color:#000; font-weight:700; text-decoration: underline; text-underline-offset: 2px;">(${getRelativeTime(n.Date)})</span>
                             </div>
@@ -515,7 +517,7 @@ function render(isNewSearch = false) {
                 `;
             });
             list.innerHTML += newsHtml;
-        }
+        }   
     }
 
     // ГИБКОСТЬ 1: Убираем двоеточия, тире, точки из запроса пользователя
@@ -1203,42 +1205,62 @@ function generateOrderID() {
     return `${d}${m}${y}-${h}${min}`;
 }
 
-// Глобальный флаг режима (добавьте его мысленно, он будет работать и так)
 let isQuestionMode = false; 
 
-// 1. Открытие окна "ВОПРОС" из меню
+// 1. ОТКРЫТИЕ ОКНА "ВОПРОС" (Из меню)
 function openQuestion() {
-    isQuestionMode = true; // Скрипт запомнил: мы задаем вопрос!
-    
-    const overlay = document.getElementById('contactOverlay');
+    isQuestionMode = true; 
+    closeModal(); // Гасим корзину, чтобы не было слоевой каши
+
     document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
+    
+    // Прячем предпросмотр (если был), показываем поле ввода
+    const previewBox = document.getElementById('orderPreviewBox');
+    if (previewBox) previewBox.style.display = 'none';
     
     const manualInput = document.getElementById('manualMsgInput');
     if (manualInput) {
         manualInput.style.display = 'block';
-        // Если поле пустое или там старый текст, ставим приветствие
         if (manualInput.value.length < 10) {
             manualInput.value = "Здравствуйте RxDE, у меня вопрос:\n";
         }
     }
     
     document.getElementById('phoneFormWrap').style.display = 'none';
-    document.getElementById('contactButtonsGrid').style.display = 'grid';
+    document.getElementById('contactButtonsGrid').style.display = 'flex'; 
     
-    overlay.style.display = 'flex';
+    document.getElementById('contactOverlay').style.display = 'flex';
     setTimeout(() => { if (manualInput) manualInput.focus(); }, 100);
 }
 
-// 2. Открытие формы контакта для Корзины (кнопка "Другое" в корзине)
+// 2. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА (Из корзины)
 function openContactForm(preparedText) {
-    isQuestionMode = false; // Скрипт запомнил: мы оформляем заказ!
+    isQuestionMode = false; 
     currentPreparedText = preparedText;
     
-    switchToContactForm();
-    document.getElementById('contactOverlay').style.display = 'flex';
+    closeModal(); // Убираем проблему слоев
+    
+    document.getElementById('contactTitle').innerText = "ПРЕДПРОСМОТР ЗАЯВКИ";
+    
+    const manualInput = document.getElementById('manualMsgInput');
+    if (manualInput) manualInput.style.display = 'none';
+    
+    // Выводим текст для клиента
+    const previewBox = document.getElementById('orderPreviewBox');
+    if (previewBox) {
+        previewBox.style.display = 'block';
+        previewBox.innerText = preparedText;
+    }
+    
+    document.getElementById('contactButtonsGrid').style.display = 'flex';
+    document.getElementById('phoneFormWrap').style.display = 'none';
+    
+    setTimeout(() => {
+        document.getElementById('contactOverlay').style.display = 'flex';
+    }, 400); // Ждем плавного закрытия корзины
 }
 
-// Переключение на ввод телефона
+// Переключение на форму ввода телефона
 function switchToContactForm() {
     document.getElementById('contactTitle').innerText = "ВАШ ТЕЛЕФОН";
     document.getElementById('contactButtonsGrid').style.display = 'none';
@@ -1250,42 +1272,36 @@ function switchToContactForm() {
     document.getElementById('btnOtherSend').style.display = 'block'; 
     
     const phoneInput = document.getElementById('contactDetailsInput');
-    setTimeout(() => phoneInput.focus(), 100);
+    if (phoneInput) {
+        phoneInput.style.display = 'block';
+        setTimeout(() => phoneInput.focus(), 100);
+    }
 }
 
-// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (Теперь без сбоев)
-// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (СТРОГО РАЗДЕЛЕННАЯ)
-// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (ЕДИНАЯ ДЛЯ ВСЕХ)
-// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (ЕДИНАЯ ДЛЯ ВСЕХ)
-// ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (СТРОГО РАЗДЕЛЕННАЯ)
+// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
 function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
     const contactInput = document.getElementById('contactDetailsInput');
-    
     let finalMsg = "";
 
-    // 1. Берем текст в зависимости от текущего режима (Заказ или Вопрос)
-    // 1. Берем текст в зависимости от текущего режима
+    // Берем текст
     if (isQuestionMode) {
-         // Если человек пришел из новости, берем заготовленный текст с контекстом
          if (typeof currentNewsContext !== 'undefined' && currentNewsContext !== "") {
              finalMsg = currentNewsContext;
-             currentNewsContext = ""; // Сразу очищаем память для будущих обычных вопросов
+             currentNewsContext = ""; 
          } else {
-             // Иначе это обычный вопрос из верхнего меню
              finalMsg = manualInput && manualInput.value.trim() ? manualInput.value.trim() : "Вопрос";
          }
     } else {
          finalMsg = currentPreparedText || getShortOrderLink(); 
     }
 
-    // 2. Логика отправки
+    // Распределяем по каналам
     if (app === 'other') {
         const phone = contactInput.value.trim();
         finalMsg += "\n\nКонтакт для связи: " + phone;
         
-        // Фоновая отправка 
-        if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
+        if (typeof GOOGLE_SCRIPT_URL !== 'undefined' && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
             fetch(GOOGLE_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -1294,7 +1310,6 @@ function submitFinal(app) {
             }).catch(e => console.log("Отправлено в фон"));
         }
         
-        // Передаем тип в окно успеха!
         if (typeof showSuccess === 'function') {
             showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, finalMsg);
         }
@@ -1303,12 +1318,10 @@ function submitFinal(app) {
         closeContact();
 
     } else if (app === 'wa') {
-        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+        window.open(`https://wa.me/${typeof WA_PHONE !== 'undefined' ? WA_PHONE : ''}?text=${encodeURIComponent(finalMsg)}`, '_blank');
         closeContact();
-        closeModal(); // <--- ДОБАВЛЕНО: Закрываем корзину при переходе в WA
 
     } else if (app === 'tg') {
-        // --- TELEGRAM (УПРАВЛЯЕМЫЙ ПЕРЕХОД) ---
         try { 
             navigator.clipboard.writeText(finalMsg); 
         } catch(e) { console.log("Копирование недоступно"); }
@@ -1318,58 +1331,40 @@ function submitFinal(app) {
         const previewEl = document.getElementById('tgOverlayPreview');
         
         if (tgOverlay && titleEl && previewEl) {
-            // Ставим нужный заголовок
             titleEl.innerText = isQuestionMode ? "ВОПРОС СКОПИРОВАН" : "ЗАКАЗ СКОПИРОВАН";
             
-            // Чистим текст для превью
             let cleanMsg = finalMsg;
             if (isQuestionMode) cleanMsg = cleanMsg.replace("Здравствуйте RxDE, у меня вопрос:\n", "");
             
             previewEl.innerText = cleanMsg; 
             
-            closeContact(); // Прячем меню выбора связи
-            closeModal();   // <--- ДОБАВЛЕНО: Прячем саму корзину!
-            
-            tgOverlay.style.display = 'flex'; // Показываем окно перехода
-            return;
+            closeContact(); 
+            tgOverlay.style.display = 'flex'; 
         } else {
-             window.open(`https://t.me/${TG_USER}`, '_blank');
+             window.open(`https://t.me/${typeof TG_USER !== 'undefined' ? TG_USER : ''}`, '_blank');
              closeContact();
-             closeModal(); // <--- ДОБАВЛЕНО
         }
     }
 }
 
-
-// Открытие формы контакта (кнопка "Другое")
-function openContactForm(preparedText) {
-    currentPreparedText = preparedText;
-    switchToContactForm();
-    document.getElementById('contactOverlay').style.display = 'flex';
-}
-
-function switchToContactForm() {
-    document.getElementById('contactTitle').innerText = "ВАШ ТЕЛЕФОН";
-    document.getElementById('contactButtonsGrid').style.display = 'none';
-    document.getElementById('phoneFormWrap').style.display = 'block';
-    
-    const phoneInput = document.getElementById('contactDetailsInput');
-    phoneInput.style.display = 'block';
-    setTimeout(() => phoneInput.focus(), 100);
-}
-
-// Закрытие окон связи и сброс состояния
+// 4. ЗАКРЫТИЕ ОКОН И СБРОС
 function closeContact() {
     const overlay = document.getElementById('contactOverlay');
     if (overlay) {
         overlay.style.display = 'none';
         setTimeout(() => {
             document.getElementById('contactTitle').innerText = "СВЯЗАТЬСЯ";
-            document.getElementById('contactButtonsGrid').style.display = 'grid';
+            document.getElementById('contactButtonsGrid').style.display = 'flex'; 
             document.getElementById('phoneFormWrap').style.display = 'none';
+            
+            const previewBox = document.getElementById('orderPreviewBox');
+            if (previewBox) previewBox.style.display = 'none';
+
             const phoneInput = document.getElementById('contactDetailsInput');
-            phoneInput.value = '';
-            phoneInput.style.textAlign = 'center';
+            if (phoneInput) {
+                phoneInput.value = '';
+                phoneInput.style.textAlign = 'center';
+            }
         }, 300);
     }
 }
@@ -1380,94 +1375,65 @@ function closeTgOverlay() {
 }
 
 function goToTelegram() {
-    closeTgOverlay(); // Закрываем окно
-    window.open(`https://t.me/${TG_USER}`, '_blank'); // Открываем телеграм
+    closeTgOverlay(); 
+    window.open(`https://t.me/${typeof TG_USER !== 'undefined' ? TG_USER : ''}`, '_blank'); 
 }
 
-// 1. Принудительный старт с +7
+// 5. ЛОГИКА ТЕЛЕФОНА (МАСКА)
 function setCursorPosition(input) {
-    if (input.value === "") {
-        input.value = "+7";
-    }
-    // Ставим курсор всегда в конец после +7
+    if (input.value === "") input.value = "+7";
     setTimeout(() => {
         input.setSelectionRange(input.value.length, input.value.length);
     }, 10);
 }
 
-// 2. Проверка: ровно 11 цифр (итого 12 символов с плюсом)
 function checkInputState() {
     const input = document.getElementById('contactDetailsInput');
     const btn = document.getElementById('btnOtherSend');
     const hint = document.getElementById('phoneHint');
     if (!input || !btn) return;
 
-    const digits = input.value.replace(/\D/g, ''); // Считаем только цифры
+    const digits = input.value.replace(/\D/g, ''); 
     const isComplete = digits.length === 11;
 
     btn.disabled = !isComplete;
     btn.style.opacity = isComplete ? "1" : "0.5";
     btn.style.transform = isComplete ? "scale(1.02)" : "scale(1)";
 
-    // Живая подсказка
-    if (digits.length === 0) {
-        hint.innerText = "Введите только цифры (11 цифр)";
-        hint.style.color = "#aaa";
-    } else if (digits.length < 11) {
-        hint.innerText = `Осталось ввести цифр: ${11 - digits.length}`;
-        hint.style.color = "#aaa";
-    } else {
-        hint.innerText = "Номер заполнен верно";
-        hint.style.color = "green";
+    if (hint) {
+        if (digits.length === 0) {
+            hint.innerText = "Введите только цифры (11 цифр)";
+            hint.style.color = "#aaa";
+        } else if (digits.length < 11) {
+            hint.innerText = `Осталось ввести цифр: ${11 - digits.length}`;
+            hint.style.color = "#aaa";
+        } else {
+            hint.innerText = "Номер заполнен верно";
+            hint.style.color = "green";
+        }
     }
 }
 
-// 3. Жесткая маска: БЛОКИРУЕМ БУКВЫ И МЕНЯЕМ 8 НА 7
 function initPhoneMask() {
     const phoneInput = document.getElementById('contactDetailsInput');
     if (!phoneInput) return;
 
     phoneInput.addEventListener('input', function (e) {
-        // МГНОВЕННО УДАЛЯЕМ ВСЁ, КРОМЕ ЦИФР
         let digits = this.value.replace(/\D/g, '');
-
-        // Если начали с 8 — меняем на 7 (для РФ рынка)
-        if (digits.startsWith('8')) {
-            digits = '7' + digits.substring(1);
-        }
-
-        // Ограничиваем длину (11 цифр максимум)
-        if (digits.length > 11) {
-            digits = digits.substring(0, 11);
-        }
-
-        // Формируем итоговое значение: всегда ПЛЮС + ЦИФРЫ
-        if (digits.length > 0) {
-            this.value = '+' + digits;
-        } else {
-            this.value = '+7';
-        }
-
+        if (digits.startsWith('8')) digits = '7' + digits.substring(1);
+        if (digits.length > 11) digits = digits.substring(0, 11);
+        
+        this.value = digits.length > 0 ? '+' + digits : '+7';
         checkInputState();
     });
 
-    // Запрещаем удалять префикс +7 кнопкой Backspace
-    phoneInput.addEventListener('keydown', function(e) {
-        if (this.selectionStart <= 2 && (e.key === 'Backspace' || e.key === 'Delete')) {
-            e.preventDefault();
-        }
-    });
-
-    // Защита от удаления префикса
+    // Запрет удаления префикса +7
     phoneInput.addEventListener('keydown', function(e) {
         if (this.selectionStart <= 2 && (e.key === 'Backspace' || e.key === 'Delete')) {
             e.preventDefault();
         }
     });
 }
-
-
-
     /* =========================================
    BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
    ========================================= */
@@ -1984,52 +1950,43 @@ function renderNewsFeed() {
         
         let tagText = item.Tag || 'ИНФО';
         let tagLower = tagText.toLowerCase();
-        let icon = "📌"; 
-        let isImportant = false;
-        
         let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
+        let capsuleBg = '';
         
+        // Считаем возраст новости
         // Считаем возраст новости
         let ageDays = getNewsAge(item.Date);
 
-        // ЛОГИКА АРХИВАЦИИ
+        // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ
         if (ageDays > 30) {
-            icon = "⚪"; 
-            cleanTag = "АРХИВ";
-            isImportant = false; // Снимаем статус "Важно"
+            cleanTag = "АРХИВНАЯ ИНФОРМАЦИЯ";
+            capsuleBg = '#8E8E93'; // Серый (Архив)
         } else {
-            // Если новость свежая (до 30 дней)
-            if (tagLower.includes("важн")) { icon = "🔴"; isImportant = true; }
-            else if (tagLower.includes("инфо")) icon = "🔵";
-            else if (tagLower.includes("доставк")) icon = "📦";
-            else if (tagLower.includes("курс")) icon = "💱";
-        }
-        
-        // Красим рамку и текст в зависимости от статуса (для газетного стиля)
-        let tagStyle = '';
-        if (isImportant) {
-            tagStyle = 'color: #d32f2f; border-color: #ffcdd2; background: #fff5f5 !important;'; // Ярко-красный
-        } else if (ageDays > 30) {
-            tagStyle = 'color: #aaa; border-color: #eee;'; // Блекло-серый для архива
+            if (tagLower.includes("важн")) { 
+                capsuleBg = '#D32F2F'; // Темно-красный (Важно)
+            } else { 
+                capsuleBg = '#007AFF'; // Синий (Инфо, курс, почта и всё остальное)
+            }
         }
 
+        let tagStyle = `background: ${capsuleBg};`;
         let relativeTime = getRelativeTime(item.Date);
 
         html += `
             <div class="notepad-item">
                 <div class="np-date-row">
-                 <span class="np-date-text" style="color: #333;">
+                    <span class="np-date-text" style="color: #333; font-family: 'Georgia', serif;">
                         ${item.Date || ''} 
                         <span style="color:#000; font-weight:800; font-size:11px; margin-left:5px; text-decoration: underline; text-underline-offset: 2px;">(${relativeTime})</span>
                     </span>
-                    <span class="np-tag-top" style="${tagStyle}">${icon} ${cleanTag.toUpperCase()}</span>
+                    <span class="np-tag-top" style="${tagStyle}">${cleanTag.toUpperCase()}</span>
                 </div>
                 <div class="np-body">
                     ${formatNewsText(item.Text, index)} 
                 </div>
             </div>
         `;
-    })
+    });
 
     if (newsToShow < newsDB.length) {
         html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
@@ -2061,8 +2018,8 @@ function showOldNews() {
             Нажмите кнопку ниже, чтобы открыть чат, и <b>вставьте</b> скопированный текст в поле ввода.
         </p>
         
-        <button onclick="goToTelegram()" class="cp-submit-full" style="background: #0088cc; display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; cursor: pointer;">
-            <span style="font-size:18px;">✈️</span> ПЕРЕЙТИ В ТЕЛЕГРАМ
+        <button onclick="goToTelegram()" class="cp-submit-full" style="background: #0088cc; border: none; color: #fff; border-radius: 10px; font-weight: 700; font-size: 14px; letter-spacing: 0.5px; height: 50px; cursor: pointer; transition: 0.2s;">
+            ПЕРЕЙТИ В ТЕЛЕГРАМ
         </button>
         
         <button onclick="closeTgOverlay()" class="s-close-btn" style="background:none; color:#888; margin-top:10px; width: 100%;">ОТМЕНА</button>
