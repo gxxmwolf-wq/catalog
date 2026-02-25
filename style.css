@@ -88,6 +88,37 @@ body {
     margin: 0 2px; /* Микро-отступ вокруг палочки */
 }
 
+/* Эффект живого присутствия для пункта меню */
+/* Эффект живого присутствия: синие буквы в легком статичном облаке */
+.live-glow {
+    position: relative;
+    color: var(--p) !important; /* Возвращаем фирменный синий */
+    font-weight: 700 !important;
+    z-index: 1;
+}
+
+.live-glow::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140%; /* Облако чуть шире текста */
+    height: 160%;
+    /* Очень мягкий радиальный градиент зеленого цвета */
+    background: radial-gradient(circle, rgba(0, 230, 118, 0.25) 0%, rgba(0, 230, 118, 0) 75%);
+    filter: blur(5px);
+    z-index: -1;
+    /* Если хочешь ПОЛНУЮ статику — удали строку ниже. 
+       Сейчас я оставил супер-медленное "дыхание" (8 секунд), которое почти незаметно. */
+    animation: very-slow-glow 8s infinite ease-in-out;
+}
+
+@keyframes very-slow-glow {
+    0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.95); }
+    50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+}
+
 .rates-compact {
     font-size: 11px; color: #999; 
     text-align: right; line-height: 1.2; 
@@ -173,20 +204,34 @@ body {
 /* КРЕСТИК ОЧИСТКИ (Идеально по центру) */
 .cls-btn {
     position: absolute !important;
-    right: 15px !important; 
-    top: 50% !important; /* Встаем на середину блока */
-    transform: translateY(-50%) !important; /* Сдвигаемся точно по центру оси Y */
-    height: 48px !important; 
-    width: 40px !important;
-    display: flex !important; 
+    /* 1. Отступаем больше от края (было 15px), чтобы крестик был в балансе со скруглением */
+    right: 25px !important; 
+    
+    top: 50% !important;
+    /* 2. Оптическая компенсация: -55% вместо -50% поднимет его ровно на нужную высоту */
+    transform: translateY(-55%) !important; 
+    
+    /* 3. Делаем кнопку компактным квадратом для точного позиционирования */
+    width: 32px !important;
+    height: 32px !important;
+    
+    display: flex !important;
     align-items: center;
     justify-content: center;
+    
+    /* 4. Сбрасываем влияние межстрочных интервалов */
+    line-height: 1 !important; 
+    
     z-index: 100 !important;
-    color: #999;
-    font-size: 18px;
+    color: #bbb;
+    font-size: 19px; /* Сделали чуть крупнее для удобства нажатия */
     cursor: pointer;
-    background: transparent !important; 
+    background: transparent !important;
+    -webkit-tap-highlight-color: transparent;
 }
+
+/* 5. Добавим легкий эффект при наведении, чтобы кнопка "ожила" */
+.cls-btn:hover { color: var(--p); }
 
 /* ПОДСКАЗКИ (Чипсы) */
 .suggestions-row { 
@@ -1249,4 +1294,21 @@ body {
     background: var(--p) !important; /* Твой синий */
     color: #fff !important; 
     border-color: var(--p) !important;
+}
+
+/* Заголовок в окне успеха */
+#succTitle {
+    color: var(--p); /* Фирменный синий */
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+/* Чуть больше воздуха для текста подзаголовка */
+#succSubTitle {
+    font-size: 15px;
+    line-height: 1.45;
+    color: #444;
 }

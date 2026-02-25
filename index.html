@@ -33,7 +33,7 @@
         <span class="tm-sep">|</span>
         <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
         <span class="tm-sep">|</span>
-         <div class="tm-item" onclick="openQuestion()">НАПИСАТЬ ВОПРОС</div>
+        <div class="tm-item live-glow" onclick="openQuestion()">НАПИСАТЬ ВОПРОС</div>
     </div>      
 
         <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
@@ -1605,36 +1605,44 @@ function showSuccess(type, orderId, phone, msg = "") {
     const idEl = document.getElementById('succID');
     
     if (popup && titleEl && subTitleEl && idEl) {
-        if (type === 'order') {
-            const dateNow = new Date().toLocaleDateString('ru-RU');
-            titleEl.innerText = "Успешно!";
-            subTitleEl.innerHTML = `Ваш заказ <b style="color:#000;">#${orderId}</b> от ${dateNow} принят в работу.<br><br>Мы свяжемся с вами по номеру<br><b style="color:#000; font-size:16px;">${phone}</b><br>для подтверждения деталей.`;
-            idEl.style.display = 'none'; 
+        // Скрываем плашку с номером заказа, если это просто запрос связи
+        idEl.style.display = (orderId === 'РЕЗЕРВ') ? 'none' : 'inline-block';
+
+        if (orderId === 'РЕЗЕРВ') {
+            titleEl.innerText = "Связь восстановлена!";
+            subTitleEl.innerHTML = `
+                Спасибо! Мы получили ваш номер <b style="color:#000;">${phone}</b>.<br><br>
+                Наш специалист уже видит ваш запрос. Мы напишем вам в мессенджер или перезвоним в ближайшее время.
+            `;
+        } else if (type === 'order') {
+            titleEl.innerText = "Заказ отправлен!";
+            subTitleEl.innerHTML = `
+                Ваш заказ <b style="color:#000;">#${orderId}</b> уже у нас.<br><br>
+                Мы свяжемся с вами по номеру <b style="color:#000;">${phone}</b> для подтверждения деталей.
+            `;
+        } else {
+            titleEl.innerText = "Вопрос принят!";
+            // Убираем из текста вопроса технические метки [РЕЗЕРВ] и т.д.
+            let cleanMsg = msg.replace(/\[.*?\]/g, "").replace("Здравствуйте RxDE, у меня вопрос:", "").trim();
+            if (cleanMsg.length > 60) cleanMsg = cleanMsg.substring(0, 60) + "...";
             
+            subTitleEl.innerHTML = `
+                <div style="background: #f5f7fa; padding: 12px; border-radius: 10px; font-style: italic; font-size: 13px; color: #666; margin-bottom: 15px; border-left: 3px solid var(--p); text-align: left;">
+                    «${cleanMsg}»
+                </div>
+                Специалист свяжется с вами по номеру <b style="color:#000;">${phone}</b>, чтобы ответить.
+            `;
+        }
+        
+        popup.classList.add('show');
+        
+        // Очистка корзины только при реальном заказе
+        if (type === 'order' && orderId !== 'РЕЗЕРВ') {
             cart = [];
             localStorage.removeItem('de_cart_arr');
             updateBar();
             render();
-            
-        } else {
-            titleEl.innerText = "Вопрос отправлен!";
-            
-            // 1. Очищаем текст от мусора
-            let cleanMsg = msg.replace("Здравствуйте RxDE, у меня вопрос:", "").replace(/Контакт для связи:.*/g, "").trim();
-            if (!cleanMsg) cleanMsg = "Вопрос специалисту";
-            
-            // 2. ЖЁСТКАЯ ОБРЕЗКА (максимум 60 символов)
-            if (cleanMsg.length > 60) cleanMsg = cleanMsg.substring(0, 60).trim() + "...";
-
-            // 3. Вывод с защитой от разрыва окна (word-break: break-word)
-            subTitleEl.innerHTML = `
-                <div style="background: #f5f7fa; padding: 10px 12px; border-radius: 8px; font-style: italic; font-size: 13px; color: #666; margin-bottom: 15px; border-left: 3px solid var(--p); text-align: left; word-break: break-word;">
-                    «${cleanMsg}»
-                </div>
-                Наш специалист свяжется с вами по номеру<br><b style="color:#000; font-size:16px;">${phone}</b><br>в ближайшее время.`;
-            idEl.style.display = 'none'; 
         }
-        popup.classList.add('show');
     }
 }
 
@@ -2006,25 +2014,27 @@ function setDialMode(mode) {
 
 // 6. ФИНАЛЬНАЯ ОТПРАВКА В ТАБЛИЦУ
 function submitDialer() {
-    const fullNumber = "+7" + dialerNumber;
+    const fullNumber = "+7" + dialerNumber; // Формат +79001112233
     let modes = [];
     if (dialerModes.msg) modes.push("МЕССЕНДЖЕР");
     if (dialerModes.call) modes.push("ЗВОНОК");
     
     const tag = `[РЕЗЕРВ: ${modes.join('+')}]`;
-    const finalMsg = `${tag} ${currentPreparedText || "Клиент вернулся с кнопки связи"}`;
+    const finalMsg = `${tag} ${currentPreparedText || "Запрос связи"}`;
 
-    if (typeof GOOGLE_SCRIPT_URL !== 'undefined' && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
+    if (typeof GOOGLE_SCRIPT_URL !== 'undefined') {
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
-            body: new URLSearchParams({ "text": finalMsg, "phone": fullNumber })
-        }).catch(e => console.log("Google Send Error"));
+            body: new URLSearchParams({ 
+                "text": finalMsg, 
+                "phone": fullNumber // Отправляем чистый номер
+            })
+        });
     }
 
     closeDialer();
-    // Показываем стандартное окно успеха
-    showSuccess('order', 'РЕЗЕРВ', fullNumber, "Мы свяжемся с вами выбранным способом.");
+    showSuccess('order', 'РЕЗЕРВ', fullNumber, "Специалист свяжется с вами.");
 }
 
 // 7. СИНТЕЗАТОР ЗВУКА (Web Audio API — без файлов mp3)
