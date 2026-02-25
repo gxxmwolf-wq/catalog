@@ -103,20 +103,21 @@ body {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 140%; /* Облако чуть шире текста */
-    height: 160%;
-    /* Очень мягкий радиальный градиент зеленого цвета */
-    background: radial-gradient(circle, rgba(0, 230, 118, 0.25) 0%, rgba(0, 230, 118, 0) 75%);
-    filter: blur(5px);
+    /* Чуть увеличили размер для мобильных, чтобы дымка выходила за края */
+    width: 160%; 
+    height: 180%;
+    /* Сделали центр чуть плотнее (0.3 вместо 0.25) */
+    background: radial-gradient(circle, rgba(0, 230, 118, 0.3) 0%, rgba(0, 230, 118, 0) 70%);
+    filter: blur(6px);
     z-index: -1;
-    /* Если хочешь ПОЛНУЮ статику — удали строку ниже. 
-       Сейчас я оставил супер-медленное "дыхание" (8 секунд), которое почти незаметно. */
-    animation: very-slow-glow 8s infinite ease-in-out;
+    /* Подсказка браузеру для плавности на смартфонах */
+    will-change: opacity, transform;
+    animation: mobile-glow 6s infinite ease-in-out;
 }
 
-@keyframes very-slow-glow {
-    0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(0.95); }
-    50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+@keyframes mobile-glow {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.9); }
+    50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.1); }
 }
 
 .rates-compact {
