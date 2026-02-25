@@ -31,7 +31,7 @@
     <div style="display: flex; align-items: center;">
         <div class="tm-item" onclick="showInfo('exp')">ОПЫТ</div>
         <span class="tm-sep">|</span>
-        <div class="tm-item" onclick="showInfo('faq')">FAQ</div>
+        <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
         <span class="tm-sep">|</span>
          <div class="tm-item" onclick="openQuestion()">НАПИСАТЬ ВОПРОС</div>
     </div>      
@@ -121,11 +121,11 @@
         <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 10px;">
             <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px;">Для отправки выберите удобный канал связи:</div>
             
-            <button onclick="submitFinal('wa')" style="width: 100%; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;">
+            <button onclick="submitFinal('wa')" style="width: 100%; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.2);">
                 WhatsApp
             </button>
             
-            <button onclick="submitFinal('tg')" style="width: 100%; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer;">
+            <button onclick="submitFinal('tg')" style="width: 100%; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 136, 204, 0.2);">
                 Telegram
             </button>
 
@@ -134,27 +134,8 @@
             </button>
             
             <button onclick="switchToContactForm()" style="width: 100%; height: 50px; background: #f8f9fa; color: #333; border: 1px solid #dcdcdc; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">
-                Оставить номер телефона
+                📞 Оставить номер телефона
             </button>
-        </div>
-
-        <div id="phoneFormWrap" style="display:none; text-align: center;">
-            <p style="font-size: 13px; color: #666; margin-bottom: 10px;">Укажите номер. Мы перезвоним.</p>
-            
-            <div id="phoneInputContainer" style="position: relative; display: flex; align-items: center; background: #f2f2f2; border-radius: 12px; padding: 4px; border: 2px solid transparent; transition: border 0.3s;">
-                
-                <input type="tel" id="contactDetailsInput" class="cp-input-inline" 
-                       placeholder="+7" 
-                       onfocus="setCursorPosition(this)"
-                       style="flex: 1; height: 48px; font-size: 20px; font-weight: 600; text-align: left; padding-left: 15px; border: none; background: transparent; outline: none; letter-spacing: 1px; color: #000;">
-                
-                <button id="btnOtherSend" class="cp-submit-full" 
-                        onclick="submitFinal('other')" 
-                        style="width: 44px; height: 44px; background: #ccc; color: #fff; border: none; border-radius: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: not-allowed; transition: 0.3s; margin: 0;" 
-                        disabled>➔</button>
-            </div>
-            
-            <div id="phoneHint" style="font-size: 11px; color: #aaa; margin-top: 8px; font-weight: 400;">Введите 11 цифр</div>
         </div>
 
         <button onclick="closeContact()" class="s-close-btn" style="background:none; color:#888; margin-top:15px; width: 100%;">НАЗАД К ПОКУПКАМ</button>
@@ -334,14 +315,31 @@ function fetchNews() {
     
 const data = {
         faq: { 
-            t: 'ЧАСТЫЕ ВОПРОСЫ', 
+            t: 'ПОЧЕМУ МЫ?', 
             c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
-                    <div><b style="color: #000; font-size: 16px;">Откуда препараты?</b><br>Мы закупаем товары исключительно в физических лицензированных аптеках Германии. Никаких сомнительных складов или посредников.</div>
-                    <div><b style="color: #000; font-size: 16px;">Какие гарантии?</b><br>Вы оплачиваете заказ безналичным переводом — у вас всегда остается банковская выписка с подтверждением платежа (в отличие от передачи «денег в конверте»). Мы гарантируем 100% подлинность препаратов и предоставляем международный трек-номер для отслеживания.</div>
-                    <div><b style="color: #000; font-size: 16px;">Сроки и тарифы доставки?</b><br>Посылки идут почтой от 12 до 25 дней. Почтовый тариф фиксированный — ${shipEur} €, независимо от количества позиций (до 5 кг).</div>
-                    <div><b style="color: #000; font-size: 16px;">Как оплатить?</b><br>Оплата принимается в рублях (перевод на карту РФ или по СБП). Расчетный курс фиксируется в момент согласования заявки с менеджером.</div>
+                    <div>
+                        <b style="color: #000; font-size: 16px;">Немецкий оригинал</b><br>
+                        Закупка под заказ в аптеках Германии (нет просрочки, пересортицы). Инструкция на одном языке (немецком), максимальные сроки годности. Посылка из Германии – гарантия прозрачности для Вас (в отличии от схемы "передача из рук в руки": “Где хранили, как хранили, из какой страны привезли?").
+                    </div>
+                    
+                    <div>
+                        <b style="color: #000; font-size: 16px;">Индивидуальная доставка</b><br>
+                        Оплата полного тарифа почты из Германии —  гарантия прохождения таможни. В отличие от «сборных» грузов, где доставка делится на всех, Ваша посылка отправляется индивидуально для Вашего лечения (не коммерция!).
+                    </div>
+                    
+                    <div>
+                        <b style="color: #000; font-size: 16px;">Прозрачная оплата</b><br>
+                        Оплата в рублях (на карту РФ или по СБП) по фиксированному расчетному курсу. Оплата безналичным переводом оставляет у вас банковскую выписку с подтверждением платежа (никаких передач «денег в конверте»).
+                    </div>
+                    
+                    <div>
+                        <b style="color: #000; font-size: 16px;">Всегда на связи</b><br>
+                        Наш специалист сопровождает Вас на каждом этапе: от помощи в подборе лучшего варианта в аптеке до вручения посылки.
+                    </div>
                 </div>` 
         },
+
+
         exp: { 
             t: 'НАШ ОПЫТ', 
             c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
@@ -582,30 +580,30 @@ function render(isNewSearch = false) {
         }
     }
 
-    if (results.length === 0) {
-        if (query.length < 2) return;
-        
-        const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
+    // ... внутри функции render() ...
+if (results.length === 0) {
+    // Если введено меньше 3 символов — вообще ничего не пишем (ждем продолжения ввода)
+    if (query.length < 3) return;
+    
+    const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
 
-        list.innerHTML = `
-            <div style="margin: 30px 15px; padding: 25px 15px; border: 1px solid #007bff; border-radius: 12px; background: #fff; text-align: center;">
-                <div style="font-size: 14px; color: #000; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-                    По вашему запросу ничего не найдено
-                </div>
-                <div style="font-size: 14px; color: #666; line-height: 1.5; margin-bottom: 20px;">
-                    Мы можем найти нужный препарат в аптеках Германии в ручном режиме. <br>
-                    Пожалуйста, отправьте запрос специалисту:
-                </div>
-                
-                <div class="grid-3-btns">
-                    <button class="b-cell wa" onclick="currentPreparedText='${failText}'; submitFinal('wa')"><span>WhatsApp</span></button>
-                    <button class="b-cell tg" onclick="currentPreparedText='${failText}'; submitFinal('tg')"><span>Telegram</span></button>
-                    <button class="b-cell other" onclick="openContactForm('${failText}')"><span>Другое</span></button>
-                </div>
+    list.innerHTML = `
+        <div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
+            <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">
+                По текущему запросу ничего не найдено. <br>
+                <span style="color: #888; font-size: 13px;">
+                    Если вы уверены в написании — напишите нам. <br>
+                    Мы расширим поиск и вернемся с результатом!
+                </span>
             </div>
-        `;
-        return;
-    }
+            
+            <button onclick="openContactForm('${failText}')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0,86,145,0.15);">
+                ЗАПРОСИТЬ ПОИСК
+            </button>
+        </div>
+    `;
+    return;
+}
 
     // ВЫВОДИМ ПРЕДУПРЕЖДЕНИЕ, ЕСЛИ СРАБОТАЛА КОРРЕКЦИЯ ОПЕЧАТКИ
     if (isFuzzyMatch) {
@@ -1197,7 +1195,7 @@ function openCart() {
     }
 
 /* =========================================
-   BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ
+   BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ (CLEAN)
    ========================================= */
 
 // Генерация номера заказа
@@ -1216,11 +1214,11 @@ let isQuestionMode = false;
 // 1. ОТКРЫТИЕ ОКНА "ВОПРОС" (Из меню)
 function openQuestion() {
     isQuestionMode = true; 
-    closeModal(); // Гасим корзину, чтобы не было слоевой каши
+    closeModal();
 
     document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
     
-    // Прячем предпросмотр (если был), показываем поле ввода
+    // Прячем предпросмотр, показываем поле ввода
     const previewBox = document.getElementById('orderPreviewBox');
     if (previewBox) previewBox.style.display = 'none';
     
@@ -1232,30 +1230,25 @@ function openQuestion() {
         }
     }
     
-    document.getElementById('phoneFormWrap').style.display = 'none';
     document.getElementById('contactButtonsGrid').style.display = 'flex'; 
-    
     document.getElementById('contactOverlay').style.display = 'flex';
     setTimeout(() => { if (manualInput) manualInput.focus(); }, 100);
 
-    // --- ПРЯЧЕМ МИНИ-КОРЗИНУ ---
     const mini = document.getElementById('miniCart');
     if (mini) mini.style.display = 'none';
 }
 
-// 2. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА (Из корзины)
+// 2. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА (Из корзины или поиска)
 function openContactForm(preparedText) {
     isQuestionMode = false; 
     currentPreparedText = preparedText;
-    
-    closeModal(); // Убираем проблему слоев
+    closeModal(); 
     
     document.getElementById('contactTitle').innerText = "ПРЕДПРОСМОТР ЗАЯВКИ";
     
     const manualInput = document.getElementById('manualMsgInput');
     if (manualInput) manualInput.style.display = 'none';
     
-    // Выводим текст для клиента
     const previewBox = document.getElementById('orderPreviewBox');
     if (previewBox) {
         previewBox.style.display = 'block';
@@ -1263,43 +1256,35 @@ function openContactForm(preparedText) {
     }
     
     document.getElementById('contactButtonsGrid').style.display = 'flex';
-    document.getElementById('phoneFormWrap').style.display = 'none';
-    
-    setTimeout(() => {
-        document.getElementById('contactOverlay').style.display = 'flex';
-    }, 400); // Ждем плавного закрытия корзины
+    document.getElementById('contactOverlay').style.display = 'flex';
 
-    // --- ПРЯЧЕМ МИНИ-КОРЗИНУ ---
     const mini = document.getElementById('miniCart');
     if (mini) mini.style.display = 'none';
 }
 
-// Переключение на форму ввода телефона
+// 3. ПЕРЕХОД В ДАЙЛЕР (Вместо старой формы)
 function switchToContactForm() {
-    document.getElementById('contactTitle').innerText = "ВАШ ТЕЛЕФОН";
-    document.getElementById('contactButtonsGrid').style.display = 'none';
+    closeContact(); // Закрываем текущее окно с кнопками
     
-    const manualInput = document.getElementById('manualMsgInput');
-    if (manualInput) manualInput.style.display = 'none';
-    
-    document.getElementById('phoneFormWrap').style.display = 'block';
-    document.getElementById('btnOtherSend').style.display = 'block'; 
-    
-    const phoneInput = document.getElementById('contactDetailsInput');
-    if (phoneInput) {
-        phoneInput.style.display = 'block';
-        setTimeout(() => phoneInput.focus(), 100);
-    }
+    setTimeout(() => {
+        lastClickedChannel = "формы на сайте"; 
+        isWaitingForReturn = false; 
+        showDialer(); // Открываем интерактивный набор номера
+    }, 300);
 }
 
-
-// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ
+// 4. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (WA / TG / Email)
 function submitFinal(app) {
+    // Активируем ловушку возврата для Дайлера
+    if (app === 'wa' || app === 'tg' || app === 'email') {
+        lastClickedChannel = (app === 'wa') ? 'WhatsApp' : (app === 'tg' ? 'Telegram' : 'E-mail');
+        isWaitingForReturn = true;
+    }
+
     const manualInput = document.getElementById('manualMsgInput');
-    const contactInput = document.getElementById('contactDetailsInput');
     let finalMsg = "";
 
-    // 1. Собираем текст сообщения
+    // Собираем текст сообщения
     if (isQuestionMode) {
          if (typeof currentNewsContext !== 'undefined' && currentNewsContext !== "") {
              finalMsg = currentNewsContext;
@@ -1311,193 +1296,35 @@ function submitFinal(app) {
          finalMsg = currentPreparedText || getShortOrderLink(); 
     }
 
-    // Вспомогательная функция для фоновой отправки
-    const sendToBackground = (sourceLabel, phoneNumber = "Без номера (Клик)") => {
-        if (typeof GOOGLE_SCRIPT_URL !== 'undefined' && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
-            fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: new URLSearchParams({ 
-                    "text": `[${sourceLabel}] ${finalMsg}`, 
-                    "phone": phoneNumber 
-                })
-            }).catch(e => console.log("Фоновая отправка не удалась"));
-        }
-    };
-
-    // 2. Распределяем по каналам
-    if (app === 'other') {
-        const phone = contactInput.value.trim();
-        const fullMsgWithPhone = finalMsg + "\n\nКонтакт для связи: " + phone;
-        
-        sendToBackground("ПРЯМАЯ ЗАЯВКА", phone); // Отправка в Гугл
-        
-        if (typeof showSuccess === 'function') {
-            showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), phone, fullMsgWithPhone);
-        }
-        
-        if (manualInput) manualInput.value = "";
+    // Распределяем по приложениям
+    if (app === 'wa') {
+        window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
         closeContact();
-
-    } else if (app === 'wa') {
-        sendToBackground("ПЕРЕХОД В WHATSAPP"); // Фоновый сигнал
-        window.open(`https://wa.me/${typeof WA_PHONE !== 'undefined' ? WA_PHONE : ''}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-        closeContact();
-        closeModal();
-
+    } else if (app === 'tg') {
+        try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
+        closeContact(); 
+        document.getElementById('tgOverlayPreview').innerText = finalMsg;
+        document.getElementById('tgOverlay').style.display = 'flex'; 
     } else if (app === 'email') {
-        sendToBackground("ПЕРЕХОД В EMAIL"); // Фоновый сигнал
         const subject = encodeURIComponent(isQuestionMode ? "Вопрос с сайта RxDE" : "Новый заказ RxDE");
         window.location.href = `mailto:med.zakaz.de@gmail.com?subject=${subject}&body=${encodeURIComponent(finalMsg)}`;
         closeContact();
-        closeModal();
-
-    } else if (app === 'tg') {
-        sendToBackground("ПЕРЕХОД В TELEGRAM"); // Фоновый сигнал
-        
-        try { 
-            navigator.clipboard.writeText(finalMsg); 
-        } catch(e) { console.log("Копирование недоступно"); }
-        
-        const tgOverlay = document.getElementById('tgOverlay');
-        const titleEl = document.getElementById('tgOverlayTitle');
-        const previewEl = document.getElementById('tgOverlayPreview');
-        
-        if (tgOverlay && titleEl && previewEl) {
-            titleEl.innerText = isQuestionMode ? "ВОПРОС СКОПИРОВАН" : "ЗАКАЗ СКОПИРОВАН";
-            let cleanMsg = finalMsg;
-            if (isQuestionMode) cleanMsg = cleanMsg.replace("Здравствуйте RxDE, у меня вопрос:\n", "");
-            
-            previewEl.innerText = cleanMsg; 
-            closeContact(); 
-            tgOverlay.style.display = 'flex'; 
-
-            const mini = document.getElementById('miniCart');
-            if (mini) mini.style.display = 'none';
-        } else {
-             window.open(`https://t.me/${typeof TG_USER !== 'undefined' ? TG_USER : ''}`, '_blank');
-             closeContact();
-             closeModal();
-        }
     }
 }
 
-// 4. ЗАКРЫТИЕ ОКОН И СБРОС
+// 5. ЗАКРЫТИЕ И СБРОС
 function closeContact() {
     const overlay = document.getElementById('contactOverlay');
     if (overlay) {
         overlay.style.display = 'none';
-        setTimeout(() => {
-            document.getElementById('contactTitle').innerText = "СВЯЗАТЬСЯ";
-            document.getElementById('contactButtonsGrid').style.display = 'flex'; 
-            document.getElementById('phoneFormWrap').style.display = 'none';
-            
-            const previewBox = document.getElementById('orderPreviewBox');
-            if (previewBox) previewBox.style.display = 'none';
-
-            const phoneInput = document.getElementById('contactDetailsInput');
-            if (phoneInput) {
-                phoneInput.value = '';
-                phoneInput.style.textAlign = 'center';
-            }
-        }, 300);
-
-        // --- ВОЗВРАЩАЕМ МИНИ-КОРЗИНУ ---
+        
+        // Возвращаем мини-корзину
         const mini = document.getElementById('miniCart');
         if (mini) mini.style.display = '';
     }
 }
 
-function closeTgOverlay() {
-    const overlay = document.getElementById('tgOverlay');
-    if (overlay) overlay.style.display = 'none';
 
-    // --- ВОЗВРАЩАЕМ МИНИ-КОРЗИНУ ---
-    const mini = document.getElementById('miniCart');
-    if (mini) mini.style.display = '';
-}
-
-function goToTelegram() {
-    closeTgOverlay(); 
-    window.open(`https://t.me/${typeof TG_USER !== 'undefined' ? TG_USER : ''}`, '_blank'); 
-}
-
-// 5. ЛОГИКА ТЕЛЕФОНА (МАСКА)
-function setCursorPosition(input) {
-    if (input.value === "") input.value = "+7";
-    setTimeout(() => {
-        input.setSelectionRange(input.value.length, input.value.length);
-    }, 10);
-}
-
-function checkInputState() {
-    const input = document.getElementById('contactDetailsInput');
-    const btn = document.getElementById('btnOtherSend');
-    const hint = document.getElementById('phoneHint');
-    const container = document.getElementById('phoneInputContainer'); // Рамка вокруг поля
-    if (!input || !btn) return;
-
-    const digits = input.value.replace(/\D/g, ''); 
-    const isComplete = digits.length === 11;
-
-    btn.disabled = !isComplete;
-
-    if (isComplete) {
-        // Когда номер введен полностью:
-        btn.style.background = 'var(--p)'; // Синий фирменный цвет
-        btn.style.cursor = 'pointer';
-        btn.innerHTML = '✓'; // Появляется галочка
-        
-        if (container) container.style.borderColor = 'var(--p)'; // Зажигаем рамку
-        
-        if (hint) {
-            hint.innerText = "Готово! Нажмите галочку ➔";
-            hint.style.color = "var(--p)";
-            hint.style.fontWeight = "700";
-        }
-    } else {
-        // Пока номер не полный:
-        btn.style.background = '#ccc';
-        btn.style.cursor = 'not-allowed';
-        btn.innerHTML = '➔';
-        
-        if (container) container.style.borderColor = 'transparent';
-        
-        if (hint) {
-            if (digits.length === 0) {
-                hint.innerText = "Введите 11 цифр";
-                hint.style.color = "#aaa";
-                hint.style.fontWeight = "400";
-            } else {
-                hint.innerText = `Осталось цифр: ${11 - digits.length}`;
-                hint.style.color = "#aaa";
-                hint.style.fontWeight = "400";
-            }
-        }
-    }
-}
-
-function initPhoneMask() {
-    const phoneInput = document.getElementById('contactDetailsInput');
-    if (!phoneInput) return;
-
-    phoneInput.addEventListener('input', function (e) {
-        let digits = this.value.replace(/\D/g, '');
-        if (digits.startsWith('8')) digits = '7' + digits.substring(1);
-        if (digits.length > 11) digits = digits.substring(0, 11);
-        
-        this.value = digits.length > 0 ? '+' + digits : '+7';
-        checkInputState();
-    });
-
-    // Запрет удаления префикса +7
-    phoneInput.addEventListener('keydown', function(e) {
-        if (this.selectionStart <= 2 && (e.key === 'Backspace' || e.key === 'Delete')) {
-            e.preventDefault();
-        }
-    });
-}
     /* =========================================
    BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
    ========================================= */
@@ -2067,7 +1894,160 @@ function showOldNews() {
 
     // ЗАПУСК ПРИЛОЖЕНИЯ
         init();
-        
+
+
+ /* =========================================
+   BLOCK 13: УЛУЧШЕННЫЙ ДАЙЛЕР (PC + MULTI-MODE + TRACKING)
+   ========================================= */
+
+let dialerNumber = "";
+let dialerModes = { msg: true, call: false }; // "Пишите мне" активно по умолчанию
+let lastClickedChannel = "мессенджере";
+let isWaitingForReturn = false;
+
+// 1. ОТСЛЕЖИВАНИЕ ВОЗВРАТА (Ловит клиента после клика по WA/TG)
+window.onfocus = function() {
+    if (isWaitingForReturn) {
+        setTimeout(() => {
+            if (isWaitingForReturn) showDialer();
+        }, 1000); // Пауза 1 сек, чтобы окно не "пугало" мгновенно
+    }
+};
+
+// 2. ПОДДЕРЖКА КЛАВИАТУРЫ (Для ноутбуков и ПК)
+window.addEventListener('keydown', function(e) {
+    const dialer = document.getElementById('dialerOverlay');
+    if (dialer && dialer.style.display === 'flex') {
+        if (e.key >= '0' && e.key <= '9') dial(e.key);
+        if (e.key === 'Backspace') dialErase();
+        if (e.key === 'Enter' && dialerNumber.length === 10) submitDialer();
+    }
+});
+
+// 3. УПРАВЛЕНИЕ ОКНОМ
+function showDialer() {
+    isWaitingForReturn = false;
+    document.getElementById('dialerOverlay').style.display = 'flex';
+    
+    // Синхронизируем кнопки при открытии
+    document.getElementById('dialBtnMsg').classList.toggle('active', dialerModes.msg);
+    document.getElementById('dialBtnCall').classList.toggle('active', dialerModes.call);
+    
+    renderDialerDisplay();
+}
+
+function closeDialer() {
+    document.getElementById('dialerOverlay').style.display = 'none';
+    dialerNumber = ""; // Сброс номера для следующего раза
+    isWaitingForReturn = false;
+}
+
+// 4. ЛОГИКА НАБОРА (С щелчком и вибрацией)
+function dial(num) {
+    if (dialerNumber.length < 10) {
+        playClickSound(); // Фирменный щелчок
+        dialerNumber += num;
+        if (navigator.vibrate) navigator.vibrate(25); // Тактильный отклик
+        renderDialerDisplay();
+    }
+}
+
+function dialErase() {
+    if (dialerNumber.length > 0) {
+        playClickSound();
+        dialerNumber = dialerNumber.slice(0, -1);
+        renderDialerDisplay();
+    }
+}
+
+function renderDialerDisplay() {
+    const container = document.getElementById('dialerDisplay');
+    if (!container) return;
+    
+    // Префикс +7 всегда зафиксирован
+    container.innerHTML = '<div class="dial-cell filled">+7</div><div style="width:5px"></div>';
+    
+    for (let i = 0; i < 10; i++) {
+        const digit = dialerNumber[i] || "";
+        container.innerHTML += `<div class="dial-cell ${digit ? 'filled' : ''}">${digit}</div>`;
+        // Добавляем микро-отступы для красоты (как в телефоне)
+        if (i === 2 || i === 5 || i === 7) container.innerHTML += '<div style="width:4px"></div>';
+    }
+
+    const btn = document.getElementById('dialSubmit');
+    if (dialerNumber.length === 10) {
+        btn.style.opacity = "1";
+        btn.disabled = false;
+        btn.style.background = "var(--p)";
+    } else {
+        btn.style.opacity = "0.3";
+        btn.disabled = true;
+    }
+}
+
+// 5. УМНЫЙ МУЛЬТИВЫБОР (Не дает выключить обе кнопки сразу)
+function setDialMode(mode) {
+    const activeCount = Object.values(dialerModes).filter(v => v).length;
+    
+    if (dialerModes[mode] && activeCount === 1) {
+        // Если кнопка последняя активная — просто "трясем" её
+        const btnId = mode === 'msg' ? 'dialBtnMsg' : 'dialBtnCall';
+        const btn = document.getElementById(btnId);
+        btn.classList.add('attention-please');
+        setTimeout(() => btn.classList.remove('attention-please'), 400);
+        return;
+    }
+
+    dialerModes[mode] = !dialerModes[mode]; 
+    
+    document.getElementById('dialBtnMsg').classList.toggle('active', dialerModes.msg);
+    document.getElementById('dialBtnCall').classList.toggle('active', dialerModes.call);
+}
+
+// 6. ФИНАЛЬНАЯ ОТПРАВКА В ТАБЛИЦУ
+function submitDialer() {
+    const fullNumber = "+7" + dialerNumber;
+    let modes = [];
+    if (dialerModes.msg) modes.push("МЕССЕНДЖЕР");
+    if (dialerModes.call) modes.push("ЗВОНОК");
+    
+    const tag = `[РЕЗЕРВ: ${modes.join('+')}]`;
+    const finalMsg = `${tag} ${currentPreparedText || "Клиент вернулся с кнопки связи"}`;
+
+    if (typeof GOOGLE_SCRIPT_URL !== 'undefined' && GOOGLE_SCRIPT_URL.includes('script.google.com')) {
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: new URLSearchParams({ "text": finalMsg, "phone": fullNumber })
+        }).catch(e => console.log("Google Send Error"));
+    }
+
+    closeDialer();
+    // Показываем стандартное окно успеха
+    showSuccess('order', 'РЕЗЕРВ', fullNumber, "Мы свяжемся с вами выбранным способом.");
+}
+
+// 7. СИНТЕЗАТОР ЗВУКА (Web Audio API — без файлов mp3)
+function playClickSound() {
+    try {
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = context.createOscillator();
+        const gain = context.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1100, context.currentTime);
+
+        gain.gain.setValueAtTime(0, context.currentTime);
+        gain.gain.linearRampToValueAtTime(0.08, context.currentTime + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.08);
+
+        osc.connect(gain);
+        gain.connect(context.destination);
+
+        osc.start();
+        osc.stop(context.currentTime + 0.1);
+    } catch(e) { console.log("Audio blocked"); }
+}
 
 </script>
 <div id="tgOverlay" class="info-overlay" onclick="closeTgOverlay()">
@@ -2089,6 +2069,44 @@ function showOldNews() {
         <button onclick="closeTgOverlay()" class="s-close-btn" style="background:none; color:#888; margin-top:10px; width: 100%;">ОТМЕНА</button>
     </div>
 </div>
+
+
+<div id="dialerOverlay" class="info-overlay" style="z-index: 9999999; display:none; align-items: flex-end;">
+    <div class="info-box dialer-box" onclick="event.stopPropagation()">
+        
+        <div style="text-align: center; margin-bottom: 15px;">
+            <div style="font-size: 15px; color: #000; font-weight: 700; line-height: 1.2;">
+                Связь — штука капризная.<br>Найдем удобный канал?
+            </div>
+        </div>
+
+        <div id="dialerDisplay" style="display: flex; justify-content: center; gap: 4px; margin-bottom: 20px;"></div>
+
+        <div class="dial-grid">
+            <button class="d-num" onclick="dial(1)">1</button>
+            <button class="d-num" onclick="dial(2)">2</button>
+            <button class="d-num" onclick="dial(3)">3</button>
+            <button class="d-num" onclick="dial(4)">4</button>
+            <button class="d-num" onclick="dial(5)">5</button>
+            <button class="d-num" onclick="dial(6)">6</button>
+            <button class="d-num" onclick="dial(7)">7</button>
+            <button class="d-num" onclick="dial(8)">8</button>
+            <button class="d-num" onclick="dial(9)">9</button>
+            <div style="width: 60px;"></div>
+            <button class="d-num" onclick="dial(0)">0</button>
+            <button class="d-num d-back" onclick="dialErase()">⌫</button>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 20px;">
+            <button id="dialBtnMsg" class="dial-mode-btn active" onclick="setDialMode('msg')">💬 ПИШИТЕ В МЕССЕНДЖЕР</button>
+            <button id="dialBtnCall" class="dial-mode-btn" onclick="setDialMode('call')">📞 МОЖНО ПОЗВОНИТЬ</button>
+        </div>
+
+        <button id="dialSubmit" class="cp-submit-full" onclick="submitDialer()" style="margin-top: 15px; height: 50px; opacity: 0.3;" disabled>ОТПРАВИТЬ</button>
+        <button onclick="closeDialer()" style="width:100%; background:none; border:none; color:#bbb; font-size:12px; margin-top:10px; cursor:pointer;">НЕТ, Я СПРАВЛЮСЬ</button>
+    </div>
+</div>
+
 
 </body>
 </html>
