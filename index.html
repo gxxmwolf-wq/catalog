@@ -575,52 +575,100 @@ function render(isNewSearch = false) {
 
 function renderSuggestions(inputText) {
     const box = document.getElementById('suggestRow');
-    if (!box) return; box.innerHTML = ''; 
-    const val = inputText.trim().toLowerCase();
-    if (!val) return;
-    const isTrailingSpace = inputText.endsWith(' ');
-    const userWords = val.split(/\s+/).filter(w => w.length > 0);
-    const isRussianInput = /[а-яё]/i.test(userWords[0] || "");
-    const queryWordsForFilter = isTrailingSpace ? userWords : userWords.slice(0, -1);
-    const queryVars = queryWordsForFilter.map(w => getSearchVariations(w));
+    if (!box) return; 
+    box.innerHTML = ''; 
+    
+    const rawVal = inputText.toLowerCase(); 
+    const trimVal = rawVal.trim();
+    if (!trimVal) return;
 
-    const currentMatches = db.filter(r => {
+    const userWords = trimVal.split(/\s+/);
+    const isTrailingSpace = rawVal.endsWith(' ');
+    const firstWord = userWords[0];
+    const lastWord = userWords[userWords.length - 1];
+
+    // ОПРЕДЕЛЯЕМ ЯЗЫК "ЯКОРЯ"
+    // Если в первом слове есть кириллица — работаем по RU полю, иначе по DE
+    const isCyrillic = /[а-яё]/i.test(firstWord);
+    const targetField = isCyrillic ? 'Name_RU' : 'Name_DE';
+    
+    // 1. Поиск совпадений (ищем везде, чтобы найти товар)
+    const matches = db.filter(r => {
         if (!r.Name_DE) return false;
-        const pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${pznStr}`.toLowerCase();
-        return queryVars.every(vars => vars.some(v => pool.includes(v)));
-    });
-
-    let candidates = new Set();
-    const typedMeanings = new Set();
-    userWords.forEach(w => getSearchVariations(w).forEach(v => typedMeanings.add(v)));
-    const lastFragment = isTrailingSpace ? "" : userWords[userWords.length - 1];
-    const lastVars = getSearchVariations(lastFragment);
-
-    currentMatches.forEach(r => {
-        if ((lastFragment.includes('pzn') || /\d/.test(lastFragment)) && r.PZN) candidates.add(`PZN ${r.PZN}`);
-        const sourceText = isRussianInput ? `${r.Category || ''} ${r.Name_RU || ''}` : `${r.Category || ''} ${r.Name_DE}`;
-        const words = sourceText.replace(/[.,()/]/g, ' ').toLowerCase().split(/\s+/).filter(w => w.length > 1);
-        words.forEach(word => {
-            if (typedMeanings.has(word)) return;
-            const wordVars = getSearchVariations(word);
-            if (isTrailingSpace || lastVars.some(lv => lv && wordVars.some(wv => wv.startsWith(lv)))) candidates.add(word);
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.PZN}`.toLowerCase();
+        return userWords.every(word => {
+            const vars = getSearchVariations(word);
+            return vars.some(v => pool.includes(v));
         });
     });
 
-    Array.from(candidates).sort((a,b) => a.startsWith('PZN') && !b.startsWith('PZN') ? -1 : 1).slice(0, 5).forEach(word => {
+    if (matches.length === 0) return;
+
+    let candidates = new Set();
+
+    matches.forEach(r => {
+        // Берем текст только из целевого поля (RU или DE)
+        const nameText = r[targetField] || r['Name_DE']; // Фолбек на DE, если RU пустое
+        const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
+        
+        if (!isTrailingSpace) {
+            // ЛОГИКА А: Дописываем слово
+            const lastWordVars = getSearchVariations(lastWord);
+            for (let part of nameParts) {
+                const pLow = part.toLowerCase();
+                // Предлагаем целое слово, которое начинается на ввод
+                if (lastWordVars.some(v => pLow.startsWith(v)) && pLow !== lastWord.toLowerCase()) {
+                    candidates.add(part.replace(/[()]/g, ''));
+                }
+            }
+            
+            // Категория только на первом слоте
+            if (userWords.length === 1 && r.Category) {
+                candidates.add(r.Category);
+            }
+        } 
+        else {
+            // ЛОГИКА Б: Следующее слово в цепочке (строго по выбранному языку)
+            const lastWordVars = getSearchVariations(lastWord);
+            for (let i = 0; i < nameParts.length - 1; i++) {
+                const partLow = nameParts[i].toLowerCase();
+                if (lastWordVars.some(v => partLow === v)) {
+                    const nextPart = nameParts[i + 1];
+                    if (nextPart) candidates.add(nextPart.replace(/[()]/g, ''));
+                    break; 
+                }
+            }
+        }
+    });
+
+    // Очистка от уже введенного
+    let finalChips = Array.from(candidates).filter(c => {
+        const cLow = c.toLowerCase();
+        return !userWords.some(uw => uw.toLowerCase() === cLow);
+    });
+
+    // Отрисовка
+    finalChips.slice(0, 8).forEach(word => {
         const chip = document.createElement('div');
-        chip.className = 's-chip'; chip.innerText = word;
+        chip.className = 's-chip'; 
+        chip.innerText = word;
         chip.onclick = () => {
             const input = document.getElementById('search');
-            let wordsArr = input.value.trim().split(/\s+/);
-            if (isTrailingSpace) wordsArr.push(word); else wordsArr[wordsArr.length - 1] = word;
-            input.value = wordsArr.join(' ') + ' ';
-            handleInput(); input.focus();
+            let currentWords = input.value.trim().split(/\s+/);
+            
+            if (!isTrailingSpace) {
+                currentWords[currentWords.length - 1] = word;
+            } else {
+                currentWords.push(word);
+            }
+            
+            input.value = currentWords.join(' ') + ' ';
+            handleInput(); 
+            input.focus();
         };
         box.appendChild(chip);
     });
-}
+}       
 
 function handleImgError(img) {
     const div = document.createElement('div');
@@ -1128,19 +1176,32 @@ function openQuestion() {
 }
 
 // 3. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА
-function openContactForm(preparedText) {
+function openContactForm() {
     isQuestionMode = false; 
-    currentPreparedText = preparedText;
     closeModal(); 
     document.getElementById('contactTitle').innerText = "ПРЕДПРОСМОТР ЗАЯВКИ";
     
+    // 1. Генерируем "чистый" список для глаз клиента (без цен и PZN)
+    let visualPreview = "СОСТАВ ЗАЯВКИ:\n\n";
+    cart.forEach((item, idx) => {
+        const r = db.find(x => String(x.PZN) === String(item.pzn));
+        if (r) {
+            visualPreview += `${idx + 1}. ${r.Name_DE} — ${item.qty} шт.\n`;
+        }
+    });
+    visualPreview += "\n+ Тариф почты из Германии";
+
+    // 2. Генерируем "полный" текст для отправки менеджеру (со всеми данными)
+    const fullData = getOrderTextAndLink();
+    currentPreparedText = fullData ? fullData.text : "";
+
     const manualInput = document.getElementById('manualMsgInput');
     if (manualInput) manualInput.style.display = 'none';
     
     const previewBox = document.getElementById('orderPreviewBox');
     if (previewBox) {
         previewBox.style.display = 'block';
-        previewBox.innerText = preparedText;
+        previewBox.innerText = visualPreview; // Клиент видит только названия
     }
     
     document.getElementById('contactButtonsGrid').style.display = 'flex';
