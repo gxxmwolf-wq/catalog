@@ -473,84 +473,91 @@ function handleInput(updateUrl = true) {
 
 function render(isNewSearch = false) {
     const list = document.getElementById('list'); 
-    if (!list) return;
+    const intro = document.getElementById('introBlock');
+    if (!list || !intro) return;
+
     if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
     list.innerHTML = '';
     const query = filters.search.trim().toLowerCase();
     
+    // 1. СОСТОЯНИЕ "ГЛАВНАЯ" (Пустой поиск)
     if (!query) { 
-        document.getElementById('introBlock').style.display = 'block'; 
-        renderNewsFeed(); 
+        intro.style.display = 'block'; 
+        renderNewsFeed(); // Рисуем обычную ленту
         return; 
     }
-    document.getElementById('introBlock').style.display = 'none';
+    
+    // 2. СОСТОЯНИЕ "ПОИСК" (Скрываем фон)
+    intro.style.display = 'none';
 
-    // Подготовка слов
-    const cleanQuery = query.replace(/[:.,\-№#]/g, ' ');
-    const queryWords = cleanQuery.split(/\s+/).filter(w => w.length > 0);
+   /// --- ЛОГИКА КОНТЕКСТНЫХ НОВОСТЕЙ (с относительным временем) ---
+    const firstWord = query.split(/\s+/)[0]; 
+    const matchedNews = newsDB.filter(n => 
+        n.Text.toLowerCase().includes(firstWord) || 
+        (n.Tag && n.Tag.toLowerCase().includes(firstWord))
+    ).slice(0, 3);
+
+    if (matchedNews.length > 0) {
+        let newsHtml = `<div class="context-news-wrap" style="margin-bottom:20px;">`;
+        matchedNews.forEach((n, idx) => {
+            const age = getNewsAge(n.Date);
+            const isOld = age > 90;
+            
+            // Формируем текст тега и его цвет
+            const tagLabel = isOld ? "АРХИВНАЯ ЗАПИСЬ" : (n.Tag || "ВАЖНО").toUpperCase();
+            const tagBg = isOld ? "#8E8E93" : "#D32F2F";
+            
+            // Формируем строку времени: Дата (.. дней назад)
+            const timeInfo = `(${getRelativeTime(n.Date)})`;
+
+            newsHtml += `
+                <div class="notepad-item context-match" style="border-left:4px solid ${tagBg}; background:#fffbfb; margin-bottom:8px;">
+                    <div class="np-date-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <span class="np-date-text" style="font-size:11px; color:#999;">
+                            ${n.Date} <span style="text-decoration:underline; font-weight:600;">${timeInfo}</span>
+                        </span>
+                        <span class="np-tag-top" style="background:${tagBg}; font-size:9px; padding:2px 6px; border-radius:4px; color:#fff;">
+                            ${tagLabel}
+                        </span>
+                    </div>
+                    <div class="np-body" style="font-size:13px; line-height:1.4; color:#333;">
+                        ${formatNewsText(n.Text, idx)}
+                    </div>
+                </div>`;
+        });
+        newsHtml += `</div>`;
+        list.innerHTML += newsHtml;
+    }
+
+    // 3. СТАНДАРТНЫЙ ПОИСК ТОВАРОВ
+    const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
-    // СТРОГИЙ ПОИСК (с PZN логикой)
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        let pznStr = '';
-        if (r.PZN) {
-            const pznNum = String(r.PZN).replace(/\D/g, ''); 
-            if (pznNum) {
-                const noZeros = parseInt(pznNum, 10).toString();
-                const full8 = noZeros.padStart(8, '0');
-                pznStr = `pzn pzn${full8} ${full8} pzn${noZeros} ${noZeros}`;
-            }
-        }
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${pznStr}`.toLowerCase();
+        let pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${pznStr}`.toLowerCase();
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
-    // НЕЧЕТКИЙ ПОИСК (если строго ничего нет)
-    let isFuzzyMatch = false;
-    if (results.length === 0 && queryWords.length > 0 && queryWords[0].length >= 4) {
-        const firstWord = queryWords[0].toLowerCase();
-        const fuzzyMatches = db.filter(r => {
-            if (!r || !r.Name_DE) return false;
-            const nameWords = `${r.Name_DE} ${r.Name_RU||''}`.toLowerCase().replace(/[.,()/]/g, ' ').split(/\s+/).filter(w => w.length > 2);
-            return nameWords.some(w => Math.abs(w.length - firstWord.length) <= 2 && levenshtein(firstWord, w) <= (firstWord.length <= 6 ? 1 : 2));
-        });
-        if (fuzzyMatches.length > 0) { results = fuzzyMatches; isFuzzyMatch = true; }
-    }
-
     if (results.length === 0) {
         if (query.length < 3) return;
-        list.innerHTML = `<div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
-            <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">Ничего не найдено. <br><span style="color: #888; font-size: 13px;">Напишите нам — мы расширим поиск!</span></div>
-            <button onclick="openContactForm('Запрос: ${query}')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-weight: 800; cursor: pointer;">ЗАПРОСИТЬ ПОИСК</button>
-        </div>`;
+        list.innerHTML += `<div style="text-align:center; padding:30px; color:#888;">Ничего не найдено</div>`;
         return;
     }
 
-    if (isFuzzyMatch) {
-        list.innerHTML += `<div style="margin: 10px 10px 15px 10px; padding: 12px; background: #fffdf5; border: 1px solid #ffeb3b; border-radius: 8px; font-size: 13px; color: #b99d00; text-align: center; font-weight: 600;">Возможно, вы искали это:</div>`;
-    }
-
-    // Отрисовка карточек с SEO alt и ленивой загрузкой
+    // 4. ОТРИСОВКА КАРТОЧЕК
     results.forEach(r => {
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
-        const altText = `${r.Name_DE}${r.Name_RU ? ' / ' + r.Name_RU : ''} — PZN ${r.PZN}`;
-
+        const altText = `${r.Name_DE} — PZN ${r.PZN}`;
         list.innerHTML += `
             <div class="card ${q > 0 ? 'selected' : ''}">
-                <img src="img/${r.PZN}.webp" 
-                     class="product-thumb" 
-                     loading="lazy" 
-                     alt="${altText}" 
-                     onerror="handleImgError(this)">
+                <img src="img/${r.PZN}.webp" class="product-thumb" loading="lazy" alt="${altText}" onerror="handleImgError(this)">
                 <div class="card-body">
                     <div class="c-title">${r.Name_DE} ${r.R && r.R !== "0" ? '<span class="b-rx">RX</span>' : ''}</div>
                     <div class="card-bottom">
-                        <div class="c-meta-box">
-                            <div>${r.Hersteller}</div>
-                            <div>PZN: ${r.PZN}</div>
-                        </div>
+                        <div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div>
                         <div class="c-ctrl">
                             <div class="u-price">${Math.round(p)} €</div>
                             <div class="qty-capsule-wrap">
@@ -1621,11 +1628,27 @@ function formatNewsText(text, index = -1) {
 window.setSearchFromNews = function(word) {
     const input = document.getElementById('search');
     if (input) {
-        input.value = word;
-        handleInput(); 
+        // Очищаем слово от знака # если он пришел
+        const cleanWord = word.replace('#', '');
+        
+        // Вставляем слово С ПРОБЕЛОМ в конце
+        input.value = cleanWord + ' '; 
+        filters.search = cleanWord + ' ';
+        
+        // Запускаем поиск и подсказки
+        render(true); 
+        renderSuggestions(input.value); 
+        
+        // Возвращаем курсор и клавиатуру
+        setTimeout(() => {
+            input.focus();
+            // Ставим курсор в самый конец
+            input.setSelectionRange(input.value.length, input.value.length);
+        }, 100);
+        
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
     }
-};
+};;
 
 // 4. Интерактив: Вопрос по конкретной новости
 window.openQuestionFromNews = function(index) {
