@@ -584,15 +584,10 @@ function renderSuggestions(inputText) {
 
     const userWords = trimVal.split(/\s+/);
     const isTrailingSpace = rawVal.endsWith(' ');
-    const firstWord = userWords[0];
     const lastWord = userWords[userWords.length - 1];
+    const lastWordVars = getSearchVariations(lastWord).map(v => v.toLowerCase());
 
-    // ОПРЕДЕЛЯЕМ ЯЗЫК "ЯКОРЯ"
-    // Если в первом слове есть кириллица — работаем по RU полю, иначе по DE
-    const isCyrillic = /[а-яё]/i.test(firstWord);
-    const targetField = isCyrillic ? 'Name_RU' : 'Name_DE';
-    
-    // 1. Поиск совпадений (ищем везде, чтобы найти товар)
+    // 1. ФИЛЬТРУЕМ БАЗУ (Твой проверенный поиск)
     const matches = db.filter(r => {
         if (!r.Name_DE) return false;
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.PZN}`.toLowerCase();
@@ -607,68 +602,61 @@ function renderSuggestions(inputText) {
     let candidates = new Set();
 
     matches.forEach(r => {
-        // Берем текст только из целевого поля (RU или DE)
-        const nameText = r[targetField] || r['Name_DE']; // Фолбек на DE, если RU пустое
-        const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
-        
-        if (!isTrailingSpace) {
-            // ЛОГИКА А: Дописываем слово
-            const lastWordVars = getSearchVariations(lastWord);
-            for (let part of nameParts) {
-                const pLow = part.toLowerCase();
-                // Предлагаем целое слово, которое начинается на ввод
-                if (lastWordVars.some(v => pLow.startsWith(v)) && pLow !== lastWord.toLowerCase()) {
-                    candidates.add(part.replace(/[()]/g, ''));
-                }
-            }
+        // Проверяем оба поля названия, чтобы не терять чипсы при смене языка/раскладки
+        const fieldsToSearch = [r.Name_DE, r.Name_RU].filter(Boolean);
+
+        fieldsToSearch.forEach(nameText => {
+            const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
             
-            // Категория только на первом слоте
-            if (userWords.length === 1 && r.Category) {
-                candidates.add(r.Category);
-            }
-        } 
-        else {
-            // ЛОГИКА Б: Следующее слово в цепочке (строго по выбранному языку)
-            const lastWordVars = getSearchVariations(lastWord);
-            for (let i = 0; i < nameParts.length - 1; i++) {
-                const partLow = nameParts[i].toLowerCase();
-                if (lastWordVars.some(v => partLow === v)) {
-                    const nextPart = nameParts[i + 1];
-                    if (nextPart) candidates.add(nextPart.replace(/[()]/g, ''));
-                    break; 
+            if (!isTrailingSpace) {
+                // ЛОГИКА А: Дописываем текущее слово (икш -> Briviact)
+                for (let part of nameParts) {
+                    const pLow = part.toLowerCase();
+                    if (lastWordVars.some(v => pLow.startsWith(v)) && pLow !== lastWord.toLowerCase()) {
+                        candidates.add(part.replace(/[()]/g, ''));
+                    }
+                }
+            } else {
+                // ЛОГИКА Б: Ищем, что идет ПОСЛЕ якоря (Briviact -> 100mg)
+                for (let i = 0; i < nameParts.length - 1; i++) {
+                    const partLow = nameParts[i].toLowerCase();
+                    // Если часть названия совпадает с любым вариантом нашего слова (раскладка/транслит)
+                    if (lastWordVars.some(v => partLow === v)) {
+                        const nextPart = nameParts[i + 1];
+                        if (nextPart) candidates.add(nextPart.replace(/[()]/g, ''));
+                        break; 
+                    }
                 }
             }
+        });
+
+        // Категория только для первого слова без пробела
+        if (userWords.length === 1 && !isTrailingSpace && r.Category) {
+            candidates.add(r.Category);
         }
     });
 
-    // Очистка от уже введенного
+    // Чистка дублей
     let finalChips = Array.from(candidates).filter(c => {
-        const cLow = c.toLowerCase();
-        return !userWords.some(uw => uw.toLowerCase() === cLow);
+        return !userWords.some(uw => c.toLowerCase() === uw.toLowerCase());
     });
 
-    // Отрисовка
     finalChips.slice(0, 8).forEach(word => {
         const chip = document.createElement('div');
         chip.className = 's-chip'; 
         chip.innerText = word;
         chip.onclick = () => {
             const input = document.getElementById('search');
-            let currentWords = input.value.trim().split(/\s+/);
-            
-            if (!isTrailingSpace) {
-                currentWords[currentWords.length - 1] = word;
-            } else {
-                currentWords.push(word);
-            }
-            
-            input.value = currentWords.join(' ') + ' ';
+            let words = input.value.trim().split(/\s+/);
+            if (!isTrailingSpace) words[words.length - 1] = word;
+            else words.push(word);
+            input.value = words.join(' ') + ' ';
             handleInput(); 
             input.focus();
         };
         box.appendChild(chip);
     });
-}       
+}
 
 function handleImgError(img) {
     const div = document.createElement('div');
