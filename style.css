@@ -1313,3 +1313,10 @@ body {
     line-height: 1.45;
     color: #444;
 }
+/* Прячем мини-чек на мобильных устройствах */
+@media (max-width: 767px) {
+    #miniReceipt {
+        display: none !important;
+    }
+}
+

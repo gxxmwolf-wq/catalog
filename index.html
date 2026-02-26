@@ -60,7 +60,15 @@
         <span class="rx-part">RX</span><span class="de-part">DE</span>
     </div>
     
-    <input type="text" id="search" class="search-input" placeholder="Поиск (рус / lat)..." oninput="handleInput()" onkeydown="checkEnter(event)" autocomplete="off">
+   <input type="text" id="search" 
+       class="search-input" 
+       placeholder="Поиск (рус / lat)..." 
+       oninput="handleInput()" 
+       onkeydown="checkEnter(event)" 
+       autocomplete="off" 
+       autocorrect="off" 
+       spellcheck="false"
+       enterkeyhint="search">
     
     <span class="cls-btn" id="clearBtn" onclick="clearSearch()">✕</span>
 </div>
@@ -165,37 +173,45 @@
     <button onclick="closeSuccess()" class="s-close-btn">ПОНЯТНО</button>
 </div>
 <script>
+    
 /* =========================================
    BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
    ========================================= */
 const LOCAL_DB_URL = 'db.csv'; 
 const GOOGLE_SETTINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=23735297&single=true&output=csv';
 const CBR_API_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
-/* В самом начале скрипта, где константы */
 const SITE_URL = window.location.origin + window.location.pathname;
 
-// --- НАШИ НОВЫЕ НАСТРОЙКИ СВЯЗИ ---
+// Константы связи
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxafE-uXAgaGFLN9QENHgNuEWlUVGJbfYXEn4rL0N8MGHXi1pGNbrVSoRByUBMSHgMA/exec'; 
 const WA_PHONE = '79650302556'; 
-const TG_USER  = 'remed01'; // Без собачки и кавычек!
+const TG_USER  = 'remed01'; 
 const KURS_FALLBACK = 100;
 
+// База данных и корзина
 let db = [], cart = [], rateCalc = 100, shipEur = 50, filters = { search: '' };
-// ... дальше идут ваши let currentPreparedText и т.д.
-let currentPreparedText = ""; // ОБЪЯВЛЕНО ОДИН РАЗ
-let contactMode = 'question';
-let cbrRateData = 0, googleSettings = null; // Добавили недостающие переменные
-let restoredDate = ""; // Флаг для хранения даты восстановления
+let cbrRateData = 0, googleSettings = null; 
 
+// Важные технические флаги (НЕ УДАЛЯТЬ)
+let isQuestionMode = false;   // true — когда нажат "Написать вопрос", false — когда идет заказ
+let isManagerOrder = false;   // true — если корзина пришла по ссылке от менеджера
+let currentPreparedText = ""; // Буфер для текста сообщения
+let restoredDate = "";        // Хранит дату восстановления заказа
+
+// Звуковой движок
 const audioAdd = new Audio("sounds/add.mp3");
-    const audioRem = new Audio("sounds/remove.mp3");
-    
-    function playSound(isRemoving) {
-        const snd = isRemoving ? audioRem : audioAdd;
-        snd.currentTime = 0;
-        snd.volume = 0.4;
-        snd.play().catch(e => console.log("Sound blocked by browser"));
-    }
+const audioRem = new Audio("sounds/remove.mp3");
+const audioOrder = new Audio("sounds/zakaz.mp3"); // Звук №3 (успех)
+
+/**
+ * Функция для озвучки действий (Добавление/Удаление)
+ */
+function playSound(isRemoving) {
+    const snd = isRemoving ? audioRem : audioAdd;
+    snd.currentTime = 0;
+    snd.volume = 0.4;
+    snd.play().catch(e => console.log("Sound blocked by browser"));
+}
 
     /* =========================================
        BLOCK 2: УНИВЕРСАЛЬНАЯ ЛОГИКА СВЯЗИ
@@ -515,15 +531,38 @@ function render(isNewSearch = false) {
         list.innerHTML += `<div style="margin: 10px 10px 15px 10px; padding: 12px; background: #fffdf5; border: 1px solid #ffeb3b; border-radius: 8px; font-size: 13px; color: #b99d00; text-align: center; font-weight: 600;">Возможно, вы искали это:</div>`;
     }
 
+    // Отрисовка карточек с SEO alt и ленивой загрузкой
     results.forEach(r => {
-        if (!r.Price) return;
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
         const altText = `${r.Name_DE}${r.Name_RU ? ' / ' + r.Name_RU : ''} — PZN ${r.PZN}`;
-        const sum = q > 0 ? `<div class="sum-box"><div class="s-eur">${Math.round(p * q)} €</div><div class="s-rub">${getRubPrice(p * q).toLocaleString()} ₽</div></div>` : '';
-        const btn = q > 0 ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`;
-        
-        list.innerHTML += `<div class="card ${q > 0 ? 'selected' : ''}"><img src="img/${r.PZN}.webp" class="product-thumb" alt="${altText}" onerror="handleImgError(this)"><div class="card-body"><div class="c-title">${r.Name_DE} ${r.R && r.R !== "0" ? '<span class="b-rx">RX</span>' : ''}</div><div class="card-bottom"><div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div><div class="c-ctrl"><div class="u-price">${Math.round(p)} €</div><div class="qty-capsule-wrap">${btn}</div><div class="sum-box">${sum}</div></div></div></div></div>`;
+
+        list.innerHTML += `
+            <div class="card ${q > 0 ? 'selected' : ''}">
+                <img src="img/${r.PZN}.webp" 
+                     class="product-thumb" 
+                     loading="lazy" 
+                     alt="${altText}" 
+                     onerror="handleImgError(this)">
+                <div class="card-body">
+                    <div class="c-title">${r.Name_DE} ${r.R && r.R !== "0" ? '<span class="b-rx">RX</span>' : ''}</div>
+                    <div class="card-bottom">
+                        <div class="c-meta-box">
+                            <div>${r.Hersteller}</div>
+                            <div>PZN: ${r.PZN}</div>
+                        </div>
+                        <div class="c-ctrl">
+                            <div class="u-price">${Math.round(p)} €</div>
+                            <div class="qty-capsule-wrap">
+                                ${q > 0 
+                                    ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` 
+                                    : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`}
+                            </div>
+                            <div class="sum-box">${q > 0 ? `<div class="s-eur">${Math.round(p*q)} €</div><div class="s-rub">${getRubPrice(p*q).toLocaleString()} ₽</div>` : ''}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
     });
 }
 
@@ -600,7 +639,13 @@ function clearSearch() {
     /* =========================================
    BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
    ========================================= */
-function modQty(pzn, d, event) { 
+function modQty(pzn, d, event) {
+    // Если это добавление и телефон поддерживает вибрацию
+    if (d > 0 && navigator.vibrate) {
+        navigator.vibrate(10); // Едва заметный "тик" (10 миллисекунд)
+    }
+    // ... остальной код функции
+
     // МГНОВЕННО СБРАСЫВАЕМ ДАТУ ВОССТАНОВЛЕНИЯ
     restoredDate = ""; 
 
@@ -671,7 +716,8 @@ function updateBar() {
     }
 
     // МИНИ-ЧЕК (С НОВЫМ ИТОГО)
-    if (count > 0) {
+    // МИНИ-ЧЕК (Показываем только на больших экранах)
+    if (count > 0 && window.innerWidth > 767) { // <-- Добавили проверку ширины
         let rowsHtml = '';
         let displayItems = (activeItems.length <= 5) ? activeItems : [...activeItems.slice(0, 3), { isSeparator: true }, ...activeItems.slice(-2)];
         
@@ -692,11 +738,7 @@ function updateBar() {
         receipt.innerHTML = `
             ${rowsHtml}
             <div class="receipt-divider" style="height:1px; border-bottom:1px dashed #eee; margin:6px 0;"></div>
-            
-            <div class="receipt-row color-ship" style="color:#666; font-style:normal;">
-                <span class="name">Почтовый тариф</span><span class="dots"></span><span class="calc">${shipEur} €</span>
-            </div>
-            
+            <div class="receipt-row color-ship" style="color:#666;"><span class="name">Почтовый тариф</span><span class="dots"></span><span class="calc">${shipEur} €</span></div>
             <div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center;">
                 <span>ИТОГО:</span>
                 <div style="text-align:right;">
@@ -708,7 +750,7 @@ function updateBar() {
         `;
         receipt.style.display = 'flex';
     } else {
-        receipt.style.display = 'none';
+        receipt.style.display = 'none'; // На мобилках и при пустой корзине всегда скрыто
     }
 
     // ФУТЕР БОЛЬШОЙ КОРЗИНЫ
@@ -738,72 +780,84 @@ function updateBar() {
     // (Если нужны для Google Sheets, оставьте, если нет - можно убрать)
    
 
-    /* =========================================
-   BLOCK 7.2: ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+ /* =========================================
+   BLOCK 7.2: ИНИЦИАЛИЗАЦИЯ И ВОССТАНОВЛЕНИЕ
    ========================================= */
+
+function tryRestoreSearchFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q) {
+        const inp = document.getElementById('search');
+        if (inp) {
+            inp.value = q;
+            filters.search = q;
+            render(true);
+        }
+    }
+}
+
+function tryRestoreCartFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const cData = params.get('c');
+    const dData = params.get('d');
+    if (cData) {
+        try {
+            const pairs = cData.split(',');
+            cart = pairs.map(p => {
+                const [pzn, qty] = p.split(':');
+                return { pzn: pzn, qty: parseInt(qty) };
+            });
+            if (dData) {
+                restoredDate = dData.replace('_', ' ');
+                isManagerOrder = dData.includes('_'); 
+            }
+            updateBar();
+            return true;
+        } catch(e) { 
+            console.error("Ошибка разбора корзины из ссылки"); 
+            return false; 
+        }
+    }
+    return false;
+}
+
 async function init() {
-    // 1. Загружаем корзину из локальной памяти
     try { 
         const saved = localStorage.getItem('de_cart_arr'); 
         if (saved) cart = JSON.parse(saved); 
-    } catch(e) { 
-        cart = []; 
-    }
+    } catch(e) { cart = []; }
     
-    // 2. Основной поток: Загрузка базы -> Курсы -> Отрисовка
     Papa.parse(LOCAL_DB_URL, {
         download: true,
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
             db = results.data;
-            
-            // Ждем получения курсов ЦБ и настроек из Google Таблиц
-            Promise.all([
-                fetchCbrRate(), 
-                fetchGoogleSettings()
-            ]).then(() => {
-                // Считаем финальный курс и обновляем интерфейс
+            Promise.all([fetchCbrRate(), fetchGoogleSettings()]).then(() => {
                 calculateFinalLogic(); 
 
-                // --- ОБРАБОТКА ССЫЛОК ПРИ ЗАГРУЗКЕ ---
+                // Восстановление состояния из URL
+                tryRestoreSearchFromUrl();
+                const cartRestored = tryRestoreCartFromUrl();
                 
-                // А. Восстанавливаем поиск из ссылки (?q=...)
-                if (typeof tryRestoreSearchFromUrl === 'function') {
-                    tryRestoreSearchFromUrl();
-                }
-
-                // Б. Восстанавливаем корзину из ссылки (?c=...)
-                if (typeof tryRestoreCartFromUrl === 'function' && tryRestoreCartFromUrl()) {
-                    // Если корзина восстановилась, открываем её через полсекунды
+                if (cartRestored) {
                     setTimeout(openCart, 500);
                 }
 
-                // В. Если поиска в ссылке НЕТ — рисуем стартовый экран (Новости)
-                if (!filters.search) {
-                    render();
-                }
+                if (!filters.search) render();
 
-                // Г. Проверка глубоких ссылок на инфо-окна (?faq или ?exp)
                 const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('faq')) {
-                    setTimeout(() => showInfo('faq'), 800);
-                } else if (urlParams.has('exp')) {
-                    setTimeout(() => showInfo('exp'), 800);
-                }
+                if (urlParams.has('faq')) setTimeout(() => showInfo('faq'), 800);
+                else if (urlParams.has('exp')) setTimeout(() => showInfo('exp'), 800);
 
             }).catch(err => {
-                console.error("Ошибка инициализации данных:", err);
                 calculateFinalLogic(); 
-                render(); 
+                render();
             });
         }
     });
-
-    // 3. Загружаем новости в фоновом режиме (не мешает основному потоку)
-    if (typeof fetchNews === 'function') {
-        fetchNews();
-    }
+    fetchNews();
 }
     // --- 7.3 УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ КОРЗИНЫ ---
     
@@ -1024,7 +1078,7 @@ function openCart() {
    BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ (CLEAN)
    ========================================= */
 
-// Генерация номера заказа
+// 1. Генерация номера заказа
 function generateOrderID() {
     const now = new Date();
     const d = String(now.getDate()).padStart(2, '0');
@@ -1035,18 +1089,13 @@ function generateOrderID() {
     return `${d}${m}${y}-${h}${min}`;
 }
 
-let isQuestionMode = false; 
-
-// 1. ОТКРЫТИЕ ОКНА "ВОПРОС" (Из меню)
+// 2. ОТКРЫТИЕ ОКНА "ВОПРОС" (Из меню)
 function openQuestion() {
     isQuestionMode = true; 
     closeModal();
-
     document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
     
-    // Прячем предпросмотр, показываем поле ввода
-    const previewBox = document.getElementById('orderPreviewBox');
-    if (previewBox) previewBox.style.display = 'none';
+    if (document.getElementById('orderPreviewBox')) document.getElementById('orderPreviewBox').style.display = 'none';
     
     const manualInput = document.getElementById('manualMsgInput');
     if (manualInput) {
@@ -1064,12 +1113,11 @@ function openQuestion() {
     if (mini) mini.style.display = 'none';
 }
 
-// 2. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА (Из корзины или поиска)
+// 3. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА
 function openContactForm(preparedText) {
     isQuestionMode = false; 
     currentPreparedText = preparedText;
     closeModal(); 
-    
     document.getElementById('contactTitle').innerText = "ПРЕДПРОСМОТР ЗАЯВКИ";
     
     const manualInput = document.getElementById('manualMsgInput');
@@ -1088,20 +1136,18 @@ function openContactForm(preparedText) {
     if (mini) mini.style.display = 'none';
 }
 
-// 3. ПЕРЕХОД В ДАЙЛЕР (Вместо старой формы)
+// 4. ПЕРЕХОД В ДАЙЛЕР
 function switchToContactForm() {
-    closeContact(); // Закрываем текущее окно с кнопками
-    
+    closeContact();
     setTimeout(() => {
         lastClickedChannel = "формы на сайте"; 
         isWaitingForReturn = false; 
-        showDialer(); // Открываем интерактивный набор номера
+        showDialer(); 
     }, 300);
 }
 
-// 4. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (WA / TG / Email)
+// 5. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (WA / TG / Email)
 function submitFinal(app) {
-    // Активируем ловушку возврата для Дайлера
     if (app === 'wa' || app === 'tg' || app === 'email') {
         lastClickedChannel = (app === 'wa') ? 'WhatsApp' : (app === 'tg' ? 'Telegram' : 'E-mail');
         isWaitingForReturn = true;
@@ -1110,82 +1156,68 @@ function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
     let finalMsg = "";
 
-    // Собираем текст сообщения
+    // Собираем КРАСИВЫЙ текст для клиента (не шифр!)
     if (isQuestionMode) {
-         if (typeof currentNewsContext !== 'undefined' && currentNewsContext !== "") {
-             finalMsg = currentNewsContext;
-             currentNewsContext = ""; 
-         } else {
-             finalMsg = manualInput && manualInput.value.trim() ? manualInput.value.trim() : "Вопрос";
-         }
+         finalMsg = manualInput ? manualInput.value.trim() : "Вопрос по препарату";
     } else {
-         finalMsg = currentPreparedText || getShortOrderLink(); 
+         // Берем полный текст заказа (со списком лекарств), а не только ссылку!
+         const orderData = getOrderTextAndLink();
+         finalMsg = orderData ? orderData.text : "Запрос заказа"; 
     }
 
-    // Распределяем по приложениям
     if (app === 'wa') {
         window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
+        // Для WhatsApp можно сразу показать успех, так как это прямой переход
+        showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), 'WhatsApp', finalMsg);
         closeContact();
     } else if (app === 'tg') {
+        // Для Telegram сначала копируем и показываем окно подтверждения
         try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
         closeContact(); 
-        document.getElementById('tgOverlayPreview').innerText = finalMsg;
+        document.getElementById('tgOverlayPreview').innerText = finalMsg; // Тут будет список лекарств!
         document.getElementById('tgOverlay').style.display = 'flex'; 
     } else if (app === 'email') {
-        const subject = encodeURIComponent(isQuestionMode ? "Вопрос с сайта RxDE" : "Новый заказ RxDE");
-        window.location.href = `mailto:med.zakaz.de@gmail.com?subject=${subject}&body=${encodeURIComponent(finalMsg)}`;
+        window.location.href = `mailto:med.zakaz.de@gmail.com?subject=RxDE&body=${encodeURIComponent(finalMsg)}`;
         closeContact();
     }
 }
-// Функция самого перехода
+
+// Когда клиент в окне Телеграма нажал "ОТМЕНА" или "ПЕРЕЙТИ"
+function closeTgOverlay() {
+    document.getElementById('tgOverlay').style.display = 'none';
+    const mini = document.getElementById('miniCart');
+    if (mini) mini.style.display = 'flex'; // Всегда возвращаем корзину!
+}
+
+// 6. ПЕРЕХОД В ТЕЛЕГРАМ
 function goToTelegram() {
-    // 1. Сначала закрываем оверлей
     closeTgOverlay(); 
-    
-    // 2. Открываем Телеграм (используем константу TG_USER)
     const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
     window.open(`https://t.me/${username}`, '_blank'); 
 }
 
-// Функция чистого закрытия окна
+// 7. ЗАКРЫТИЕ ОКНА ТЕЛЕГРАМ
 function closeTgOverlay() {
     const overlay = document.getElementById('tgOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
-
-    // Возвращаем мини-корзину, если в ней что-то есть
-    const mini = document.getElementById('miniCart');
-    if (mini && cart.length > 0) {
-        mini.style.display = 'flex';
-    }
+    if (overlay) overlay.style.display = 'none';
+    restoreMiniCart();
 }
 
-
-// 5. ЗАКРЫТИЕ И СБРОС
+// 8. ЗАКРЫТИЕ ОБЩЕГО ОКНА КОНТАКТОВ
 function closeContact() {
     const overlay = document.getElementById('contactOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-        
-        // Возвращаем мини-корзину
-        const mini = document.getElementById('miniCart');
-        if (mini) mini.style.display = '';
-    }
+    if (overlay) overlay.style.display = 'none';
+    restoreMiniCart();
 }
 
-function closeTgOverlay() {
-    const overlay = document.getElementById('tgOverlay');
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
-    // Возвращаем мини-корзину, если она не пуста
+// 9. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ВОЗВРАТА КОРЗИНЫ
+function restoreMiniCart() {
     const mini = document.getElementById('miniCart');
-    if (mini && cart.length > 0) {
-        mini.style.display = 'flex';
+    if (mini) {
+        mini.style.display = 'flex'; // Просто показываем её, невзирая на количество
+        updateBar(); // Пересчитываем цифры
     }
 }
-
 
     /* =========================================
    BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
@@ -1460,52 +1492,40 @@ function copyFilterResults() {
    BLOCK 10: УМНОЕ ОКНО УСПЕХА
    ========================================= */
 
+/* =========================================
+   BLOCK 10: УМНОЕ ОКНО УСПЕХА
+   ========================================= */
+
 function showSuccess(type, orderId, phone, msg = "") {
     const popup = document.getElementById('successPopup');
+    if (!popup) return;
+    
+    // 1. Играем zakaz.mp3 (Звук №3)
+    if (typeof audioOrder !== 'undefined') {
+        audioOrder.currentTime = 0;
+        audioOrder.volume = 0.5;
+        audioOrder.play().catch(e => console.log("Audio play blocked by browser"));
+    }
+
+    // 2. Логика текстов
     const titleEl = document.getElementById('succTitle');
     const subTitleEl = document.getElementById('succSubTitle');
     const idEl = document.getElementById('succID');
-    
-    if (popup && titleEl && subTitleEl && idEl) {
-        // Скрываем плашку с номером заказа, если это просто запрос связи
-        idEl.style.display = (orderId === 'РЕЗЕРВ') ? 'none' : 'inline-block';
 
-        if (orderId === 'РЕЗЕРВ') {
-            titleEl.innerText = "Связь восстановлена!";
-            subTitleEl.innerHTML = `
-                Спасибо! Мы получили ваш номер <b style="color:#000;">${phone}</b>.<br><br>
-                Наш специалист уже видит ваш запрос. Мы напишем вам в мессенджер или перезвоним в ближайшее время.
-            `;
-        } else if (type === 'order') {
-            titleEl.innerText = "Заказ отправлен!";
-            subTitleEl.innerHTML = `
-                Ваш заказ <b style="color:#000;">#${orderId}</b> уже у нас.<br><br>
-                Мы свяжемся с вами по номеру <b style="color:#000;">${phone}</b> для подтверждения деталей.
-            `;
-        } else {
-            titleEl.innerText = "Вопрос принят!";
-            // Убираем из текста вопроса технические метки [РЕЗЕРВ] и т.д.
-            let cleanMsg = msg.replace(/\[.*?\]/g, "").replace("Здравствуйте RxDE, у меня вопрос:", "").trim();
-            if (cleanMsg.length > 60) cleanMsg = cleanMsg.substring(0, 60) + "...";
-            
-            subTitleEl.innerHTML = `
-                <div style="background: #f5f7fa; padding: 12px; border-radius: 10px; font-style: italic; font-size: 13px; color: #666; margin-bottom: 15px; border-left: 3px solid var(--p); text-align: left;">
-                    «${cleanMsg}»
-                </div>
-                Специалист свяжется с вами по номеру <b style="color:#000;">${phone}</b>, чтобы ответить.
-            `;
-        }
-        
-        popup.classList.add('show');
-        
-        // Очистка корзины только при реальном заказе
-        if (type === 'order' && orderId !== 'РЕЗЕРВ') {
-            cart = [];
-            localStorage.removeItem('de_cart_arr');
-            updateBar();
-            render();
-        }
+    idEl.style.display = (orderId.includes('РЕЗЕРВ') || orderId === 'FAQ') ? 'none' : 'inline-block';
+    if (idEl.style.display !== 'none') idEl.innerText = `#${orderId}`;
+
+    if (orderId.includes('РЕЗЕРВ')) {
+        titleEl.innerText = "Связь восстановлена!";
+        subTitleEl.innerHTML = `Мы получили ваш номер <b style="color:#000;">${phone}</b>.<br>Специалист скоро свяжется с вами.`;
+    } else {
+        titleEl.innerText = (type === 'order') ? "Заказ отправлен!" : "Вопрос принят!";
+        subTitleEl.innerHTML = `Мы свяжемся с вами по номеру <b style="color:#000;">${phone}</b> для уточнения деталей.`;
     }
+    
+    popup.classList.add('show');
+    
+
 }
 
 function closeSuccess() {
@@ -1625,10 +1645,10 @@ window.openQuestionFromNews = function(index) {
 
 // 5. Главная отрисовка (SEO H1 + Лента)
 function renderNewsFeed() {
-    const introBlock = document.getElementById('introBlock');
-    if (!introBlock) return;
+    const intro = document.getElementById('introBlock');
+    if (!intro) return;
 
-    // Премиальный H1 без домена для лучшего UX
+    // 1. Чистый SEO-заголовок
     let html = `
         <div style="text-align:center; margin: 10px 0 20px 0;">
             <h1 style="font-size: 22px; margin-bottom: 4px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
@@ -1636,43 +1656,42 @@ function renderNewsFeed() {
         </div>
     `;
 
-    if (!newsDB || newsDB.length === 0) {
-        introBlock.innerHTML = html;
-        return;
-    }
-
-    html += `<div class="notepad-wrap"><div class="notepad-header">Заметки сервиса</div>`;
-
-    const visibleNews = newsDB.slice(0, newsToShow);
-    
-    visibleNews.forEach((item, index) => {
-        if (!item.Text) return; 
+    // 2. Отрисовка ленты новостей
+    if (newsDB && newsDB.length > 0) {
+        html += `<div class="notepad-wrap"><div class="notepad-header">Заметки сервиса</div>`;
         
-        let tagText = item.Tag || 'ИНФО';
-        let ageDays = getNewsAge(item.Date);
-        let capsuleBg = (ageDays > 90) ? '#8E8E93' : (tagText.toLowerCase().includes("важн") ? '#D32F2F' : '#007AFF');
-        let cleanTag = ageDays > 90 ? "АРХИВНАЯ ИНФОРМАЦИЯ" : tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
+        newsDB.slice(0, newsToShow).forEach((item, index) => {
+            // Логика тегов: Архив (серое), Важное (красное), Остальное (синее)
+            const age = getNewsAge(item.Date);
+            const isOld = age > 90;
+            const isUrgent = (item.Tag || '').toLowerCase().includes("важн");
+            
+            const tagLabel = isOld ? "АРХИВНАЯ ИНФОРМАЦИЯ" : (item.Tag || 'ИНФО').toUpperCase();
+            const tagColor = isOld ? '#8E8E93' : (isUrgent ? '#D32F2F' : '#007AFF');
 
-        html += `
-            <div class="notepad-item">
-                <div class="np-date-row">
-                    <span class="np-date-text" style="color: #333; font-family: 'Georgia', serif;">
-                        ${item.Date || ''} 
-                        <span style="color:#000; font-weight:800; font-size:11px; margin-left:5px; text-decoration: underline;">(${getRelativeTime(item.Date)})</span>
-                    </span>
-                    <span class="np-tag-top" style="background: ${capsuleBg};">${cleanTag.toUpperCase()}</span>
-                </div>
-                <div class="np-body">${formatNewsText(item.Text, index)}</div>
-            </div>
-        `;
-    });
+            html += `
+                <div class="notepad-item">
+                    <div class="np-date-row">
+                        <span class="np-date-text" style="font-family:Georgia,serif;">
+                            ${item.Date} 
+                            <span style="font-weight:800; font-size:11px; text-decoration:underline;">
+                                (${getRelativeTime(item.Date)})
+                            </span>
+                        </span>
+                        <span class="np-tag-top" style="background:${tagColor}">${tagLabel}</span>
+                    </div>
+                    <div class="np-body">${formatNewsText(item.Text, index)}</div>
+                </div>`;
+        });
 
-    if (newsToShow < newsDB.length) {
-        html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
+        // Кнопка "Показать еще"
+        if (newsToShow < newsDB.length) {
+            html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
+        }
+        html += `</div>`;
     }
 
-    html += `</div>`;
-    introBlock.innerHTML = html;
+    intro.innerHTML = html;
 }
 
 function showOldNews() {
