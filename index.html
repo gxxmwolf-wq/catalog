@@ -587,7 +587,7 @@ function renderSuggestions(inputText) {
     const lastWord = userWords[userWords.length - 1];
     const lastWordVars = getSearchVariations(lastWord).map(v => v.toLowerCase());
 
-    // 1. ФИЛЬТРУЕМ БАЗУ (Твой проверенный поиск)
+    // 1. ФИЛЬТРУЕМ БАЗУ
     const matches = db.filter(r => {
         if (!r.Name_DE) return false;
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.PZN}`.toLowerCase();
@@ -602,43 +602,55 @@ function renderSuggestions(inputText) {
     let candidates = new Set();
 
     matches.forEach(r => {
-        // Проверяем оба поля названия, чтобы не терять чипсы при смене языка/раскладки
         const fieldsToSearch = [r.Name_DE, r.Name_RU].filter(Boolean);
+        let anchorFoundInName = false;
 
         fieldsToSearch.forEach(nameText => {
             const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
             
             if (!isTrailingSpace) {
-                // ЛОГИКА А: Дописываем текущее слово (икш -> Briviact)
+                // ЛОГИКА А: Дописываем текущее слово
                 for (let part of nameParts) {
                     const pLow = part.toLowerCase();
                     if (lastWordVars.some(v => pLow.startsWith(v)) && pLow !== lastWord.toLowerCase()) {
                         candidates.add(part.replace(/[()]/g, ''));
+                        anchorFoundInName = true;
                     }
                 }
             } else {
-                // ЛОГИКА Б: Ищем, что идет ПОСЛЕ якоря (Briviact -> 100mg)
+                // ЛОГИКА Б: Ищем следующее слово за якорем
                 for (let i = 0; i < nameParts.length - 1; i++) {
                     const partLow = nameParts[i].toLowerCase();
-                    // Если часть названия совпадает с любым вариантом нашего слова (раскладка/транслит)
                     if (lastWordVars.some(v => partLow === v)) {
                         const nextPart = nameParts[i + 1];
                         if (nextPart) candidates.add(nextPart.replace(/[()]/g, ''));
+                        anchorFoundInName = true;
                         break; 
                     }
                 }
             }
         });
 
-        // Категория только для первого слова без пробела
-        if (userWords.length === 1 && !isTrailingSpace && r.Category) {
+        // --- ДОПОЛНИТЕЛЬНАЯ ЛОГИКА (Семён Семёныч) ---
+        
+        // 1. Если якорь не найден в названии (ищем по PZN или категории), 
+        // но товар подходит — предлагаем само название товара (первое слово)
+        if (!anchorFoundInName) {
+            const mainName = r.Name_RU || r.Name_DE;
+            const brand = mainName.split(/[\s,]+/)[0];
+            if (brand) candidates.add(brand);
+        }
+
+        // 2. Категория (только если совсем пусто в начале)
+        if (userWords.length === 1 && !isTrailingSpace && r.Category && candidates.size < 2) {
             candidates.add(r.Category);
         }
     });
 
-    // Чистка дублей
+    // Чистка дублей и того что уже в инпуте
     let finalChips = Array.from(candidates).filter(c => {
-        return !userWords.some(uw => c.toLowerCase() === uw.toLowerCase());
+        const cLow = c.toLowerCase();
+        return !userWords.some(uw => uw.toLowerCase() === cLow);
     });
 
     finalChips.slice(0, 8).forEach(word => {
