@@ -1330,3 +1330,51 @@ body {
     }
 }
 
+/* Специальные правки для мобильных (до 480px) */
+@media (max-width: 480px) {
+    /* 1. Делаем нижнюю часть карточки вертикальной стопкой */
+    .card-bottom {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        margin-top: 8px !important;
+    }
+
+    /* 2. Производитель и PZN теперь занимают 100% ширины (не будут сжиматься) */
+    .c-meta-box {
+        width: 100% !important;
+        margin-bottom: 10px !important; /* Отступ перед строкой управления */
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 6px;
+    }
+
+    /* 3. Создаем плотную строку: Цена | Кнопки | Итого */
+    .c-ctrl {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 0 !important; /* Убираем лишние промежутки */
+    }
+
+    /* Ужимаем цену за единицу */
+    .u-price {
+        font-size: 13px !important;
+        min-width: 45px;
+    }
+
+    /* Группируем кнопки и сумму ближе друг к другу */
+    .qty-capsule-wrap {
+        flex: 0 !important; /* Не растягиваться */
+        margin: 0 10px !important;
+    }
+
+    /* Сумма теперь четко справа, без гигантского отступа */
+    .sum-box {
+        text-align: right !important;
+        min-width: 85px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .s-eur { font-size: 16px !important; }
+    .s-rub { font-size: 11px !important; }
+}
