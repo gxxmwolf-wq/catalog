@@ -657,17 +657,22 @@ function renderSuggestions(inputText) {
         const chip = document.createElement('div');
         chip.className = 's-chip'; 
         chip.innerText = word;
+        
         chip.onclick = () => {
+            // --- ВОЗВРАЩАЕМ ВИБРО ---
+            if (navigator.vibrate) navigator.vibrate(15); // Короткий приятный "тык"
+            
             const input = document.getElementById('search');
             let words = input.value.trim().split(/\s+/);
             if (!isTrailingSpace) words[words.length - 1] = word;
             else words.push(word);
+            
             input.value = words.join(' ') + ' ';
             handleInput(); 
             input.focus();
         };
         box.appendChild(chip);
-    });
+    });;
 }
 
 function handleImgError(img) {
