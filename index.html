@@ -823,7 +823,8 @@ function tryRestoreCartFromUrl() {
             });
             if (dData) {
                 restoredDate = dData.replace('_', ' ');
-                isManagerOrder = dData.includes('_'); 
+               // Теперь: если подчеркивания НЕТ, это заказ от менеджера
+                isManagerOrder = !dData.includes('_');  
             }
             updateBar();
             return true;
@@ -1251,18 +1252,20 @@ function getOrderTextAndLink() {
     const t = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     const urlDate = `${d}_${t}`; 
 
-    // 1. Компактная шапка в скобках
+    // 1. ВЫРАВНЕННАЯ ШАПКА (по 11-му символу)
     let totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
-    let text = `[${d}] [${totalQty} pack] Расчетный курс: ${rateCalc} ₽\n\n`;
+    let text =  `дата:      [${d}]\n`;
+    text +=     `€/₽:       [${rateCalc}]\n`;
+    text +=     `всего уп:  [${totalQty} pack]\n\n`;
 
     let itemsSumEur = 0;
-    let breakdown = []; 
+    let breakdown = [shipEur]; // Начинаем с почты
 
-    // 2. Список товаров
+    // 2. СПИСОК ТОВАРОВ
     cart.forEach((item, idx) => {
-        const r = db.find(x => String(x.PZN) === String(item.pzn));
+        const r = db.find(x => String(x.pzn) === String(item.pzn) || String(x.PZN) === String(item.pzn));
         if (r) {
-            const price = Math.round(parseFloat(r.Price.replace(',', '.')));
+            const price = Math.round(parseFloat(String(r.Price).replace(',', '.')));
             const sum = price * item.qty;
             itemsSumEur += sum;
             breakdown.push(sum);
@@ -1276,22 +1279,22 @@ function getOrderTextAndLink() {
         }
     });
 
-    // 3. Итоговая часть (без слова ИТОГО)
+    // 3. ИТОГОВАЯ ЧАСТЬ
     text += `Тариф почты из Германии до 5кг...${shipEur}€ (12-25 дней)\n\n`;
+    
     const totalEur = itemsSumEur + shipEur;
-    
-    // Сборка формулы (курсив для наглядности здесь не нужен, просто текст)
-    text += `\n${shipEur}+${breakdown.join('+')}=${fmt(totalEur)}€\n`;
-    
     const finalRub = Math.floor((totalEur * parseFloat(rateCalc)) / 100) * 100;
-    text += `${fmt(totalEur)}€*${rateCalc}=${fmt(finalRub)} ₽\n`;
 
-    // 4. Генерация ссылки с новым текстом
+    // Формула сложения и итоговый расчет
+    text += `${breakdown.join('+')}=${fmt(totalEur)}€\n`;
+    text += `${fmt(totalEur)}€*${rateCalc}=${fmt(finalRub)} ₽\n\n`;
+
+    // 4. ССЫЛКА
     const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
     const baseUrl = window.location.origin + window.location.pathname;
     const fullLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
 
-    text += `\nВаша сохраненная корзина всегда доступна по ссылке:\n${fullLink}`;
+    text += `Ваша сохраненная корзина всегда доступна по ссылке:\n${fullLink}`;
     
     currentPreparedText = text; 
     return { text: text, link: fullLink };
@@ -1477,27 +1480,28 @@ function copyFilterResults() {
 
     if (results.length === 0) return;
 
-    // ИСПРАВЛЕНО: Всегда берем латинское Substance
     const activeSubstance = results[0].Substance || "—";
     const dateNow = new Date().toLocaleDateString('ru-RU');
+    const queryUpper = filters.search.trim().toUpperCase();
     
-    let text = `[${filters.search.toUpperCase()}]\n`;
-    text += `[${activeSubstance}]\n`; // Теперь всегда латиница
-    text += `[${dateNow}]  Расчетный курс: ${rateCalc} ₽\n\n`;
+    // Выравнивание по самому длинному слову ("почта:" / "поиск:")
+    // Добавляем неразрывные пробелы для идеальной вертикали
+    let text =  `дата:  [${dateNow}]\n`;
+    text +=     `€/₽:   [${rateCalc}]\n`;
+    text +=     `___\n`;
+    text +=     `почта: [${shipEur}€]\n`;
+    text +=     `поиск: [${queryUpper}]\n`;
+    text +=     `д.в.:  [${activeSubstance}]\n`;
+    text +=     `___\n\n`;
 
-    text += `Тариф почты из Германии до 5кг...${shipEur}€ (12-25 дней)\n\n`;
-
-    // Список товаров: Название, Производитель, PZN...Цена€
     results.slice(0, 40).forEach(r => {
-        const p = Math.round(parseFloat(r.Price.replace(',','.')));
-        text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${p}€\n`;
+        const p = Math.round(parseFloat(r.Price.replace(',', '.')));
+        text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${p}€\n\n`;
     });
 
-    // Ссылка внизу
-    const siteUrl = window.location.origin + window.location.pathname;
-    text += `\nссылка на поисковый запрос: ${siteUrl}?q=${encodeURIComponent(filters.search)}`;
+    const baseUrl = window.location.origin + window.location.pathname;
+    text += `ссылка на поисковый запрос: ${baseUrl}?q=${encodeURIComponent(filters.search.trim())}`;
 
-    // 3. Копируем и мигаем желтым
     navigator.clipboard.writeText(text).then(() => blinkLogo('yellow'));
 }
 
@@ -1799,21 +1803,25 @@ function renderDialerDisplay() {
     const container = document.getElementById('dialerDisplay');
     if (!container) return;
     
-    // Префикс +7 всегда зафиксирован
-    container.innerHTML = '<div class="dial-cell filled">+7</div><div style="width:5px"></div>';
+    // Префикс зафиксирован, он не должен «прыгать»
+    let html = '<div class="dial-cell filled">+7</div><div style="width:8px"></div>';
     
     for (let i = 0; i < 10; i++) {
         const digit = dialerNumber[i] || "";
-        container.innerHTML += `<div class="dial-cell ${digit ? 'filled' : ''}">${digit}</div>`;
-        // Добавляем микро-отступы для красоты (как в телефоне)
-        if (i === 2 || i === 5 || i === 7) container.innerHTML += '<div style="width:4px"></div>';
+        // Если цифра есть — добавляем класс filled для анимации
+        html += `<div class="dial-cell ${digit ? 'filled' : ''}">${digit}</div>`;
+        
+        // Разделители групп (как в реальном телефоне) для легкого чтения
+        if (i === 2 || i === 5) html += '<div style="width:6px"></div>';
     }
 
+    container.innerHTML = html;
+
+    // Кнопка «Отправить» теперь просто плавно меняет прозрачность
     const btn = document.getElementById('dialSubmit');
     if (dialerNumber.length === 10) {
         btn.style.opacity = "1";
         btn.disabled = false;
-        btn.style.background = "var(--p)";
     } else {
         btn.style.opacity = "0.3";
         btn.disabled = true;

@@ -1263,27 +1263,39 @@ body {
 }
 
 /* Ячейки номера: фиксированная ширина, чтобы при вводе ничего не дрожало */
+/* Ячейка номера: спокойная и стабильная */
 .dial-cell {
-    width: 16px; /* Фикс ширина */
-    height: 30px;
-    border-bottom: 2px solid #ddd;
-    display: flex; 
-    align-items: center; 
+    width: 22px; 
+    height: 32px;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    font-size: 20px; 
-    font-weight: 800; 
-    color: var(--p);
+    border-bottom: 2px solid #eee; /* Тонкая линия вместо коробок */
+    font-size: 20px;
+    font-weight: 600;
+    color: #000;
+    transition: border-color 0.3s ease;
+    font-variant-numeric: tabular-nums; /* Магия: все цифры одной ширины */
 }
 
-.dial-cell.filled { 
-    border-bottom-color: var(--p); 
-    /* Мягкое появление цифры без прыжка всей строки */
-    animation: dialFadeIn 0.2s ease-out; 
+/* Эффект при появлении цифры */
+.dial-cell.filled {
+    border-bottom-color: var(--p); /* Подсвечиваем активную ячейку */
+    animation: digit-bloom 0.2s ease-out; /* Плавное «проявление» */
 }
 
-@keyframes dialFadeIn { 
-    from { opacity: 0; transform: translateY(5px); } 
-    to { opacity: 1; transform: translateY(0); } 
+@keyframes digit-bloom {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Пустая ячейка: просто точка-подсказка */
+.dial-cell:empty::after {
+    content: "";
+    width: 4px;
+    height: 4px;
+    background: #ccc;
+    border-radius: 50%;
 }
 
 /* Кнопки выбора режима (Универсальный стиль) */
