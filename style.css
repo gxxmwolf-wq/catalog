@@ -1330,51 +1330,52 @@ body {
     }
 }
 
-/* Специальные правки для мобильных (до 480px) */
+/* ОБНОВЛЕННЫЙ: Компактная верстка для мобильных */
 @media (max-width: 480px) {
-    /* 1. Делаем нижнюю часть карточки вертикальной стопкой */
+    /* 1. Делаем нижнюю часть вертикальной стопкой */
     .card-bottom {
         flex-direction: column !important;
         align-items: flex-start !important;
-        margin-top: 8px !important;
+        margin-top: 6px !important; /* Чуть уменьшили отступ */
     }
 
-    /* 2. Производитель и PZN теперь занимают 100% ширины (не будут сжиматься) */
+    /* 2. Производитель на всю ширину */
     .c-meta-box {
         width: 100% !important;
-        margin-bottom: 10px !important; /* Отступ перед строкой управления */
-        border-bottom: 1px solid #f0f0f0;
+        margin-bottom: 8px !important;
+        border-bottom: 1px solid #f7f7f7; /* Очень легкая линия разделителя */
         padding-bottom: 6px;
     }
 
-    /* 3. Создаем плотную строку: Цена | Кнопки | Итого */
+    /* 3. Строка управления: Цена слева, Кнопки+Сумма справа */
     .c-ctrl {
         width: 100% !important;
         display: flex !important;
-        justify-content: space-between !important;
         align-items: center !important;
-        gap: 0 !important; /* Убираем лишние промежутки */
+        justify-content: flex-start !important; /* Убираем space-between */
     }
 
-    /* Ужимаем цену за единицу */
+    /* Цена за штуку - слева и чуть жирнее */
     .u-price {
-        font-size: 13px !important;
-        min-width: 45px;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        margin-right: auto !important; /* Толкает всё остальное вправо */
     }
 
-    /* Группируем кнопки и сумму ближе друг к другу */
+    /* Кнопки - прижаты к сумме */
     .qty-capsule-wrap {
-        flex: 0 !important; /* Не растягиваться */
-        margin: 0 10px !important;
+        flex: 0 0 auto !important;
+        margin-right: 12px !important; /* Небольшой отступ до суммы */
     }
 
-    /* Сумма теперь четко справа, без гигантского отступа */
+    /* Сумма - справа, компактно */
     .sum-box {
         text-align: right !important;
-        min-width: 85px !important;
         flex-shrink: 0 !important;
+        min-width: auto !important; /* Убираем фиксированную ширину */
     }
     
-    .s-eur { font-size: 16px !important; }
-    .s-rub { font-size: 11px !important; }
+    /* Чуть уменьшим шрифт итоговой евро-цены, чтобы не спорила с кнопками */
+    .s-eur { font-size: 15px !important; font-weight: 700 !important; }
+    .s-rub { font-size: 11px !important; color: #999 !important; }
 }
