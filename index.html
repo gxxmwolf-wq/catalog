@@ -8,6 +8,19 @@
     
     <title>RXDE.online — сервис доставки лекарств из Германии</title>
     <meta name="description" content="Сервис доставки аптечных препаратов из Германии. Заказ онлайн, гарантия подлинности.">
+    <link rel="canonical" href="https://rxde.online/">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "DeliveryService",
+      "name": "RXDE.online",
+      "description": "Сервис доставки медикаментов из аптек Германии",
+      "areaServed": "RU",
+      "url": "https://rxde.online",
+      "logo": "https://rxde.online/favicon.png"
+    }
+    </script>
     
     <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
@@ -56,9 +69,9 @@
 </div>
     <div id="list"></div>
     <div id="introBlock" class="intro-section">
-        <h2>Deutsche Qualität.</h2>
-        <p>Введите название препарата в поиске выше.</p>
-    </div>
+    <h1 style="font-size: 22px; margin-bottom: 5px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
+    <p style="font-size: 14px; color: #888;">Deutsche Qualität. Поиск по базе медикаментов.</p>
+</div>
 </div>
 
 <div id="miniCart" class="mini-cart-fab" onclick="openCart()">
@@ -158,6 +171,8 @@
 const LOCAL_DB_URL = 'db.csv'; 
 const GOOGLE_SETTINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=23735297&single=true&output=csv';
 const CBR_API_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
+/* В самом начале скрипта, где константы */
+const SITE_URL = window.location.origin + window.location.pathname;
 
 // --- НАШИ НОВЫЕ НАСТРОЙКИ СВЯЗИ ---
 const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxafE-uXAgaGFLN9QENHgNuEWlUVGJbfYXEn4rL0N8MGHXi1pGNbrVSoRByUBMSHgMA/exec'; 
@@ -379,21 +394,23 @@ const data = {
 }
 
     window.onclick = function(event) {
-        const modal = document.getElementById('modal');
-        const info = document.getElementById('infoOverlay');
-        const contact = document.getElementById('contactOverlay');
-        const tgOver = document.getElementById('tgOverlay'); // <--- Добавили
-        
-        if (event.target == modal) closeModal();
-        if (event.target == info) closeInfo();
-        if (event.target == contact) closeContact();
-        if (event.target == tgOver) closeTgOverlay(); // <--- Добавили
-    }
+    const modal = document.getElementById('modal');
+    const info = document.getElementById('infoOverlay');
+    const contact = document.getElementById('contactOverlay');
+    const tgOver = document.getElementById('tgOverlay');
+    const dialer = document.getElementById('dialerOverlay');
+
+    if (event.target == modal) closeModal();
+    if (event.target == info) closeInfo();
+    if (event.target == contact) closeContact();
+    if (event.target == tgOver) closeTgOverlay();
+    if (event.target == dialer) closeDialer();
+}
 
 /* =========================================
    BLOCK 4: УМНЫЙ ДВИЖОК (NAME + CAT + PZN)
    ========================================= */
-// --- АЛГОРИТМ ЛЕВЕНШТЕЙНА (Вычисление опечаток) ---
+
 function levenshtein(a, b) {
     if (a.length === 0) return b.length;
     if (b.length === 0) return a.length;
@@ -402,11 +419,8 @@ function levenshtein(a, b) {
     for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
     for (let i = 1; i <= b.length; i++) {
         for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) == a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
-            } else {
-                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
-            }
+            if (b.charAt(i - 1) == a.charAt(j - 1)) matrix[i][j] = matrix[i - 1][j - 1];
+            else matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
         }
     }
     return matrix[b.length][a.length];
@@ -431,9 +445,6 @@ function getSearchVariations(word) {
 function handleInput(updateUrl = true) {
     const input = document.getElementById('search');
     filters.search = input.value;
-    
-    // УДАЛИЛИ строку: document.getElementById('clearBtn').style.display = ...
-    
     if (updateUrl) {
         const url = new URL(window.location);
         if (input.value.trim()) url.searchParams.set('q', input.value.trim());
@@ -451,88 +462,21 @@ function render(isNewSearch = false) {
     list.innerHTML = '';
     const query = filters.search.trim().toLowerCase();
     
-    // ЕСЛИ ПОИСК ПУСТЫЙ: показываем блок и рисуем внутри него новости
     if (!query) { 
         document.getElementById('introBlock').style.display = 'block'; 
         renderNewsFeed(); 
         return; 
     }
-    
-    // ЕСЛИ КЛИЕНТ ИЩЕТ: прячем новости
     document.getElementById('introBlock').style.display = 'none';
-    // --- ВЫВОДИМ СВЕРНУТЫЕ АЛЕРТЫ СВЕРХУ ПОИСКА ---
-    // Ищем новости ТОЛЬКО если введено 3 и более символов!
-    // --- ВЫВОДИМ СВЕРНУТЫЕ АЛЕРТЫ СВЕРХУ ПОИСКА ---
-    if (query.length >= 3) {
-        // 1. Подключаем умный транслитератор (rus/lat) к поиску по новостям!
-        const newsWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
-        const newsVars = newsWords.map(w => getSearchVariations(w));
 
-        // 2. Ищем новости с учетом всех возможных раскладок клавиатуры
-        const relevantNews = newsDB.filter(n => {
-            if (!n.Text) return false;
-            const textPool = n.Text.toLowerCase();
-            return newsVars.every(vars => vars.some(v => textPool.includes(v)));
-        });
-        
-        if (relevantNews.length > 0) {
-            let newsHtml = ``;
-            relevantNews.forEach(n => {
-                let originalIndex = newsDB.indexOf(n); 
-                
-                let tagText = n.Tag || 'ИНФО';
-                let tagLower = tagText.toLowerCase();
-                let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
-
-             let ageDays = getNewsAge(n.Date);
-                let capsuleBg = '';
-
-                // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ (СМЕСТИЛИ НА 90 ДНЕЙ)
-                if (ageDays > 90) {
-                    cleanTag = "АРХИВНАЯ ИНФОРМАЦИЯ";
-                    capsuleBg = '#8E8E93'; // Серый
-                } else {
-                    if (tagLower.includes("важн")) { 
-                        capsuleBg = '#D32F2F'; // Темно-красный
-                    } else { 
-                        capsuleBg = '#007AFF'; // Синий (всё остальное)
-                    }
-                }
-
-                // Сама плашка-аккордеон остается белой и нейтральной
-                let alertBg = 'background: #ffffff; border-color: #e5e5e5;'; 
-                
-                newsHtml += `
-                    <div class="mini-alert" onclick="this.classList.toggle('open')" style="${alertBg}">
-                        <div class="mini-alert-head" style="color: #333; padding: 10px 15px;">
-                            <span style="background: ${capsuleBg}; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 800; letter-spacing: 0.5px; font-family: -apple-system, BlinkMacSystemFont, Roboto, sans-serif;">
-                                ${cleanTag.toUpperCase()}
-                            </span>
-                            <span class="ma-chevron" style="color: #999;">▼</span>
-                        </div>
-                        <div class="mini-alert-body">
-                            ${formatNewsText(n.Text, originalIndex)} 
-                            <div style="margin-top:10px; font-size:11px; color:#444; font-family: 'Georgia', serif;">
-                                Обновлено: <span style="color:#000; font-weight:700;">${n.Date || ''}</span> 
-                                <span style="color:#000; font-weight:700; text-decoration: underline; text-underline-offset: 2px;">(${getRelativeTime(n.Date)})</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            list.innerHTML += newsHtml;
-        }   
-    }
-
-    // ГИБКОСТЬ 1: Убираем двоеточия, тире, точки из запроса пользователя
-   // ГИБКОСТЬ 1: Убираем двоеточия, тире, точки из запроса пользователя
+    // Подготовка слов
     const cleanQuery = query.replace(/[:.,\-№#]/g, ' ');
     const queryWords = cleanQuery.split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
+    // СТРОГИЙ ПОИСК (с PZN логикой)
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        
         let pznStr = '';
         if (r.PZN) {
             const pznNum = String(r.PZN).replace(/\D/g, ''); 
@@ -542,107 +486,55 @@ function render(isNewSearch = false) {
                 pznStr = `pzn pzn${full8} ${full8} pzn${noZeros} ${noZeros}`;
             }
         }
-        
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${pznStr}`.toLowerCase();
-        
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
-    // --- МАГИЯ 3: НЕЧЕТКИЙ ПОИСК (ЕСЛИ СТРОГИЙ НИЧЕГО НЕ НАШЕЛ) ---
+    // НЕЧЕТКИЙ ПОИСК (если строго ничего нет)
     let isFuzzyMatch = false;
-    if (results.length === 0 && queryWords.length > 0) {
-        const firstWord = queryWords[0].toLowerCase(); // Берем главное введенное слово
-        
-        // Включаем спасение только для слов от 4 букв
-        if (firstWord.length >= 4) {
-            const fuzzyMatches = db.filter(r => {
-                if (!r || !r.Name_DE) return false;
-                
-                // Проверяем опечатки только в названиях (чтобы не цеплять категории)
-                const nameWords = `${r.Name_DE} ${r.Name_RU||''}`.toLowerCase().replace(/[.,()/]/g, ' ').split(/\s+/).filter(w => w.length > 2);
-                
-                return nameWords.some(w => {
-                    // Отсекаем слова, которые сильно отличаются по длине
-                    if (Math.abs(w.length - firstWord.length) > 2) return false; 
-                    
-                    let dist = levenshtein(firstWord, w);
-                    
-                    // Жесткое правило: 1 опечатка для слов до 6 букв, 2 опечатки для длинных
-                    let allowed = firstWord.length <= 6 ? 1 : 2; 
-                    return dist <= allowed;
-                });
-            });
-
-            if (fuzzyMatches.length > 0) {
-                results = fuzzyMatches;
-                isFuzzyMatch = true;
-            }
-        }
+    if (results.length === 0 && queryWords.length > 0 && queryWords[0].length >= 4) {
+        const firstWord = queryWords[0].toLowerCase();
+        const fuzzyMatches = db.filter(r => {
+            if (!r || !r.Name_DE) return false;
+            const nameWords = `${r.Name_DE} ${r.Name_RU||''}`.toLowerCase().replace(/[.,()/]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+            return nameWords.some(w => Math.abs(w.length - firstWord.length) <= 2 && levenshtein(firstWord, w) <= (firstWord.length <= 6 ? 1 : 2));
+        });
+        if (fuzzyMatches.length > 0) { results = fuzzyMatches; isFuzzyMatch = true; }
     }
 
-    // ... внутри функции render() ...
-if (results.length === 0) {
-    // Если введено меньше 3 символов — вообще ничего не пишем (ждем продолжения ввода)
-    if (query.length < 3) return;
-    
-    const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
+    if (results.length === 0) {
+        if (query.length < 3) return;
+        list.innerHTML = `<div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
+            <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">Ничего не найдено. <br><span style="color: #888; font-size: 13px;">Напишите нам — мы расширим поиск!</span></div>
+            <button onclick="openContactForm('Запрос: ${query}')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-weight: 800; cursor: pointer;">ЗАПРОСИТЬ ПОИСК</button>
+        </div>`;
+        return;
+    }
 
-    list.innerHTML = `
-        <div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
-            <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">
-                По текущему запросу ничего не найдено. <br>
-                <span style="color: #888; font-size: 13px;">
-                    Если вы уверены в написании — напишите нам. <br>
-                    Мы расширим поиск и вернемся с результатом!
-                </span>
-            </div>
-            
-            <button onclick="openContactForm('${failText}')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0,86,145,0.15);">
-                ЗАПРОСИТЬ ПОИСК
-            </button>
-        </div>
-    `;
-    return;
-}
-
-    // ВЫВОДИМ ПРЕДУПРЕЖДЕНИЕ, ЕСЛИ СРАБОТАЛА КОРРЕКЦИЯ ОПЕЧАТКИ
     if (isFuzzyMatch) {
-        list.innerHTML += `
-            <div style="margin: 10px 10px 15px 10px; padding: 12px; background: #fffdf5; border: 1px solid #ffeb3b; border-radius: 8px; font-size: 13px; color: #b99d00; text-align: center; font-weight: 600;">
-                 Точного совпадения нет. Возможно, вы искали это:
-            </div>
-        `;
+        list.innerHTML += `<div style="margin: 10px 10px 15px 10px; padding: 12px; background: #fffdf5; border: 1px solid #ffeb3b; border-radius: 8px; font-size: 13px; color: #b99d00; text-align: center; font-weight: 600;">Возможно, вы искали это:</div>`;
     }
 
     results.forEach(r => {
-        // ... (дальше идет ваш стандартный вывод карточек товаров, ничего не меняем)
         if (!r.Price) return;
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
-        const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
-        let btn = q > 0 ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`;
+        const altText = `${r.Name_DE}${r.Name_RU ? ' / ' + r.Name_RU : ''} — PZN ${r.PZN}`;
+        const sum = q > 0 ? `<div class="sum-box"><div class="s-eur">${Math.round(p * q)} €</div><div class="s-rub">${getRubPrice(p * q).toLocaleString()} ₽</div></div>` : '';
+        const btn = q > 0 ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`;
         
-        const sum = q > 0 ? 
-            `<div class="sum-box">
-                <div class="s-eur">${Math.round(p * q)} €</div>
-                <div class="s-rub">${getRubPrice(p * q).toLocaleString()} ₽</div>
-            </div>` : '';
-            
-        list.innerHTML += `<div class="card ${q > 0 ? 'selected' : ''}"><img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)"><div class="card-body"><div class="c-title">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div><div class="card-bottom"><div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div><div class="c-ctrl"><div class="u-price">${Math.round(p)} €</div><div class="qty-capsule-wrap">${btn}</div><div class="sum-box">${sum}</div></div></div></div></div>`;
+        list.innerHTML += `<div class="card ${q > 0 ? 'selected' : ''}"><img src="img/${r.PZN}.webp" class="product-thumb" alt="${altText}" onerror="handleImgError(this)"><div class="card-body"><div class="c-title">${r.Name_DE} ${r.R && r.R !== "0" ? '<span class="b-rx">RX</span>' : ''}</div><div class="card-bottom"><div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div><div class="c-ctrl"><div class="u-price">${Math.round(p)} €</div><div class="qty-capsule-wrap">${btn}</div><div class="sum-box">${sum}</div></div></div></div></div>`;
     });
 }
 
 function renderSuggestions(inputText) {
     const box = document.getElementById('suggestRow');
-    if (!box) return;
-    box.innerHTML = ''; 
+    if (!box) return; box.innerHTML = ''; 
     const val = inputText.trim().toLowerCase();
     if (!val) return;
-
     const isTrailingSpace = inputText.endsWith(' ');
     const userWords = val.split(/\s+/).filter(w => w.length > 0);
     const isRussianInput = /[а-яё]/i.test(userWords[0] || "");
-
     const queryWordsForFilter = isTrailingSpace ? userWords : userWords.slice(0, -1);
     const queryVars = queryWordsForFilter.map(w => getSearchVariations(w));
 
@@ -656,79 +548,39 @@ function renderSuggestions(inputText) {
     let candidates = new Set();
     const typedMeanings = new Set();
     userWords.forEach(w => getSearchVariations(w).forEach(v => typedMeanings.add(v)));
-
     const lastFragment = isTrailingSpace ? "" : userWords[userWords.length - 1];
     const lastVars = getSearchVariations(lastFragment);
 
-    const isPznSearch = lastFragment.includes('pzn') || /\d/.test(lastFragment);
-    const typedDigits = lastFragment.replace(/\D/g, ''); 
-
     currentMatches.forEach(r => {
-        // 1. Подсказки для PZN (добавляем сразу с префиксом)
-        if (isPznSearch && r.PZN) {
-            const pznStr = String(r.PZN);
-            if (isTrailingSpace || pznStr.startsWith(typedDigits) || typedDigits === '') {
-                candidates.add(`PZN ${pznStr}`);
-            }
-        }
-
-        // 2. Подсказки для слов (ТЕПЕРЬ ПРОПУСКАЮТ ДОЗИРОВКИ!)
-        const sourceText = isRussianInput 
-            ? `${r.Category || ''} ${r.Name_RU || ''}` 
-            : `${r.Category || ''} ${r.Name_DE}`;
-
+        if ((lastFragment.includes('pzn') || /\d/.test(lastFragment)) && r.PZN) candidates.add(`PZN ${r.PZN}`);
+        const sourceText = isRussianInput ? `${r.Category || ''} ${r.Name_RU || ''}` : `${r.Category || ''} ${r.Name_DE}`;
         const words = sourceText.replace(/[.,()/]/g, ' ').toLowerCase().split(/\s+/).filter(w => w.length > 1);
-        
         words.forEach(word => {
-            if (typedMeanings.has(word)) return; // Слово уже введено
-            
+            if (typedMeanings.has(word)) return;
             const wordVars = getSearchVariations(word);
-            const isMatch = isTrailingSpace ? true : lastVars.some(lv => lv && wordVars.some(wv => wv.startsWith(lv)));
-            
-            // Пропускаем только если слово один-в-один совпадает с номером PZN, чтобы не дублировать
-            if (isMatch && word !== String(r.PZN)) { 
-                candidates.add(word); // <-- Убрали блокировку цифр!
-            }
+            if (isTrailingSpace || lastVars.some(lv => lv && wordVars.some(wv => wv.startsWith(lv)))) candidates.add(word);
         });
     });
 
-    // Сортируем: сначала номера PZN, затем самые короткие слова
-    Array.from(candidates).sort((a,b) => {
-        const isPznA = a.startsWith('PZN');
-        const isPznB = b.startsWith('PZN');
-        if (isPznA && !isPznB) return -1;
-        if (!isPznA && isPznB) return 1;
-        return a.length - b.length;
-    }).slice(0, 5).forEach(word => {
+    Array.from(candidates).sort((a,b) => a.startsWith('PZN') && !b.startsWith('PZN') ? -1 : 1).slice(0, 5).forEach(word => {
         const chip = document.createElement('div');
-        chip.className = 's-chip';
-        chip.innerText = word; // "50mg", "filmtabletten" и т.д.
-
+        chip.className = 's-chip'; chip.innerText = word;
         chip.onclick = () => {
             const input = document.getElementById('search');
             let wordsArr = input.value.trim().split(/\s+/);
-            
-            if (isTrailingSpace) {
-                wordsArr.push(word); 
-            } else {
-                wordsArr[wordsArr.length - 1] = word;
-            }
-            
+            if (isTrailingSpace) wordsArr.push(word); else wordsArr[wordsArr.length - 1] = word;
             input.value = wordsArr.join(' ') + ' ';
-            handleInput();
-            input.focus();
+            handleInput(); input.focus();
         };
         box.appendChild(chip);
     });
 }
 
-window.handleImgError = function(img) {
+function handleImgError(img) {
     const div = document.createElement('div');
-    div.className = 'product-thumb';
-    div.style.cssText = 'background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:24px;';
-    div.innerText = '📷';
-    img.replaceWith(div);
-};
+    div.className = 'product-thumb'; div.style.cssText = 'background:#f9f9f9; display:flex; align-items:center; justify-content:center; color:#ccc; font-size:24px;';
+    div.innerText = '📷'; img.replaceWith(div);
+}
 
 function getQty(pzn) { 
     const item = cart.find(i => String(i.pzn) === String(pzn)); 
@@ -737,21 +589,12 @@ function getQty(pzn) {
 
 function clearSearch() {
     const input = document.getElementById('search');
-    const suggestRow = document.getElementById('suggestRow');
-
     if (input) {
-        input.value = ''; 
-        filters.search = ''; 
-        
-        const url = new URL(window.location);
-        url.searchParams.delete('q');
+        input.value = ''; filters.search = ''; 
+        const url = new URL(window.location); url.searchParams.delete('q');
         window.history.replaceState({}, '', url);
-
-        // УДАЛИЛИ строку: if (clearBtn) clearBtn.style.display = 'none';
-        if (suggestRow) suggestRow.innerHTML = '';
-
-        render(true);
-        input.focus(); 
+        if (document.getElementById('suggestRow')) document.getElementById('suggestRow').innerHTML = '';
+        render(true); input.focus(); 
     }
 }
     /* =========================================
@@ -896,89 +739,72 @@ function updateBar() {
    
 
     /* =========================================
-       BLOCK 7.2: ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
-       ========================================= */
-    async function init() {
-        // 1. Корзина из памяти
-        try { 
-            const saved = localStorage.getItem('de_cart_arr'); 
-            if (saved) cart = JSON.parse(saved); 
-        } catch(e) { cart = []; }
-        
-        // 2. Загружаем базу данных лекарств (убрали v=Date.now)
-        Papa.parse(LOCAL_DB_URL, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                db = results.data;
-                console.log("База загружена, записей:", db.length);
-                
-                // 3. СТРОГИЙ ПОРЯДОК: Сначала ждем ВСЕ данные, потом считаем
-                // Функции в Блоке 3 должны быть обернуты в Promise (см. ниже)
-// 3. СТРОГИЙ ПОРЯДОК: Сначала ждем ВСЕ данные, потом считаем
-                Promise.all([
-                    fetchCbrRate(), 
-                    fetchGoogleSettings(),
-                    
-                ]).then(() => {
-                    console.log("Курсы получены. Запускаем расчет...");
-                    calculateFinalLogic(); 
-
-                    // ВОТ ЭТО ДОЛЖНО БЫТЬ ЗДЕСЬ:
-                    initPhoneMask(); 
-
-                    console.log("Приложение и маска телефона запущены");
-                    
-                    // 1. Сначала подтягиваем поиск из ссылки, если он есть
-                    if (typeof tryRestoreSearchFromUrl === 'function') {
-                        tryRestoreSearchFromUrl();
-                    }
-
-                    // 2. Затем проверяем ссылку на корзину (как и было)
-                    if (typeof tryRestoreCartFromUrl === 'function' && tryRestoreCartFromUrl()) {
-                        setTimeout(openCart, 500);
-                    }
-
-                    // 3. Если поиска в ссылке не было, принудительно рисуем стартовый экран
-                    if (!filters.search) render();
-
-                }).catch(err => {
-                    console.error("Ошибка при получении курсов:", err);
-                    calculateFinalLogic(); 
-                    render(); // Рисуем хоть что-то на дефолтах
-                    // Код внутри init -> Papa.parse -> complete
-                    // Добавьте этот фрагмент в самый конец блока .then(() => { ... })
-
-                    // ПРОВЕРКА ГИПЕРССЫЛОК НА ОКНА (faq / exp)
-                    const urlParams = new URLSearchParams(window.location.search);
-                    if (urlParams.has('faq')) {
-                        setTimeout(() => showInfo('faq'), 800); // Небольшая задержка для красоты
-                    } else if (urlParams.has('exp')) {
-                        setTimeout(() => showInfo('exp'), 800);
-                    }
-
-
-                });
-            }
-
-            
-
-        });
-
-        // Запускаем загрузку новостей абсолютно независимо, в фоне!
-                fetchNews();
-        // Код внутри init -> Papa.parse -> complete -> .then(() => { ... })
-
-        // ПРОВЕРКА ПАРАМЕТРОВ URL ПРИ ЗАГРУЗКЕ
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('faq')) {
-            setTimeout(() => showInfo('faq'), 500); // Откроет FAQ через полсекунды
-        } else if (urlParams.has('exp')) {
-            setTimeout(() => showInfo('exp'), 500); // Откроет ОПЫТ
-        }
-
+   BLOCK 7.2: ИНИЦИАЛИЗАЦИЯ ПРИЛОЖЕНИЯ
+   ========================================= */
+async function init() {
+    // 1. Загружаем корзину из локальной памяти
+    try { 
+        const saved = localStorage.getItem('de_cart_arr'); 
+        if (saved) cart = JSON.parse(saved); 
+    } catch(e) { 
+        cart = []; 
     }
+    
+    // 2. Основной поток: Загрузка базы -> Курсы -> Отрисовка
+    Papa.parse(LOCAL_DB_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            db = results.data;
+            
+            // Ждем получения курсов ЦБ и настроек из Google Таблиц
+            Promise.all([
+                fetchCbrRate(), 
+                fetchGoogleSettings()
+            ]).then(() => {
+                // Считаем финальный курс и обновляем интерфейс
+                calculateFinalLogic(); 
+
+                // --- ОБРАБОТКА ССЫЛОК ПРИ ЗАГРУЗКЕ ---
+                
+                // А. Восстанавливаем поиск из ссылки (?q=...)
+                if (typeof tryRestoreSearchFromUrl === 'function') {
+                    tryRestoreSearchFromUrl();
+                }
+
+                // Б. Восстанавливаем корзину из ссылки (?c=...)
+                if (typeof tryRestoreCartFromUrl === 'function' && tryRestoreCartFromUrl()) {
+                    // Если корзина восстановилась, открываем её через полсекунды
+                    setTimeout(openCart, 500);
+                }
+
+                // В. Если поиска в ссылке НЕТ — рисуем стартовый экран (Новости)
+                if (!filters.search) {
+                    render();
+                }
+
+                // Г. Проверка глубоких ссылок на инфо-окна (?faq или ?exp)
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('faq')) {
+                    setTimeout(() => showInfo('faq'), 800);
+                } else if (urlParams.has('exp')) {
+                    setTimeout(() => showInfo('exp'), 800);
+                }
+
+            }).catch(err => {
+                console.error("Ошибка инициализации данных:", err);
+                calculateFinalLogic(); 
+                render(); 
+            });
+        }
+    });
+
+    // 3. Загружаем новости в фоновом режиме (не мешает основному потоку)
+    if (typeof fetchNews === 'function') {
+        fetchNews();
+    }
+}
     // --- 7.3 УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ КОРЗИНЫ ---
     
     function updateCartStatusUI() {
@@ -1311,6 +1137,30 @@ function submitFinal(app) {
         closeContact();
     }
 }
+// Функция самого перехода
+function goToTelegram() {
+    // 1. Сначала закрываем оверлей
+    closeTgOverlay(); 
+    
+    // 2. Открываем Телеграм (используем константу TG_USER)
+    const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
+    window.open(`https://t.me/${username}`, '_blank'); 
+}
+
+// Функция чистого закрытия окна
+function closeTgOverlay() {
+    const overlay = document.getElementById('tgOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+
+    // Возвращаем мини-корзину, если в ней что-то есть
+    const mini = document.getElementById('miniCart');
+    if (mini && cart.length > 0) {
+        mini.style.display = 'flex';
+    }
+}
+
 
 // 5. ЗАКРЫТИЕ И СБРОС
 function closeContact() {
@@ -1321,6 +1171,18 @@ function closeContact() {
         // Возвращаем мини-корзину
         const mini = document.getElementById('miniCart');
         if (mini) mini.style.display = '';
+    }
+}
+
+function closeTgOverlay() {
+    const overlay = document.getElementById('tgOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+    // Возвращаем мини-корзину, если она не пуста
+    const mini = document.getElementById('miniCart');
+    if (mini && cart.length > 0) {
+        mini.style.display = 'flex';
     }
 }
 
@@ -1654,99 +1516,46 @@ function closeSuccess() {
     }
 }
 /* =========================================
-   BLOCK 11: ПЕРЕХВАТ ЖЕСТА "НАЗАД" (ANDROID)
+   BLOCK 11: УНИВЕРСАЛЬНЫЙ ПЕРЕХВАТ "НАЗАД"
    ========================================= */
-
-// 1. При загрузке сайта добавляем "фиктивный" шаг в историю браузера
 window.history.pushState({ noExit: true }, "");
 
-// 2. Слушаем событие свайпа "Назад" (popstate)
 window.addEventListener('popstate', function(event) {
-    
-    // СЦЕНАРИЙ А: Если открыта Корзина -> просто закрываем её (не выходя из приложения)
     const modal = document.getElementById('modal');
-    if (modal && modal.classList.contains('active')) {
-        closeModal();
-        window.history.pushState({ noExit: true }, ""); // Восстанавливаем ловушку
-        return;
-    }
-
-    // СЦЕНАРИЙ Б: Если открыты окна Связи или FAQ -> закрываем их
     const contact = document.getElementById('contactOverlay');
     const info = document.getElementById('infoOverlay');
-    if ((contact && contact.style.display === 'flex') || (info && info.style.display === 'flex')) {
-        closeContact();
-        closeInfo();
+    const tgOver = document.getElementById('tgOverlay');
+    const dialer = document.getElementById('dialerOverlay');
+
+    const isAnyOpen = (modal && modal.classList.contains('active')) ||
+                      (contact && contact.style.display === 'flex') ||
+                      (info && info.style.display === 'flex') ||
+                      (tgOver && tgOver.style.display === 'flex') ||
+                      (dialer && dialer.style.display === 'flex');
+
+    if (isAnyOpen) {
+        if (modal) closeModal();
+        if (contact) closeContact();
+        if (info) closeInfo();
+        if (tgOver) closeTgOverlay();
+        if (dialer) closeDialer();
+        
         window.history.pushState({ noExit: true }, "");
         return;
     }
 
-    // СЦЕНАРИЙ В: Если всё закрыто, спрашиваем пользователя, хочет ли он уйти
-    const userWantsToExit = confirm("Вы точно хотите выйти из магазина?");
-    if (!userWantsToExit) {
-        // Пользователь передумал — снова ставим ловушку
-        window.history.pushState({ noExit: true }, "");
-    } else {
-        // Пользователь подтвердил выход — закрываем страницу
+    if (confirm("Вы точно хотите выйти из магазина?")) {
         window.history.back();
+    } else {
+        window.history.pushState({ noExit: true }, "");
     }
 });
 
-    /* === ВОССТАНОВЛЕНИЕ КОРЗИНЫ ИЗ ССЫЛКИ === */
-
-/* === ВОССТАНОВЛЕНИЕ КОРЗИНЫ (РАБОЧЕЕ + ЛОГИКА МЕНЕДЖЕРА) === */
-let isManagerOrder = false; 
-
-function tryRestoreCartFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const cartParam = params.get('c');
-    const dateParam = params.get('d'); 
-    
-    if (cartParam) {
-        cart = [];
-        const pairs = cartParam.split(',');
-        pairs.forEach(p => {
-            const [pzn, qty] = p.split(':');
-            if (pzn && qty) cart.push({ pzn: pzn.trim(), qty: parseInt(qty) || 1 });
-        });
-
-        localStorage.setItem('de_cart_arr', JSON.stringify(cart));
-
-        if (dateParam) {
-            const decodedDate = decodeURIComponent(dateParam);
-            isManagerOrder = !decodedDate.includes('_') && !decodedDate.includes(':');
-            restoredDate = decodedDate.replace('_', ' в ');
-        }
-
-        // --- МАГИЯ ОЧИСТКИ URL ---
-        // Убираем параметры из строки, чтобы F5 не приводил к повторному восстановлению
-        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-        window.history.replaceState({}, document.title, cleanUrl);
-        
-        return cart.length > 0; 
-    }
-    return false;
-}
-function tryRestoreSearchFromUrl() {
-    const params = new URLSearchParams(window.location.search);
-    const query = params.get('q'); 
-
-    if (query) {
-        const input = document.getElementById('search');
-        const searchVal = decodeURIComponent(query);
-        if (input) {
-            input.value = searchVal; // Ставим текст в инпут
-            filters.search = searchVal; // Обновляем глобальный фильтр
-            render(true); // Запускаем отрисовку результатов
-        }
-    }
-}
-
 /* =========================================
-   BLOCK 12: ЖИВАЯ ЛЕНТА И НОВОСТИ (ЧИСТОВИК)
+   BLOCK 12: ЖИВАЯ ЛЕНТА И НОВОСТИ (ФИНАЛ)
    ========================================= */
 
-// --- ВЫЧИСЛЕНИЕ ВОЗРАСТА НОВОСТИ В ДНЯХ ---
+// 1. Умный расчет возраста новости
 function getNewsAge(dateStr) {
     if (!dateStr) return 0;
     const parts = dateStr.split('.');
@@ -1758,19 +1567,9 @@ function getNewsAge(dateStr) {
     return Math.floor((today - newsDate) / (1000 * 60 * 60 * 24));
 }
 
-// 1. Умный счетчик дней
 function getRelativeTime(dateStr) {
     if (!dateStr) return "";
-    const parts = dateStr.split('.');
-    if (parts.length !== 3) return "";
-    
-    const newsDate = new Date(parts[2], parts[1] - 1, parts[0]);
-    const today = new Date();
-    newsDate.setHours(0, 0, 0, 0);
-    today.setHours(0, 0, 0, 0);
-    
-    const diffTime = today - newsDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = getNewsAge(dateStr);
     
     if (diffDays === 0) return "сегодня";
     if (diffDays === 1) return "вчера";
@@ -1787,48 +1586,53 @@ function getRelativeTime(dateStr) {
     return `${diffDays} ${word} назад`;
 }
 
-// 2. Форматировщик текста (хештеги и вопросы)
+// 2. Форматирование текста (Хештеги и Кнопки)
 function formatNewsText(text, index = -1) {
     if (!text) return "";
     let formatted = text;
+    // Заменяем [vopros] на кнопку, которая передает индекс новости
     formatted = formatted.replace(/\[vopros\]/gi, `<span class="n-inline-btn" onclick="openQuestionFromNews(${index}); event.stopPropagation();">💬 Задать вопрос</span>`);
+    // Хештеги
     formatted = formatted.replace(/#([a-zA-Zа-яА-ЯёЁ0-9_]+)/g, `<span class="n-hashtag" onclick="setSearchFromNews('$1'); event.stopPropagation();">#$1</span>`);
     return formatted;
 }
 
+// 3. Интерактив: Поиск из новости
 window.setSearchFromNews = function(word) {
     const input = document.getElementById('search');
     if (input) {
         input.value = word;
         handleInput(); 
-        window.scrollTo(0, 0); 
+        window.scrollTo({ top: 0, behavior: 'smooth' }); 
     }
 };
 
-let currentNewsContext = ""; 
+// 4. Интерактив: Вопрос по конкретной новости
 window.openQuestionFromNews = function(index) {
-    isQuestionMode = true; 
     if (index >= 0 && newsDB[index]) {
-        let date = newsDB[index].Date || '';
-        let cleanText = newsDB[index].Text.replace(/\[vopros\]/gi, '').trim();
-        currentNewsContext = `Здравствуйте! У меня вопрос по новости от ${date}:\n«${cleanText}»\n\nМой вопрос: `;
-    } else {
-        currentNewsContext = "";
+        const date = newsDB[index].Date || '';
+        const cleanText = newsDB[index].Text.replace(/\[vopros\]/gi, '').trim();
+        const msgInput = document.getElementById('manualMsgInput');
+        
+        if (msgInput) {
+            // Сразу вставляем контекст в поле ввода, чтобы пользователь его видел
+            msgInput.value = `Здравствуйте! Вопрос по новости от ${date}:\n«${cleanText}»\n\nМой вопрос: `;
+        }
     }
-    const contactOverlay = document.getElementById('contactOverlay');
-    if (contactOverlay) contactOverlay.style.display = 'flex'; 
+    // Открываем стандартное окно вопроса
+    openQuestion(); 
 };
 
-// 3. Главная отрисовка ленты с КОМПАКТНОЙ шапкой
+// 5. Главная отрисовка (SEO H1 + Лента)
 function renderNewsFeed() {
     const introBlock = document.getElementById('introBlock');
     if (!introBlock) return;
 
-    // Компактная шапка
+    // Премиальный H1 без домена для лучшего UX
     let html = `
-        <div style="text-align:center; margin: 10px 0 15px 0;">
-            <h2 style="font-size: 18px; margin-bottom: 2px; color: #333;">Deutsche Qualität</h2>
-            <p style="font-size: 13px; color: #888; margin: 0;">Поиск по базе лекарств из Германии</p>
+        <div style="text-align:center; margin: 10px 0 20px 0;">
+            <h1 style="font-size: 22px; margin-bottom: 4px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
+            <p style="font-size: 14px; color: #888; margin: 0;">Deutsche Qualität. Поиск по базе медикаментов.</p>
         </div>
     `;
 
@@ -1837,10 +1641,7 @@ function renderNewsFeed() {
         return;
     }
 
-    html += `
-        <div class="notepad-wrap">
-            <div class="notepad-header">Заметки сервиса</div>
-    `;
+    html += `<div class="notepad-wrap"><div class="notepad-header">Заметки сервиса</div>`;
 
     const visibleNews = newsDB.slice(0, newsToShow);
     
@@ -1848,41 +1649,20 @@ function renderNewsFeed() {
         if (!item.Text) return; 
         
         let tagText = item.Tag || 'ИНФО';
-        let tagLower = tagText.toLowerCase();
-        let cleanTag = tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
-        let capsuleBg = '';
-        
-        // Считаем возраст новости
-       // Считаем возраст новости
         let ageDays = getNewsAge(item.Date);
-
-        // ЛОГИКА АРХИВАЦИИ И ЦВЕТА КАПСУЛ (СМЕСТИЛИ НА 90 ДНЕЙ)
-        if (ageDays > 90) { 
-            cleanTag = "АРХИВНАЯ ИНФОРМАЦИЯ";
-            capsuleBg = '#8E8E93'; // Серый (Архив)
-        } else {
-            if (tagLower.includes("важн")) { 
-                capsuleBg = '#D32F2F'; // Темно-красный (Важно)
-            } else { 
-                capsuleBg = '#007AFF'; // Синий (Инфо, курс, почта)
-            }
-        }
-
-        let tagStyle = `background: ${capsuleBg};`;
-        let relativeTime = getRelativeTime(item.Date);
+        let capsuleBg = (ageDays > 90) ? '#8E8E93' : (tagText.toLowerCase().includes("важн") ? '#D32F2F' : '#007AFF');
+        let cleanTag = ageDays > 90 ? "АРХИВНАЯ ИНФОРМАЦИЯ" : tagText.replace(/[🔴⚠️🔵📦💱📌ℹ️]/g, '').trim();
 
         html += `
             <div class="notepad-item">
                 <div class="np-date-row">
                     <span class="np-date-text" style="color: #333; font-family: 'Georgia', serif;">
                         ${item.Date || ''} 
-                        <span style="color:#000; font-weight:800; font-size:11px; margin-left:5px; text-decoration: underline; text-underline-offset: 2px;">(${relativeTime})</span>
+                        <span style="color:#000; font-weight:800; font-size:11px; margin-left:5px; text-decoration: underline;">(${getRelativeTime(item.Date)})</span>
                     </span>
-                    <span class="np-tag-top" style="${tagStyle}">${cleanTag.toUpperCase()}</span>
+                    <span class="np-tag-top" style="background: ${capsuleBg};">${cleanTag.toUpperCase()}</span>
                 </div>
-                <div class="np-body">
-                    ${formatNewsText(item.Text, index)} 
-                </div>
+                <div class="np-body">${formatNewsText(item.Text, index)}</div>
             </div>
         `;
     });
@@ -1899,7 +1679,6 @@ function showOldNews() {
     newsToShow += 5;
     renderNewsFeed(); 
 }
-
     // ЗАПУСК ПРИЛОЖЕНИЯ
         init();
 
