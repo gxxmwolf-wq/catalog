@@ -46,7 +46,7 @@
         <span class="tm-sep">|</span>
         <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
         <span class="tm-sep">|</span>
-        <div class="tm-item live-glow" onclick="openQuestion()">НАПИСАТЬ ВОПРОС</div>
+        <div class="tm-item live-glow" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>
     </div>      
 
         <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
@@ -93,33 +93,32 @@
     <div class="m-box" onclick="event.stopPropagation()">
         
         <div class="modal-head">
-            <div class="m-head-add-more" onclick="addMoreItems()" style="flex: 1.5; display: flex; align-items: center; cursor: pointer;">
-                <span class="m-chevron" style="font-size: 26px; margin-right: 4px; line-height: 0.8; color: var(--p);">‹</span>
-                <span class="m-add-txt" style="letter-spacing: 0.5px; color: var(--p); font-weight: 700; font-size: 13px;">ДОБАВИТЬ ПОЗИЦИИ</span>
+            <div id="modalHeaderLinks" class="m-head-add-more" style="flex: 1.2; display: flex; align-items: center;"></div>
+
+            <div class="m-head-info" style="flex: 1; text-align: center; line-height: 1.3;">
+                <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">ЗАКАЗ: ...</div>
+                <div style="font-size: 13px; color: #000; font-weight: 700;">Курс: <span id="cartRate">0</span> ₽</div>
             </div>
 
-            <div class="m-head-info" style="flex: 1; text-align: center;">
-                <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase;">Заказ: ...</div>
-                <div style="font-size: 13px; color: #000; font-weight: 400;">Расчетный: <span id="cartRate" style="font-weight:700">0</span> ₽</div>
-            </div>
-
-            <div onclick="closeModal()" class="close-x" style="flex: 0.8; display: flex; justify-content: flex-end; cursor: pointer; font-size: 22px; font-weight: 300; color: #000;">✕</div>
+            <div onclick="closeModal()" class="close-x" style="flex: 0.8; display: flex; justify-content: flex-end; cursor: pointer; font-size: 26px; color: #333;">✕</div>
         </div>
+
         <div class="m-scroll-area" style="padding: 0 15px; flex: 1; overflow-y: auto;">
             <div id="cartItems"></div>
         </div>
         
-        <div class="modal-footer-sticky">
-            <div class="footer-total-compact" style="margin-bottom: 15px;">
-                <span id="footerTotalSum" style="color:var(--p); font-weight: 900;">0 €</span>
+        <div class="modal-footer-sticky" style="padding: 15px 20px 30px 20px; background: #fff; border-top: 1px solid #eee;">
+            <div class="footer-total-compact" style="margin-bottom: 15px; text-align: right;">
+                <span id="footerTotalSum" style="color:var(--p); font-weight: 900; font-size: 24px;">0 €</span>
             </div>
             
-            <button onclick="openContactForm(getShortOrderLink())" style="width: 100%; background: var(--p); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: transform 0.2s;">
+            <button onclick="openContact('order')" style="width: 100%; background: var(--p); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: transform 0.2s;">
                 ОФОРМИТЬ ЗАКАЗ <span style="font-size: 18px;">›</span>
             </button>
         </div>
         
     </div>
+</div>
 </div>
 
 <div id="infoOverlay" class="info-overlay" onclick="closeInfo()">
@@ -197,6 +196,7 @@ let isQuestionMode = false;   // true — когда нажат "Написат�
 let isManagerOrder = false;   // true — если корзина пришла по ссылке от менеджера
 let currentPreparedText = ""; // Буфер для текста сообщения
 let restoredDate = "";        // Хранит дату восстановления заказа
+let cartBackup = null; // Сюда будем сохранять корзину перед очисткой
 
 // Звуковой движок
 const audioAdd = new Audio("sounds/add.mp3");
@@ -214,10 +214,47 @@ function playSound(isRemoving) {
 }
 
 
-    /* =========================================
-       BLOCK 2: УНИВЕРСАЛЬНАЯ ЛОГИКА СВЯЗИ
-       ========================================= */
+/* =========================================
+   BLOCK 2: УМНАЯ ОЧИСТКА КОРЗИНЫ (UNDO)
+   ========================================= */
+function handleCartToggle() {
+    if (cartBackup) {
+        // РЕЖИМ: ВЕРНУТЬ
+        cart = [...cartBackup];
+        cartBackup = null;
+        if (navigator.vibrate) navigator.vibrate(15); // Легкий "тык"
+    } else {
+        // РЕЖИМ: ОЧИСТИТЬ
+        if (cart.length === 0) return;
+        cartBackup = [...cart];
+        cart = [];
+        // Фирменный "двойной" вибро-отклик S24 на удаление
+        if (navigator.vibrate) navigator.vibrate([20, 50, 20]); 
+    }
     
+    localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+    updateBar();
+    render();
+    renderCartItems(); // Перерисовываем модалку, чтобы кнопка сменилась
+}
+
+
+    function clearFullCart() {
+    // Директорское подтверждение, чтобы не сбросить случайно
+    if (!confirm("Удалить все товары из корзины?")) return;
+
+    // 1. Очищаем данные
+    cart = [];
+    localStorage.removeItem('de_cart_arr');
+
+    // 2. Тактильный отклик (Двойной удар — признак удаления)
+    if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
+
+    // 3. Обновляем интерфейс
+    updateBar();  // Сбросит счетчики и мини-корзину
+    render();     // Сбросит выделение (selected) в результатах поиска
+    closeModal(); // Закрываем пустую корзину
+}
    
 
    /* =========================================
@@ -541,16 +578,31 @@ function render(isNewSearch = false) {
     });
 
     if (results.length === 0) {
-        if (query.length < 3) {
-            list.innerHTML = htmlBuffer;
-            return;
-        }
-        htmlBuffer += `<div style="text-align:center; padding:30px; color:#888;">Ничего не найдено</div>`;
-        list.innerHTML = htmlBuffer;
-        return;
-    }
+    // Если введено меньше 3 символов — вообще ничего не пишем (ждем продолжения ввода)
+    if (query.length < 3) return;
+    
+    const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
+
+    list.innerHTML = `
+        <div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
+            <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">
+                По текущему запросу ничего не найдено. <br>
+                <span style="color: #888; font-size: 13px;">
+                    Если вы уверены в написании — напишите нам. <br>
+                    Мы расширим поиск и вернемся с результатом!
+                </span>
+            </div>
+            
+            <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0,86,145,0.15);">
+                ЗАПРОСИТЬ ПОИСК
+            </button>
+        </div>
+    `;
+    return;
+}
 
     // 4. ОТРИСОВКА КАРТОЧЕК (РЕАКТИВНАЯ ЗАГРУЗКА)
+    // 4. ОТРИСОВКА КАРТОЧЕК (БЕЗ ЛИШНИХ НАДПИСЕЙ)
     results.forEach(r => {
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
@@ -567,8 +619,6 @@ function render(isNewSearch = false) {
                 <div class="card-body">
                     <div class="c-title">${r.Name_DE} ${r.R && r.R !== "0" ? '<span class="b-rx">RX</span>' : ''}</div>
                     
-                    ${r.Form_RU ? `<div style="font-size:10px; color:var(--p); font-weight:700; margin-bottom:4px; text-transform:uppercase;">${r.Form_RU}</div>` : ''}
-
                     <div class="card-bottom">
                         <div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div>
                         <div class="c-ctrl">
@@ -583,7 +633,9 @@ function render(isNewSearch = false) {
                     </div>
                 </div>
             </div>`;
-    });
+    });;
+
+    
 
     // Финальная мгновенная замена всего содержимого списка
     list.innerHTML = htmlBuffer;
@@ -724,6 +776,8 @@ function clearSearch() {
    BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
    ========================================= */
 function modQty(pzn, d, event) {
+    cartBackup = null; // Любое изменение состава корзины убивает возможность "Вернуть"
+    // ... остальной код функции ...
     // ТАКТИЛЬНЫЙ ОТКЛИК (Haptic Feedback)
     if (navigator.vibrate) {
         if (d > 0) {
@@ -963,19 +1017,31 @@ async function init() {
 /* === ОБНОВЛЕННАЯ ОТРИСОВКА БОЛЬШОЙ КОРЗИНЫ (С НУМЕРАЦИЕЙ) === */
 function renderCartItems() {
     const div = document.getElementById('cartItems'); 
-    if (!div) return;
+    const headerLinks = document.getElementById('modalHeaderLinks'); 
+    if (!div || !headerLinks) return;
+
+    const clearLabel = cartBackup ? "ВЕРНУТЬ" : "ОЧИСТИТЬ";
+    const clearColor = cartBackup ? "#00e676" : "#bbb"; 
+
+    headerLinks.innerHTML = `
+        <div onclick="addMoreItems()" style="display: flex; align-items: center; cursor: pointer;">
+            <span style="font-size: 24px; color: var(--p); line-height: 1; margin-right: 4px;">‹</span>
+            <span style="color: var(--p); font-weight: 800; font-size: 12px;">ДОБАВИТЬ</span>
+        </div>
+        <span style="color: #eee; margin: 0 10px;">|</span>
+        <div onclick="event.stopPropagation(); handleCartToggle();" 
+             style="font-size: 11px; font-weight: 800; color: ${clearColor}; text-transform: uppercase; cursor: pointer;">
+             ${clearLabel}
+        </div>
+    `;
+
     div.innerHTML = '';
-    
-    // 1. КОМПАКТНАЯ ПЛАШКА ВОССТАНОВЛЕНИЯ (Ужата до 1 строчки)
-    // 1. КОМПАКТНАЯ ПЛАШКА ВОССТАНОВЛЕНИЯ (С текущей датой)
+
     if (restoredDate && cart.length > 0) {
         const title = isManagerOrder ? '👨‍⚕️ Заказ от менеджера' : '🛒 Сохраненная корзина';
         const borderColor = isManagerOrder ? 'var(--p)' : '#ccc';
         const bgColor = isManagerOrder ? '#e3f2fd' : '#f8f9fa';
-        
-        // Генерируем сегодняшнюю дату
         const dateNow = new Date().toLocaleDateString('ru-RU'); 
-        
         div.innerHTML += `
             <div style="background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="line-height: 1.2;">
@@ -985,8 +1051,7 @@ function renderCartItems() {
                 <div style="text-align: right; font-size: 10px; color: #888; line-height: 1.2;">
                     Текущие цены и курс<br>на <b style="color:#555;">${dateNow}</b>
                 </div>
-            </div>
-        `;
+            </div>`;
     }
 
     if (cart.length === 0) { 
@@ -994,67 +1059,55 @@ function renderCartItems() {
         return;
     }
 
-    // 2. ОТРИСОВКА ТОВАРОВ (Плотный чек)
     cart.forEach((item, index) => {
         const r = db.find(x => String(x.PZN) === String(item.pzn));
         if (r) {
             const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
             const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
-            
-            let btn = `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${item.pzn}',-1, event)">−</button><span class="q-val">${item.qty}</span><button class="q-btn" onclick="modQty('${item.pzn}',1, event)">+</button></div>`;
-            
-            const sum = `
-                <div class="sum-box" style="min-width: 65px;">
-                    <div class="s-eur">${Math.round(p * item.qty)} €</div>
-                    <div class="s-rub">${getRubPrice(p * item.qty).toLocaleString()} ₽</div>
-                </div>`;
-
             div.innerHTML += `
             <div style="display: flex; padding: 12px 0; border-bottom: 1px solid #f5f5f5; align-items: center;">
                 <div style="font-size: 13px; color: #999; font-weight: 700; width: 22px; flex-shrink: 0;">${index + 1}.</div>
-                
                 <div style="flex: 1; min-width: 0; padding-right: 8px;">
                     <div class="c-title" style="font-size: 14px; margin-bottom: 2px; line-height: 1.1;">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div>
                     <div style="font-size: 11px; color: #888; line-height: 1.3; word-break: break-word;">
                         ${r.Hersteller} <span style="opacity:0.5; margin:0 4px;">|</span> PZN: ${r.PZN}
                     </div>
                 </div>
-
                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                     <div style="font-size: 14px; font-weight: 700; color: #000;">${Math.round(p)} €</div>
-                    <div class="qty-capsule-wrap">${btn}</div>
-                    ${sum}
+                    <div class="qty-capsule-wrap">
+                        <div class="qty-capsule">
+                            <button class="q-btn" onclick="modQty('${item.pzn}',-1, event)">−</button>
+                            <span class="q-val">${item.qty}</span>
+                            <button class="q-btn" onclick="modQty('${item.pzn}',1, event)">+</button>
+                        </div>
+                    </div>
+                    <div class="sum-box" style="min-width: 65px;">
+                        <div class="s-eur">${Math.round(p * item.qty)} €</div>
+                        <div class="s-rub">${getRubPrice(p * item.qty).toLocaleString()} ₽</div>
+                    </div>
                 </div>
             </div>`;
         }
     });
 
-// 3// 3. УМНЫЙ БЛОК: ТАРИФ + АПСЕЙЛ (ДЕЛОВОЙ СТИЛЬ, БЕЗ ЭМОДЗИ)
     const shipRub = getRubPrice(shipEur);
     div.innerHTML += `
     <div onclick="addMoreItems()" style="margin-top: 15px; margin-bottom: 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: 0.2s;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            
             <div style="flex: 1; padding-right: 12px;">
                 <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px;">Тариф почты из Германии</div>
                 <div style="font-size: 11px; color: #888; margin-bottom: 12px;">12–25 дней</div>
-                
-                <div style="font-size: 12px; font-weight: 800; color: var(--p); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
-                    Добавить позиции ›
-                </div>
-                <div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: 400; letter-spacing: 0.2px;">
-                    Стоимость доставки не изменится
-                </div>
+                <div style="font-size: 12px; font-weight: 800; color: var(--p); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">Добавить позиции ›</div>
+                <div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: 400; letter-spacing: 0.2px;">Стоимость доставки не изменится</div>
             </div>
-            
             <div style="text-align: right; flex-shrink: 0;">
                 <div style="font-size: 16px; font-weight: 800; color: #000;">${shipEur} €</div>
                 <div style="font-size: 13px; font-weight: 500; color: #666; margin-top: 2px;">${shipRub.toLocaleString('ru-RU')} ₽</div>
             </div>
-            
         </div>
     </div>`;
-} // <-- Конец функции renderCartItems
+}
 
 /* === ФУНКЦИЯ ДЛЯ ССЫЛКИ "ДОБАВИМ ЕЩЕ" === */
 function addMoreItems() {
@@ -1169,6 +1222,74 @@ function openCart() {
    BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ (CLEAN)
    ========================================= */
 
+/**
+ * Универсальное окно контактов
+ * type: 'question' (вопрос), 'search' (не нашли), 'order' (заказ)
+ */
+/**
+ * УНИВЕРСАЛЬНЫЙ ЦЕНТР СВЯЗИ
+ * type: 'question', 'search', 'order', 'news'
+ * index: нужен только для типа 'news'
+ */
+function openContact(type, index = null) {
+    closeModal(); 
+    
+    const overlay = document.getElementById('contactOverlay');
+    const title = document.getElementById('contactTitle');
+    const previewBox = document.getElementById('orderPreviewBox');
+    const manualInput = document.getElementById('manualMsgInput');
+    const buttons = document.getElementById('contactButtonsGrid');
+    const mini = document.getElementById('miniCart');
+
+    if (!overlay || !manualInput) return;
+    if (mini) mini.style.display = 'none';
+
+    // Сброс состояний
+    isQuestionMode = (type !== 'order'); 
+    previewBox.style.display = 'none';
+    manualInput.style.display = 'none';
+
+    if (type === 'order') {
+        title.innerText = "ПРЕДПРОСМОТР ЗАЯВКИ";
+        let visualPreview = "СОСТАВ ЗАЯВКИ:\n\n";
+        cart.forEach((item, idx) => {
+            const r = db.find(x => String(x.PZN) === String(item.pzn));
+            if (r) visualPreview += `${idx + 1}. ${r.Name_DE} — ${item.qty} шт.\n`;
+        });
+        visualPreview += "\n+ Тариф почты из Германии";
+        previewBox.innerText = visualPreview;
+        previewBox.style.display = 'block';
+
+        const orderData = getOrderTextAndLink();
+        currentPreparedText = orderData ? orderData.text : "";
+
+    } else {
+        // РЕЖИМЫ ТЕКСТОВЫХ ВОПРОСОВ
+        manualInput.style.display = 'block';
+        
+        if (type === 'search') {
+            title.innerText = "ПОИСК ПРЕПАРАТА";
+            const q = document.getElementById('search').value.trim();
+            manualInput.value = `Здравствуйте! Не нашли в поиске: "${q.toUpperCase()}".\nПомогите найти этот препарат или аналог: `;
+        } 
+        else if (type === 'news' && index !== null && newsDB[index]) {
+            title.innerText = "ВОПРОС ПО НОВОСТИ";
+            const n = newsDB[index];
+            const cleanText = n.Text.replace(/\[vopros\]/gi, '').trim();
+            manualInput.value = `Здравствуйте! Вопрос по новости от ${n.Date}:\n«${cleanText}»\n\nМой вопрос: `;
+        } 
+        else {
+            title.innerText = "ВАШ ВОПРОС";
+            manualInput.value = "Здравствуйте RxDE, у меня вопрос:\n";
+        }
+        
+        setTimeout(() => manualInput.focus(), 200);
+    }
+
+    overlay.style.display = 'flex';
+    buttons.style.display = 'flex';
+}
+
 // 1. Генерация номера заказа
 function generateOrderID() {
     const now = new Date();
@@ -1180,65 +1301,11 @@ function generateOrderID() {
     return `${d}${m}${y}-${h}${min}`;
 }
 
-// 2. ОТКРЫТИЕ ОКНА "ВОПРОС" (Из меню)
-function openQuestion() {
-    isQuestionMode = true; 
-    closeModal();
-    document.getElementById('contactTitle').innerText = "ВАШ ВОПРОС";
-    
-    if (document.getElementById('orderPreviewBox')) document.getElementById('orderPreviewBox').style.display = 'none';
-    
-    const manualInput = document.getElementById('manualMsgInput');
-    if (manualInput) {
-        manualInput.style.display = 'block';
-        if (manualInput.value.length < 10) {
-            manualInput.value = "Здравствуйте RxDE, у меня вопрос:\n";
-        }
-    }
-    
-    document.getElementById('contactButtonsGrid').style.display = 'flex'; 
-    document.getElementById('contactOverlay').style.display = 'flex';
-    setTimeout(() => { if (manualInput) manualInput.focus(); }, 100);
+// 2. ОТКРЫТИЕ ОКНА "ВОПРОС" (Из меню) - заменили на универсальную openContact()
 
-    const mini = document.getElementById('miniCart');
-    if (mini) mini.style.display = 'none';
-}
 
-// 3. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА
-function openContactForm() {
-    isQuestionMode = false; 
-    closeModal(); 
-    document.getElementById('contactTitle').innerText = "ПРЕДПРОСМОТР ЗАЯВКИ";
-    
-    // 1. Генерируем "чистый" список для глаз клиента (без цен и PZN)
-    let visualPreview = "СОСТАВ ЗАЯВКИ:\n\n";
-    cart.forEach((item, idx) => {
-        const r = db.find(x => String(x.PZN) === String(item.pzn));
-        if (r) {
-            visualPreview += `${idx + 1}. ${r.Name_DE} — ${item.qty} шт.\n`;
-        }
-    });
-    visualPreview += "\n+ Тариф почты из Германии";
+// 3. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА - заменили на универсальную
 
-    // 2. Генерируем "полный" текст для отправки менеджеру (со всеми данными)
-    const fullData = getOrderTextAndLink();
-    currentPreparedText = fullData ? fullData.text : "";
-
-    const manualInput = document.getElementById('manualMsgInput');
-    if (manualInput) manualInput.style.display = 'none';
-    
-    const previewBox = document.getElementById('orderPreviewBox');
-    if (previewBox) {
-        previewBox.style.display = 'block';
-        previewBox.innerText = visualPreview; // Клиент видит только названия
-    }
-    
-    document.getElementById('contactButtonsGrid').style.display = 'flex';
-    document.getElementById('contactOverlay').style.display = 'flex';
-
-    const mini = document.getElementById('miniCart');
-    if (mini) mini.style.display = 'none';
-}
 
 // 4. ПЕРЕХОД В ДАЙЛЕР
 function switchToContactForm() {
@@ -1756,10 +1823,17 @@ function getRelativeTime(dateStr) {
 function formatNewsText(text, index = -1) {
     if (!text) return "";
     let formatted = text;
-    // Заменяем [vopros] на кнопку, которая передает индекс новости
-    formatted = formatted.replace(/\[vopros\]/gi, `<span class="n-inline-btn" onclick="openQuestionFromNews(${index}); event.stopPropagation();">💬 Задать вопрос</span>`);
-    // Хештеги
-    formatted = formatted.replace(/#([a-zA-Zа-яА-ЯёЁ0-9_]+)/g, `<span class="n-hashtag" onclick="setSearchFromNews('$1'); event.stopPropagation();">#$1</span>`);
+
+    // ТЕПЕРЬ ВЫЗЫВАЕМ УНИВЕРСАЛЬНУЮ openContact С ТИПОМ 'news'
+    formatted = formatted.replace(/\[vopros\]/gi, 
+        `<span class="n-inline-btn" onclick="openContact('news', ${index}); event.stopPropagation();">💬 Задать вопрос</span>`
+    );
+
+    // Хештеги (оставляем как было — это удобно для поиска)
+    formatted = formatted.replace(/#([a-zA-Zа-яА-ЯёЁ0-9_]+)/g, 
+        `<span class="n-hashtag" onclick="setSearchFromNews('$1'); event.stopPropagation();">#$1</span>`
+    );
+
     return formatted;
 }
 
@@ -1790,20 +1864,7 @@ window.setSearchFromNews = function(word) {
 };;
 
 // 4. Интерактив: Вопрос по конкретной новости
-window.openQuestionFromNews = function(index) {
-    if (index >= 0 && newsDB[index]) {
-        const date = newsDB[index].Date || '';
-        const cleanText = newsDB[index].Text.replace(/\[vopros\]/gi, '').trim();
-        const msgInput = document.getElementById('manualMsgInput');
-        
-        if (msgInput) {
-            // Сразу вставляем контекст в поле ввода, чтобы пользователь его видел
-            msgInput.value = `Здравствуйте! Вопрос по новости от ${date}:\n«${cleanText}»\n\nМой вопрос: `;
-        }
-    }
-    // Открываем стандартное окно вопроса
-    openQuestion(); 
-};
+
 
 // 5. Главная отрисовка (SEO H1 + Лента)
 function renderNewsFeed() {
