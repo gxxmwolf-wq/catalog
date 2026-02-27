@@ -478,11 +478,12 @@ function render(isNewSearch = false) {
     if (!list || !intro) return;
 
     if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
-    list.innerHTML = '';
+    
     const query = filters.search.trim().toLowerCase();
     
     // 1. СОСТОЯНИЕ "ГЛАВНАЯ" (Пустой поиск)
     if (!query) { 
+        list.innerHTML = '';
         intro.style.display = 'block'; 
         renderNewsFeed(); // Рисуем обычную ленту
         return; 
@@ -491,7 +492,10 @@ function render(isNewSearch = false) {
     // 2. СОСТОЯНИЕ "ПОИСК" (Скрываем фон)
     intro.style.display = 'none';
 
-   /// --- ЛОГИКА КОНТЕКСТНЫХ НОВОСТЕЙ (с относительным временем) ---
+    // Создаем буфер для сборки всего HTML кода разом
+    let htmlBuffer = '';
+
+    // --- ЛОГИКА КОНТЕКСТНЫХ НОВОСТЕЙ ---
     const firstWord = query.split(/\s+/)[0]; 
     const matchedNews = newsDB.filter(n => 
         n.Text.toLowerCase().includes(firstWord) || 
@@ -499,19 +503,15 @@ function render(isNewSearch = false) {
     ).slice(0, 3);
 
     if (matchedNews.length > 0) {
-        let newsHtml = `<div class="context-news-wrap" style="margin-bottom:20px;">`;
+        htmlBuffer += `<div class="context-news-wrap" style="margin-bottom:20px;">`;
         matchedNews.forEach((n, idx) => {
             const age = getNewsAge(n.Date);
             const isOld = age > 90;
-            
-            // Формируем текст тега и его цвет
             const tagLabel = isOld ? "АРХИВНАЯ ЗАПИСЬ" : (n.Tag || "ВАЖНО").toUpperCase();
             const tagBg = isOld ? "#8E8E93" : "#D32F2F";
-            
-            // Формируем строку времени: Дата (.. дней назад)
             const timeInfo = `(${getRelativeTime(n.Date)})`;
 
-            newsHtml += `
+            htmlBuffer += `
                 <div class="notepad-item context-match" style="border-left:4px solid ${tagBg}; background:#fffbfb; margin-bottom:8px;">
                     <div class="np-date-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                         <span class="np-date-text" style="font-size:11px; color:#999;">
@@ -526,41 +526,49 @@ function render(isNewSearch = false) {
                     </div>
                 </div>`;
         });
-        newsHtml += `</div>`;
-        list.innerHTML += newsHtml;
+        htmlBuffer += `</div>`;
     }
 
     // 3. СТАНДАРТНЫЙ ПОИСК ТОВАРОВ
     const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
-    // Внутри функции render(isNewSearch = false)
-let results = db.filter(r => {
-    if (!r || !r.Name_DE) return false;
-    let pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
-    
-    // ДОБАВЛЯЕМ r.Form_RU сюда:
-    const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${pznStr}`.toLowerCase();
-    
-    return wordVars.every(vars => vars.some(v => pool.includes(v)));
-});
+    let results = db.filter(r => {
+        if (!r || !r.Name_DE) return false;
+        let pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${pznStr}`.toLowerCase();
+        return wordVars.every(vars => vars.some(v => pool.includes(v)));
+    });
 
     if (results.length === 0) {
-        if (query.length < 3) return;
-        list.innerHTML += `<div style="text-align:center; padding:30px; color:#888;">Ничего не найдено</div>`;
+        if (query.length < 3) {
+            list.innerHTML = htmlBuffer;
+            return;
+        }
+        htmlBuffer += `<div style="text-align:center; padding:30px; color:#888;">Ничего не найдено</div>`;
+        list.innerHTML = htmlBuffer;
         return;
     }
 
-    // 4. ОТРИСОВКА КАРТОЧЕК
+    // 4. ОТРИСОВКА КАРТОЧЕК (РЕАКТИВНАЯ ЗАГРУЗКА)
     results.forEach(r => {
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
         const altText = `${r.Name_DE} — PZN ${r.PZN}`;
-        list.innerHTML += `
+        
+        htmlBuffer += `
             <div class="card ${q > 0 ? 'selected' : ''}">
-                <img src="img/${r.PZN}.webp" class="product-thumb" loading="lazy" alt="${altText}" onerror="handleImgError(this)">
+                <img src="img/${r.PZN}.webp" 
+                     class="product-thumb" 
+                     loading="eager" 
+                     fetchpriority="high"
+                     alt="${altText}" 
+                     onerror="handleImgError(this)">
                 <div class="card-body">
                     <div class="c-title">${r.Name_DE} ${r.R && r.R !== "0" ? '<span class="b-rx">RX</span>' : ''}</div>
+                    
+                    ${r.Form_RU ? `<div style="font-size:10px; color:var(--p); font-weight:700; margin-bottom:4px; text-transform:uppercase;">${r.Form_RU}</div>` : ''}
+
                     <div class="card-bottom">
                         <div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div>
                         <div class="c-ctrl">
@@ -576,6 +584,9 @@ let results = db.filter(r => {
                 </div>
             </div>`;
     });
+
+    // Финальная мгновенная замена всего содержимого списка
+    list.innerHTML = htmlBuffer;
 }
 
 function renderSuggestions(inputText) {
@@ -1376,7 +1387,7 @@ function getOrderTextAndLink() {
     const baseUrl = window.location.origin + window.location.pathname;
     const fullLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
 
-    text += `Ваша сохраненная корзина всегда доступна по ссылке:\n${fullLink}`;
+    text += `Для Вашего удобства ЗАКАЗ с актуальной ценой доступен по ссылке:\n${fullLink}`;
     
     currentPreparedText = text; 
     return { text: text, link: fullLink };
