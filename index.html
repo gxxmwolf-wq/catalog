@@ -1331,14 +1331,14 @@ function getOrderTextAndLink() {
     const t = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     const urlDate = `${d}_${t}`; 
 
-    // 1. ВЫРАВНЕННАЯ ШАПКА (по 11-му символу)
+    // 1. ШАПКА
     let totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
     let text =  `дата:      [${d}]\n`;
     text +=     `€/₽:       [${rateCalc}]\n`;
     text +=     `всего уп:  [${totalQty} pack]\n\n`;
 
     let itemsSumEur = 0;
-    let breakdown = [shipEur]; // Начинаем с почты
+    let breakdown = [shipEur];
 
     // 2. СПИСОК ТОВАРОВ
     cart.forEach((item, idx) => {
@@ -1354,17 +1354,20 @@ function getOrderTextAndLink() {
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
 
-            text += `${idx + 1}.\n${fullDesc}...${math}\n\n`;
+            // --- ЛОГИКА НУМЕРАЦИИ ---
+            // Если в корзине больше одного товара — ставим номер, если один — пусто
+            const prefix = cart.length > 1 ? `${idx + 1}.\n` : "";
+            
+            text += `${prefix}${fullDesc}...${math}\n\n`;
         }
     });
 
-    // 3. ИТОГОВАЯ ЧАСТЬ
+    // 3. ИТОГО
     text += `Тариф почты из Германии до 5кг...${shipEur}€ (12-25 дней)\n\n`;
     
     const totalEur = itemsSumEur + shipEur;
     const finalRub = Math.floor((totalEur * parseFloat(rateCalc)) / 100) * 100;
 
-    // Формула сложения и итоговый расчет
     text += `${breakdown.join('+')}=${fmt(totalEur)}€\n`;
     text += `${fmt(totalEur)}€*${rateCalc}=${fmt(finalRub)} ₽\n\n`;
 
