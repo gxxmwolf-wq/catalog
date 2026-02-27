@@ -1605,7 +1605,7 @@ function copyFilterResults() {
             // Считаем рубли для каждой строки
             const pRub = getRubPrice(pEur).toLocaleString('ru-RU');
             
-            text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${pEur}€ (${pRub} ₽)\n`;
+            text += `  ${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${pEur}€ (${pRub} ₽)\n`;
         });
         
         text += `\n`;
