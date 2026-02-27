@@ -534,12 +534,16 @@ function render(isNewSearch = false) {
     const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
-    let results = db.filter(r => {
-        if (!r || !r.Name_DE) return false;
-        let pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${pznStr}`.toLowerCase();
-        return wordVars.every(vars => vars.some(v => pool.includes(v)));
-    });
+    // Внутри функции render(isNewSearch = false)
+let results = db.filter(r => {
+    if (!r || !r.Name_DE) return false;
+    let pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
+    
+    // ДОБАВЛЯЕМ r.Form_RU сюда:
+    const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${pznStr}`.toLowerCase();
+    
+    return wordVars.every(vars => vars.some(v => pool.includes(v)));
+});
 
     if (results.length === 0) {
         if (query.length < 3) return;
@@ -588,17 +592,18 @@ function renderSuggestions(inputText) {
     const lastWord = userWords[userWords.length - 1];
     const lastWordVars = getSearchVariations(lastWord).map(v => v.toLowerCase());
 
-    // 1. ФИЛЬТРУЕМ БАЗУ
-    // 1. ФИЛЬТРУЕМ БАЗУ (Добавили Form_RU в pool)
+   // Внутри функции renderSuggestions(inputText)
     const matches = db.filter(r => {
-        if (!r.Name_DE) return false;
-        // Теперь поиск ищет и по русской форме выпуска
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
-        return userWords.every(word => {
-            const vars = getSearchVariations(word);
-            return vars.some(v => pool.includes(v));
-        });
+    if (!r.Name_DE) return false;
+    
+    // И СЮДА ТОЖЕ ДОБАВЛЯЕМ r.Form_RU:
+    const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
+    
+    return userWords.every(word => {
+        const vars = getSearchVariations(word);
+        return vars.some(v => pool.includes(v));
     });
+});
 
     if (matches.length === 0) return;
 
@@ -1545,6 +1550,7 @@ function copyCartData() {
 function copyFilterResults() {
     if (!filters.search || filters.search.length < 2) return;
 
+    // 1. Фильтруем базу (учитываем Name, Substance, Category, Form_RU и PZN)
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
@@ -1558,6 +1564,7 @@ function copyFilterResults() {
     const queryUpper = filters.search.trim().toUpperCase();
     const activeSubstance = results[0].Substance || "—";
     
+    // Шапка отчета
     let text =  `дата:  [${dateNow}]\n`;
     text +=     `€/₽:   [${rateCalc}]\n`;
     text +=     `___\n`;
@@ -1566,19 +1573,27 @@ function copyFilterResults() {
     text +=     `д.в.:  [${activeSubstance}]\n`;
     text +=     `___\n\n`;
 
-    // ГРУППИРОВКА ПО Form_RU
+    // 2. Группируем по немецкому полю Form
     const groups = {};
     results.forEach(r => {
-        const key = r.Form_RU || "ПРОЧЕЕ"; 
+        const key = r.Form || "OTHER"; 
         if (!groups[key]) groups[key] = [];
         groups[key].push(r);
     });
 
-    // Отрисовка групп с внутренней сортировкой по цене
+    // 3. Отрисовка групп
     Object.keys(groups).sort().forEach(formName => {
-        text += `${formName.toUpperCase()}:\n`;
+        const firstInGroup = groups[formName][0];
+        const formRu = firstInGroup.Form_RU;
+        
+        // Тот самый солидный заголовок: REKTALSCHAUM (РЕКТАЛЬНАЯ ПЕНА):
+        const displayTitle = formRu 
+            ? `${formName.toUpperCase()} (${formRu.toUpperCase()}):` 
+            : `${formName.toUpperCase()}:`;
 
-        // Сортировка внутри группы: от дешевых к дорогим
+        text += `${displayTitle}\n`;
+
+        // Сортировка внутри группы по цене (от меньшей к большей)
         groups[formName].sort((a, b) => {
             const pA = parseFloat(String(a.Price).replace(',', '.'));
             const pB = parseFloat(String(b.Price).replace(',', '.'));
@@ -1586,16 +1601,23 @@ function copyFilterResults() {
         });
 
         groups[formName].forEach(r => {
-            const p = Math.round(parseFloat(String(r.Price).replace(',', '.')));
-            text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${p}€\n`;
+            const pEur = Math.round(parseFloat(String(r.Price).replace(',', '.')));
+            // Считаем рубли для каждой строки
+            const pRub = getRubPrice(pEur).toLocaleString('ru-RU');
+            
+            text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${pEur}€ (${pRub} ₽)\n`;
         });
+        
         text += `\n`;
     });
 
     const baseUrl = window.location.origin + window.location.pathname;
     text += `ссылка на поисковый запрос: ${baseUrl}?q=${encodeURIComponent(filters.search.trim())}`;
 
-    navigator.clipboard.writeText(text).then(() => blinkLogo('yellow'));
+    // Копируем и мигаем желтым
+    navigator.clipboard.writeText(text).then(() => {
+        blinkLogo('yellow');
+    });
 }
 
 /* =========================================
