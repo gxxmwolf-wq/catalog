@@ -589,9 +589,11 @@ function renderSuggestions(inputText) {
     const lastWordVars = getSearchVariations(lastWord).map(v => v.toLowerCase());
 
     // 1. ФИЛЬТРУЕМ БАЗУ
+    // 1. ФИЛЬТРУЕМ БАЗУ (Добавили Form_RU в pool)
     const matches = db.filter(r => {
         if (!r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.PZN}`.toLowerCase();
+        // Теперь поиск ищет и по русской форме выпуска
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
         return userWords.every(word => {
             const vars = getSearchVariations(word);
             return vars.some(v => pool.includes(v));
@@ -632,9 +634,14 @@ function renderSuggestions(inputText) {
             }
         });
 
-        // --- ДОПОЛНИТЕЛЬНАЯ ЛОГИКА (Семён Семёныч) ---
+  // --- ДОПОЛНИТЕЛЬНАЯ ЛОГИКА ---
         
-        // 1. Если якорь не найден в названии (ищем по PZN или категории), 
+        // 1. Форма выпуска (НОВОЕ: добавляем в чипсы, если введено 1 слово)
+        if (userWords.length === 1 && !isTrailingSpace && r.Form_RU) {
+            candidates.add(r.Form_RU);
+        }
+
+        // 2. Если якорь не найден в названии (ищем по PZN, категории или теперь по форме), 
         // но товар подходит — предлагаем само название товара (первое слово)
         if (!anchorFoundInName) {
             const mainName = r.Name_RU || r.Name_DE;
@@ -642,8 +649,8 @@ function renderSuggestions(inputText) {
             if (brand) candidates.add(brand);
         }
 
-        // 2. Категория (только если совсем пусто в начале)
-        if (userWords.length === 1 && !isTrailingSpace && r.Category && candidates.size < 2) {
+        // 3. Категория (только если совсем мало кандидатов)
+        if (userWords.length === 1 && !isTrailingSpace && r.Category && candidates.size < 4) {
             candidates.add(r.Category);
         }
     });
@@ -1538,21 +1545,19 @@ function copyCartData() {
 function copyFilterResults() {
     if (!filters.search || filters.search.length < 2) return;
 
-    const results = db.filter(r => {
+    let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Substance_RU||''} ${r.Category||''} ${r.PZN}`.toLowerCase();
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
         const vars = getSearchVariations(filters.search.trim());
         return vars.some(v => pool.includes(v));
     });
 
     if (results.length === 0) return;
 
-    const activeSubstance = results[0].Substance || "—";
     const dateNow = new Date().toLocaleDateString('ru-RU');
     const queryUpper = filters.search.trim().toUpperCase();
+    const activeSubstance = results[0].Substance || "—";
     
-    // Выравнивание по самому длинному слову ("почта:" / "поиск:")
-    // Добавляем неразрывные пробелы для идеальной вертикали
     let text =  `дата:  [${dateNow}]\n`;
     text +=     `€/₽:   [${rateCalc}]\n`;
     text +=     `___\n`;
@@ -1561,9 +1566,30 @@ function copyFilterResults() {
     text +=     `д.в.:  [${activeSubstance}]\n`;
     text +=     `___\n\n`;
 
-    results.slice(0, 40).forEach(r => {
-        const p = Math.round(parseFloat(r.Price.replace(',', '.')));
-        text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${p}€\n\n`;
+    // ГРУППИРОВКА ПО Form_RU
+    const groups = {};
+    results.forEach(r => {
+        const key = r.Form_RU || "ПРОЧЕЕ"; 
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(r);
+    });
+
+    // Отрисовка групп с внутренней сортировкой по цене
+    Object.keys(groups).sort().forEach(formName => {
+        text += `${formName.toUpperCase()}:\n`;
+
+        // Сортировка внутри группы: от дешевых к дорогим
+        groups[formName].sort((a, b) => {
+            const pA = parseFloat(String(a.Price).replace(',', '.'));
+            const pB = parseFloat(String(b.Price).replace(',', '.'));
+            return pA - pB;
+        });
+
+        groups[formName].forEach(r => {
+            const p = Math.round(parseFloat(String(r.Price).replace(',', '.')));
+            text += `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${p}€\n`;
+        });
+        text += `\n`;
     });
 
     const baseUrl = window.location.origin + window.location.pathname;
