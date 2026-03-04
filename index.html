@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="theme-color" content="#ffffff">
     
     <title>RXDE.online — сервис доставки лекарств из Германии</title>
@@ -34,52 +33,49 @@
 
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 <div class="cont">
-        <div class="sticky">
-    <div class="top-menu-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #fff; border-bottom: 1px solid #f0f0f0;">
-        
-    <div style="display: flex; align-items: center;">
-        <div class="tm-item" onclick="showInfo('exp')">ОПЫТ</div>
-        <span class="tm-sep">|</span>
-        <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
-        <span class="tm-sep">|</span>
-        <div class="tm-item live-glow" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>
-    </div>      
-
-        <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
-            <div style="white-space: nowrap;">ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
-            <div style="white-space: nowrap;">Расчетный: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
+    <div class="sticky">
+        <div class="top-menu-bar">
+            <div style="display: flex; align-items: center;">
+                <div class="tm-item" onclick="showInfo('exp')">ОПЫТ</div>
+                <span class="tm-sep">|</span>
+                <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
+                <span class="tm-sep">|</span>
+                <div class="tm-item live-glow" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>
+            </div>      
+            <div class="rates-compact">
+                <div>ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
+                <div>Курс: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
+            </div>
         </div>
+
+        <div class="inp-wrap">
+            <div class="embedded-logo" onmousedown="handleLogoClick(event)">
+                <span class="rx-part">RX</span><span class="de-part">DE</span>
+            </div>
+            <input type="text" id="search" 
+                   class="search-input" 
+                   placeholder="Поиск (рус / lat)..." 
+                   oninput="handleInput()" 
+                   onkeydown="checkEnter(event)" 
+                   autocomplete="off" 
+                   autocorrect="off" 
+                   spellcheck="false"
+                   enterkeyhint="search">
+            <span class="cls-btn" id="clearBtn" onclick="clearSearch()">✕</span>
+        </div>
+
+        <div id="suggestRow" class="suggestions-row"></div>
     </div>
 
-    <div class="inp-wrap">
-    <div class="embedded-logo" onmousedown="handleLogoClick(event)">
-        <span class="rx-part">RX</span><span class="de-part">DE</span>
-    </div>
-    
-   <input type="text" id="search" 
-       class="search-input" 
-       placeholder="Поиск (рус / lat)..." 
-       oninput="handleInput()" 
-       onkeydown="checkEnter(event)" 
-       autocomplete="off" 
-       autocorrect="off" 
-       spellcheck="false"
-       enterkeyhint="search">
-    
-    <span class="cls-btn" id="clearBtn" onclick="clearSearch()">✕</span>
-</div>
-
-    <div id="suggestRow" class="suggestions-row"></div>
-</div>
     <div id="list"></div>
     <div id="introBlock" class="intro-section">
-    <h1 style="font-size: 22px; margin-bottom: 5px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
-    <p style="font-size: 14px; color: #888;">Deutsche Qualität. Поиск по базе медикаментов.</p>
-</div>
+        <h1 style="font-size: 22px; margin-bottom: 5px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
+        <p style="font-size: 14px; color: #888;">Deutsche Qualität. Поиск по базе медикаментов.</p>
+    </div>
 </div>
 
 <div id="miniCart" class="mini-cart-fab" onclick="openCart()">
@@ -93,21 +89,21 @@
     <div class="m-box" onclick="event.stopPropagation()">
         
         <div class="modal-head">
-            <div id="modalHeaderLinks" class="m-head-add-more" style="flex: 1.2; display: flex; align-items: center;"></div>
+            <div id="modalHeaderLinks" class="m-head-add-more"></div>
 
-            <div class="m-head-info" style="flex: 1; text-align: center; line-height: 1.3;">
+            <div class="m-head-info">
                 <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">ЗАКАЗ: ...</div>
                 <div style="font-size: 13px; color: #000; font-weight: 700;">Курс: <span id="cartRate">0</span> ₽</div>
             </div>
 
-            <div onclick="closeModal()" class="close-x" style="flex: 0.8; display: flex; justify-content: flex-end; cursor: pointer; font-size: 26px; color: #333;">✕</div>
+            <div onclick="closeModal()" class="close-x">✕</div>
         </div>
 
-        <div class="m-scroll-area" style="padding: 0 15px; flex: 1; overflow-y: auto;">
+        <div class="m-scroll-area">
             <div id="cartItems"></div>
         </div>
         
-        <div class="modal-footer-sticky" style="padding: 15px 20px 30px 20px; background: #fff; border-top: 1px solid #eee;">
+        <div class="modal-footer-sticky">
             <div class="footer-total-compact" style="margin-bottom: 15px; text-align: right;">
                 <span id="footerTotalSum" style="color:var(--p); font-weight: 900; font-size: 24px;">0 €</span>
             </div>
@@ -119,7 +115,6 @@
         
     </div>
 </div>
-</div>
 
 <div id="infoOverlay" class="info-overlay" onclick="closeInfo()">
     <div class="info-box" onclick="event.stopPropagation()">
@@ -129,7 +124,7 @@
     </div>
 </div>
 
-<div id="contactOverlay" class="info-overlay" onclick="closeContact()" style="z-index: 9999;">
+<div id="contactOverlay" class="info-overlay" onclick="closeContact()">
     <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;">
         <div id="contactTitle" class="info-title" style="text-align: center; font-size: 16px;">ПРЕДПРОСМОТР</div>
         
@@ -171,9 +166,10 @@
     <div id="succID" class="s-order-id" style="display: none;">#0000</div>
     <button onclick="closeSuccess()" class="s-close-btn">ПОНЯТНО</button>
 </div>
+
 <script>
-    
-/* =========================================
+
+    /* =========================================
    BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
    ========================================= */
 const LOCAL_DB_URL = 'db.csv'; 
@@ -222,92 +218,83 @@ function handleCartToggle() {
         // РЕЖИМ: ВЕРНУТЬ
         cart = [...cartBackup];
         cartBackup = null;
-        if (navigator.vibrate) navigator.vibrate(15); // Легкий "тык"
+        if (navigator.vibrate) navigator.vibrate(15); 
     } else {
         // РЕЖИМ: ОЧИСТИТЬ
         if (cart.length === 0) return;
         cartBackup = [...cart];
         cart = [];
-        // Фирменный "двойной" вибро-отклик S24 на удаление
         if (navigator.vibrate) navigator.vibrate([20, 50, 20]); 
     }
     
     localStorage.setItem('de_cart_arr', JSON.stringify(cart));
     updateBar();
     render();
-    renderCartItems(); // Перерисовываем модалку, чтобы кнопка сменилась
+    renderCartItems(); 
 }
 
-
-    function clearFullCart() {
-    // Директорское подтверждение, чтобы не сбросить случайно
+function clearFullCart() {
     if (!confirm("Удалить все товары из корзины?")) return;
 
-    // 1. Очищаем данные
     cart = [];
+    cartBackup = null; // [ФИКС]: Сбрасываем бэкап, чтобы не было фантомных восстановлений
     localStorage.removeItem('de_cart_arr');
 
-    // 2. Тактильный отклик (Двойной удар — признак удаления)
     if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
 
-    // 3. Обновляем интерфейс
-    updateBar();  // Сбросит счетчики и мини-корзину
-    render();     // Сбросит выделение (selected) в результатах поиска
-    closeModal(); // Закрываем пустую корзину
+    updateBar();  
+    render();     
+    closeModal(); 
 }
    
 
    /* =========================================
-       BLOCK 3: ДАННЫЕ, КУРСЫ И УМНЫЙ ПОИСК
-       ========================================= */
+   BLOCK 3: ДАННЫЕ, КУРСЫ И УМНЫЙ ПОИСК
+   ========================================= */
 
-    // --- 1. ЗАГРУЗКА ДАННЫХ (НОВОЕ) ---
-
-    async function fetchCbrRate() {
-        try {
-            const response = await fetch(CBR_API_URL);
-            const data = await response.json();
-            cbrRateData = data.Valute.EUR.Value;
-        } catch (e) {
-            console.log("CBR error, fallback used");
-            cbrRateData = KURS_FALLBACK;
-        }
+// --- 1. ЗАГРУЗКА ДАННЫХ (НОВОЕ) ---
+async function fetchCbrRate() {
+    try {
+        const response = await fetch(CBR_API_URL);
+        const data = await response.json();
+        cbrRateData = data.Valute.EUR.Value;
+    } catch (e) {
+        console.log("CBR error, fallback used");
+        cbrRateData = KURS_FALLBACK;
     }
+}
 
-    async function fetchGoogleSettings() {
-        return new Promise(resolve => {
-            Papa.parse(GOOGLE_SETTINGS_URL + '&t=' + Date.now(), {
-                download: true,
-                header: true,
-                complete: res => {
-                    googleSettings = res.data ? res.data[0] : null;
-                    resolve();
-                },
-                error: () => resolve()
-            });
+async function fetchGoogleSettings() {
+    return new Promise(resolve => {
+        Papa.parse(GOOGLE_SETTINGS_URL + '&t=' + Date.now(), {
+            download: true,
+            header: true,
+            complete: res => {
+                googleSettings = res.data ? res.data[0] : null;
+                resolve();
+            },
+            error: () => resolve()
         });
-    }
+    });
+}
 
-    // --- ЗАГРУЗКА НОВОСТЕЙ ИЗ ГУГЛ ТАБЛИЦЫ ---
+// --- ЗАГРУЗКА НОВОСТЕЙ ИЗ ГУГЛ ТАБЛИЦЫ ---
 const GOOGLE_NEWS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=1952028184&single=true&output=csv';
 let newsDB = [];
 let newsToShow = 5;
 
 // --- УМНАЯ ЗАГРУЗКА НОВОСТЕЙ (ФОН + КЭШ) ---
 function fetchNews() {
-    // 1. Пытаемся мгновенно показать старые новости из памяти телефона
     try {
         const cached = localStorage.getItem('rxde_news_cache');
         if (cached) {
             newsDB = JSON.parse(cached);
-            // Отрисовываем кэш, только если строка поиска пуста
             if (!document.getElementById('search').value.trim()) {
                 renderNewsFeed();
             }
         }
     } catch(e) {}
 
-    // 2. Идем в Гугл за свежими данными (в фоне, не мешая сайту)
     Papa.parse(GOOGLE_NEWS_URL + '&t=' + Date.now(), {
         download: true,
         header: true,
@@ -316,7 +303,6 @@ function fetchNews() {
             if (res.data && res.data.length > 0) {
                 let validNews = res.data.filter(item => item.Date && item.Text);
                 
-                // Сортируем по дате (свежие сверху)
                 validNews.sort((a, b) => {
                     const dateA = a.Date.split('.').reverse().join(''); 
                     const dateB = b.Date.split('.').reverse().join(''); 
@@ -324,11 +310,8 @@ function fetchNews() {
                 });
                 
                 newsDB = validNews;
-                
-                // Сохраняем свежие данные в память телефона для следующего раза
                 localStorage.setItem('rxde_news_cache', JSON.stringify(newsDB));
                 
-                // Тихо обновляем экран, только если клиент все еще на стартовом экране
                 const currentQuery = document.getElementById('search') ? document.getElementById('search').value.trim() : '';
                 if (!currentQuery) {
                     renderNewsFeed();
@@ -338,22 +321,17 @@ function fetchNews() {
     });
 }
 
-    // --- 2. ЛОГИКА КУРСА (ОБНОВЛЕНО) ---
-
-    function calculateFinalLogic() {
+// --- 2. ЛОГИКА КУРСА (ОБНОВЛЕНО) ---
+function calculateFinalLogic() {
     if (!db || db.length === 0) return;
 
     let gRate = parseFloat(googleSettings?.Current_Rate?.replace(',', '.') || 0);
     let gSmena = parseFloat(googleSettings?.Bank_Smena?.replace(',', '.') || 0);
     
-    // 1. Определяем базовый курс
     let baseRate = gRate > 0 ? gRate : (cbrRateData > 0 ? cbrRateData : KURS_FALLBACK);
     
-    // 2. Считаем расчетный курс (округляем вниз до целого и принудительно ставим .00)
     rateCalc = (Math.floor(baseRate + gSmena)).toFixed(2); 
 
-    // 3. Выводим в шапку сайта (Главный экран)
-    // .toFixed(2) заставит 91 превратиться в 91.00
     if(document.getElementById('cbrRate')) {
         document.getElementById('cbrRate').innerText = parseFloat(baseRate).toFixed(2);
     }
@@ -362,7 +340,6 @@ function fetchNews() {
         document.getElementById('finalRate').innerText = rateCalc; 
     }
     
-    // 4. Выводим в корзину (Модальное окно)
     if(document.getElementById('cartRate')) {
         document.getElementById('cartRate').innerText = rateCalc;
     }
@@ -371,50 +348,30 @@ function fetchNews() {
     render(); 
 }
 
-    function getRubPrice(eur) { return Math.floor((parseFloat(eur) * rateCalc) / 100) * 100; }
+function getRubPrice(eur) { return Math.floor((parseFloat(eur) * rateCalc) / 100) * 100; }
 
-    // --- 3. ИНФО-ОКНА (FAQ / ОПЫТ) ---
-
-    function showInfo(type) {
+// --- 3. ИНФО-ОКНА (FAQ / ОПЫТ) ---
+function showInfo(type) {
     const overlay = document.getElementById('infoOverlay');
     if (!overlay || type === 'none' || !type) { 
         if(overlay) overlay.style.display = 'none'; 
         return; 
     }
     
-const data = {
+    const data = {
         faq: { 
             t: 'ПОЧЕМУ МЫ?', 
             c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
-                    <div>
-                        <b style="color: #000; font-size: 16px;">Немецкий оригинал</b><br>
-                        Закупка под заказ в аптеках Германии (нет просрочки, пересортицы). Инструкция на одном языке (немецком), максимальные сроки годности. Посылка из Германии – гарантия прозрачности для Вас (в отличии от схемы "передача из рук в руки": “Где хранили, как хранили, из какой страны привезли?").
-                    </div>
-                    
-                    <div>
-                        <b style="color: #000; font-size: 16px;">Индивидуальная доставка</b><br>
-                        Оплата полного тарифа почты из Германии —  гарантия прохождения таможни. В отличие от «сборных» грузов, где доставка делится на всех, Ваша посылка отправляется индивидуально для Вашего лечения (не коммерция!).
-                    </div>
-                    
-                    <div>
-                        <b style="color: #000; font-size: 16px;">Прозрачная оплата</b><br>
-                        Оплата в рублях (на карту РФ или по СБП) по фиксированному расчетному курсу. Оплата безналичным переводом оставляет у вас банковскую выписку с подтверждением платежа (никаких передач «денег в конверте»).
-                    </div>
-                    
-                    <div>
-                        <b style="color: #000; font-size: 16px;">Всегда на связи</b><br>
-                        Наш специалист сопровождает Вас на каждом этапе: от помощи в подборе лучшего варианта в аптеке до вручения посылки.
-                    </div>
+                    <div><b style="color: #000; font-size: 16px;">Немецкий оригинал</b><br>Закупка под заказ в аптеках Германии (нет просрочки, пересортицы). Инструкция на одном языке (немецком), максимальные сроки годности. Посылка из Германии – гарантия прозрачности для Вас (в отличии от схемы "передача из рук в руки": “Где хранили, как хранили, из какой страны привезли?").</div>
+                    <div><b style="color: #000; font-size: 16px;">Индивидуальная доставка</b><br>Оплата полного тарифа почты из Германии —  гарантия прохождения таможни. В отличие от «сборных» грузов, где доставка делится на всех, Ваша посылка отправляется индивидуально для Вашего лечения (не коммерция!).</div>
+                    <div><b style="color: #000; font-size: 16px;">Прозрачная оплата</b><br>Оплата в рублях (на карту РФ или по СБП) по фиксированному расчетному курсу. Оплата безналичным переводом оставляет у вас банковскую выписку с подтверждением платежа (никаких передач «денег в конверте»).</div>
+                    <div><b style="color: #000; font-size: 16px;">Всегда на связи</b><br>Наш специалист сопровождает Вас на каждом этапе: от помощи в подборе лучшего варианта в аптеке до вручения посылки.</div>
                 </div>` 
         },
-
-
         exp: { 
             t: 'НАШ ОПЫТ', 
             c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
-                    <div style="text-align: center; margin-bottom: 5px;">
-                        <span style="font-size: 36px;">🇩🇪</span>
-                    </div>
+                    <div style="text-align: center; margin-bottom: 5px;"><span style="font-size: 36px;">🇩🇪</span></div>
                     <div><b style="color: var(--p); font-size: 16px;">RxDE.online</b> — это сервис бережной доставки лекарств из Германии с <b style="color: #000;">опытом работы более 10 лет</b>. Мы знаем специфику закупки редких рецептурных (RX) препаратов и обеспечиваем их надежную транспортировку.</div>
                     <div>Наша главная задача — в вашем лице приобрести постоянного клиента и получать искренние рекомендации. Мы не используем однодневные схемы со сменой контактов, телефонов или карт.</div>
                     <div>Мы работаем открыто: указанная стоимость в Евро <b style="color: #000;">уже включает все расходы</b> сервиса. Вы видите финальную цену и понятный расчетный курс.</div>
@@ -424,9 +381,8 @@ const data = {
     
     if (!data[type]) return;
 
-    // --- ОБНОВЛЕНИЕ АДРЕСНОЙ СТРОКИ (Для копирования ссылки) ---
     const url = new URL(window.location);
-    url.searchParams.set(type, ''); // Добавляет ?faq или ?exp
+    url.searchParams.set(type, ''); 
     window.history.replaceState({}, '', url);
 
     document.getElementById('infoTitle').innerText = data[type].t;
@@ -434,31 +390,25 @@ const data = {
     overlay.style.display = 'flex';
 }
 
-    function closeInfo() { 
+function closeInfo() { 
     document.getElementById('infoOverlay').style.display = 'none'; 
     
-    // Очищаем адресную строку полностью
     const url = new URL(window.location);
     url.searchParams.delete('faq');
     url.searchParams.delete('exp');
     
-    // Если после удаления параметров остался пустой поиск, убираем и знак вопроса
     const cleanUrl = url.pathname + (url.search ? url.search : '');
     window.history.replaceState({}, document.title, cleanUrl);
 }
 
-    window.onclick = function(event) {
+window.onclick = function(event) {
     const modal = document.getElementById('modal');
     const info = document.getElementById('infoOverlay');
     const contact = document.getElementById('contactOverlay');
-    const tgOver = document.getElementById('tgOverlay');
-    const dialer = document.getElementById('dialerOverlay');
 
     if (event.target == modal) closeModal();
     if (event.target == info) closeInfo();
     if (event.target == contact) closeContact();
-    if (event.target == tgOver) closeTgOverlay();
-    if (event.target == dialer) closeDialer();
 }
 
 /* =========================================
@@ -518,21 +468,16 @@ function render(isNewSearch = false) {
     
     const query = filters.search.trim().toLowerCase();
     
-    // 1. СОСТОЯНИЕ "ГЛАВНАЯ" (Пустой поиск)
     if (!query) { 
         list.innerHTML = '';
         intro.style.display = 'block'; 
-        renderNewsFeed(); // Рисуем обычную ленту
+        renderNewsFeed(); 
         return; 
     }
     
-    // 2. СОСТОЯНИЕ "ПОИСК" (Скрываем фон)
     intro.style.display = 'none';
-
-    // Создаем буфер для сборки всего HTML кода разом
     let htmlBuffer = '';
 
-    // --- ЛОГИКА КОНТЕКСТНЫХ НОВОСТЕЙ ---
     const firstWord = query.split(/\s+/)[0]; 
     const matchedNews = newsDB.filter(n => 
         n.Text.toLowerCase().includes(firstWord) || 
@@ -566,7 +511,6 @@ function render(isNewSearch = false) {
         htmlBuffer += `</div>`;
     }
 
-    // 3. СТАНДАРТНЫЙ ПОИСК ТОВАРОВ
     const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
@@ -578,31 +522,25 @@ function render(isNewSearch = false) {
     });
 
     if (results.length === 0) {
-    // Если введено меньше 3 символов — вообще ничего не пишем (ждем продолжения ввода)
-    if (query.length < 3) return;
-    
-    const failText = `Здравствуйте RxDE! Я не нашел в поиске препарат: ${query}. Поможете найти в аптеках Германии?`;
-
-    list.innerHTML = `
-        <div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
-            <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">
-                По текущему запросу ничего не найдено. <br>
-                <span style="color: #888; font-size: 13px;">
-                    Если вы уверены в написании — напишите нам. <br>
-                    Мы расширим поиск и вернемся с результатом!
-                </span>
+        if (query.length < 3) return;
+        
+        list.innerHTML = `
+            <div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
+                <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">
+                    По текущему запросу ничего не найдено. <br>
+                    <span style="color: #888; font-size: 13px;">
+                        Если вы уверены в написании — напишите нам. <br>
+                        Мы расширим поиск и вернемся с результатом!
+                    </span>
+                </div>
+                <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0,86,145,0.15);">
+                    ЗАПРОСИТЬ ПОИСК
+                </button>
             </div>
-            
-            <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0,86,145,0.15);">
-                ЗАПРОСИТЬ ПОИСК
-            </button>
-        </div>
-    `;
-    return;
-}
+        `;
+        return;
+    }
 
-    // 4. ОТРИСОВКА КАРТОЧЕК (РЕАКТИВНАЯ ЗАГРУЗКА)
-    // 4. ОТРИСОВКА КАРТОЧЕК (БЕЗ ЛИШНИХ НАДПИСЕЙ)
     results.forEach(r => {
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
@@ -633,11 +571,8 @@ function render(isNewSearch = false) {
                     </div>
                 </div>
             </div>`;
-    });;
+    });
 
-    
-
-    // Финальная мгновенная замена всего содержимого списка
     list.innerHTML = htmlBuffer;
 }
 
@@ -655,18 +590,15 @@ function renderSuggestions(inputText) {
     const lastWord = userWords[userWords.length - 1];
     const lastWordVars = getSearchVariations(lastWord).map(v => v.toLowerCase());
 
-   // Внутри функции renderSuggestions(inputText)
     const matches = db.filter(r => {
-    if (!r.Name_DE) return false;
-    
-    // И СЮДА ТОЖЕ ДОБАВЛЯЕМ r.Form_RU:
-    const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
-    
-    return userWords.every(word => {
-        const vars = getSearchVariations(word);
-        return vars.some(v => pool.includes(v));
+        if (!r.Name_DE) return false;
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
+        
+        return userWords.every(word => {
+            const vars = getSearchVariations(word);
+            return vars.some(v => pool.includes(v));
+        });
     });
-});
 
     if (matches.length === 0) return;
 
@@ -680,7 +612,6 @@ function renderSuggestions(inputText) {
             const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
             
             if (!isTrailingSpace) {
-                // ЛОГИКА А: Дописываем текущее слово
                 for (let part of nameParts) {
                     const pLow = part.toLowerCase();
                     if (lastWordVars.some(v => pLow.startsWith(v)) && pLow !== lastWord.toLowerCase()) {
@@ -689,7 +620,6 @@ function renderSuggestions(inputText) {
                     }
                 }
             } else {
-                // ЛОГИКА Б: Ищем следующее слово за якорем
                 for (let i = 0; i < nameParts.length - 1; i++) {
                     const partLow = nameParts[i].toLowerCase();
                     if (lastWordVars.some(v => partLow === v)) {
@@ -702,28 +632,21 @@ function renderSuggestions(inputText) {
             }
         });
 
-  // --- ДОПОЛНИТЕЛЬНАЯ ЛОГИКА ---
-        
-        // 1. Форма выпуска (НОВОЕ: добавляем в чипсы, если введено 1 слово)
         if (userWords.length === 1 && !isTrailingSpace && r.Form_RU) {
             candidates.add(r.Form_RU);
         }
 
-        // 2. Если якорь не найден в названии (ищем по PZN, категории или теперь по форме), 
-        // но товар подходит — предлагаем само название товара (первое слово)
         if (!anchorFoundInName) {
             const mainName = r.Name_RU || r.Name_DE;
             const brand = mainName.split(/[\s,]+/)[0];
             if (brand) candidates.add(brand);
         }
 
-        // 3. Категория (только если совсем мало кандидатов)
         if (userWords.length === 1 && !isTrailingSpace && r.Category && candidates.size < 4) {
             candidates.add(r.Category);
         }
     });
 
-    // Чистка дублей и того что уже в инпуте
     let finalChips = Array.from(candidates).filter(c => {
         const cLow = c.toLowerCase();
         return !userWords.some(uw => uw.toLowerCase() === cLow);
@@ -735,8 +658,7 @@ function renderSuggestions(inputText) {
         chip.innerText = word;
         
         chip.onclick = () => {
-            // --- ВОЗВРАЩАЕМ ВИБРО ---
-            if (navigator.vibrate) navigator.vibrate(15); // Короткий приятный "тык"
+            if (navigator.vibrate) navigator.vibrate(15); 
             
             const input = document.getElementById('search');
             let words = input.value.trim().split(/\s+/);
@@ -748,7 +670,7 @@ function renderSuggestions(inputText) {
             input.focus();
         };
         box.appendChild(chip);
-    });;
+    });
 }
 
 function handleImgError(img) {
@@ -772,27 +694,28 @@ function clearSearch() {
         render(true); input.focus(); 
     }
 }
-    /* =========================================
+
+ /* =========================================
    BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
    ========================================= */
+
 function modQty(pzn, d, event) {
-    cartBackup = null; // Любое изменение состава корзины убивает возможность "Вернуть"
-    // ... остальной код функции ...
-    // ТАКТИЛЬНЫЙ ОТКЛИК (Haptic Feedback)
+    // 1. Сброс предохранителей: любое изменение убивает старый кэш и дату
+    cartBackup = null; 
+    restoredDate = ""; 
+
+    // 2. Тактильный отклик (Haptic Feedback)
     if (navigator.vibrate) {
         if (d > 0) {
             // Одиночный четкий "тик" при добавлении (+)
             navigator.vibrate(10); 
         } else {
             // Двойной микро-отклик при удалении (-)
-            // Это создает физическое ощущение "отмены"
             navigator.vibrate([7, 30, 7]); 
         }
     }
 
-    // МГНОВЕННО СБРАСЫВАЕМ ДАТУ ВОССТАНОВЛЕНИЯ
-    restoredDate = ""; 
-
+    // 3. Запуск визуальной анимации (Пилюля летит в корзину)
     if (event) {
         event.stopPropagation();
         const btn = event.target.closest('button') || event.currentTarget;
@@ -803,27 +726,37 @@ function modQty(pzn, d, event) {
         }
     }
 
+    // 4. Математика корзины
     const index = cart.findIndex(i => i.pzn === pzn);
+    
     if (index === -1) { 
         if (d > 0) cart.push({ pzn: pzn, qty: 1 }); 
     } else { 
         let newQty = cart[index].qty + d; 
         if (newQty <= 0) {
             cart.splice(index, 1); 
+            // Если удалили последний товар — закрываем большую корзину
             if (cart.length === 0) closeModal();
         } else {
             cart[index].qty = newQty; 
         }
     }
+    
+    // 5. Сохранение и перерисовка
     localStorage.setItem('de_cart_arr', JSON.stringify(cart));
     updateBar(); 
     render(false); 
-    if (document.getElementById('modal').classList.contains('active')) renderCartItems(); 
+    
+    // Перерисовываем внутренности открытой модалки, если она сейчас на экране
+    if (document.getElementById('modal').classList.contains('active')) {
+        renderCartItems(); 
+    }
 }
-    /* =========================================
+
+/* =========================================
    BLOCK 6: МИНИ-ЧЕК (ИСПРАВЛЕННЫЙ)
    ========================================= */
-/* === ОБНОВЛЕННАЯ ФУНКЦИЯ МИНИ-КОРЗИНЫ И ЧЕКА === */
+
 function updateBar() {
     const bar = document.getElementById('miniCart');
     const receipt = document.getElementById('miniReceipt');
@@ -849,7 +782,7 @@ function updateBar() {
 
     document.getElementById('miniCount').innerText = count;
 
-    // МИНИ-КНОПКА
+    // 1. МИНИ-КНОПКА
     if (count > 0) {
         bar.classList.add('active');
         document.getElementById('miniPrice').innerHTML = 
@@ -859,9 +792,8 @@ function updateBar() {
         document.getElementById('miniPrice').innerText = "0 €";
     }
 
-    // МИНИ-ЧЕК (С НОВЫМ ИТОГО)
-    // МИНИ-ЧЕК (Показываем только на больших экранах)
-    if (count > 0 && window.innerWidth > 767) { // <-- Добавили проверку ширины
+    // 2. МИНИ-ЧЕК (Показываем только на больших экранах > 767px)
+    if (count > 0 && window.innerWidth > 767) { 
         let rowsHtml = '';
         let displayItems = (activeItems.length <= 5) ? activeItems : [...activeItems.slice(0, 3), { isSeparator: true }, ...activeItems.slice(-2)];
         
@@ -882,8 +814,12 @@ function updateBar() {
         receipt.innerHTML = `
             ${rowsHtml}
             <div class="receipt-divider" style="height:1px; border-bottom:1px dashed #eee; margin:6px 0;"></div>
-            <div class="receipt-row color-ship" style="color:#666;"><span class="name">Почтовый тариф</span><span class="dots"></span><span class="calc">${shipEur} €</span></div>
-            <div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center;">
+            <div class="receipt-row color-ship" style="color:#666;">
+                <span class="name">Почтовый тариф</span>
+                <span class="dots"></span>
+                <span class="calc">${shipEur} €</span>
+            </div>
+            <div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center; justify-content:space-between; width:100%;">
                 <span>ИТОГО:</span>
                 <div style="text-align:right;">
                     <span style="font-size:13px; font-weight:400; color:#555; margin-right:4px;">${fmtEur} €</span>
@@ -894,10 +830,10 @@ function updateBar() {
         `;
         receipt.style.display = 'flex';
     } else {
-        receipt.style.display = 'none'; // На мобилках и при пустой корзине всегда скрыто
+        receipt.style.display = 'none'; 
     }
 
-    // ФУТЕР БОЛЬШОЙ КОРЗИНЫ
+    // 3. ФУТЕР БОЛЬШОЙ КОРЗИНЫ
     const footerTotalContainer = document.querySelector('.modal-footer-sticky .footer-total-compact');
     if (footerTotalContainer) {
         footerTotalContainer.innerHTML = `
@@ -913,19 +849,12 @@ function updateBar() {
         `;
     }
     
-    if(document.getElementById('cartRate')) document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
+    if(document.getElementById('cartRate')) {
+        document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
+    }
 }
-
     /* =========================================
-       BLOCK 7: НОВАЯ ЛОГИКА (SIMPLE FLOW)
-       ========================================= */
-
-    // --- 7.1 НАСТРОЙКИ ---
-    // (Если нужны для Google Sheets, оставьте, если нет - можно убрать)
-   
-
- /* =========================================
-   BLOCK 7.2: ИНИЦИАЛИЗАЦИЯ И ВОССТАНОВЛЕНИЕ
+   BLOCK 7: ИНИЦИАЛИЗАЦИЯ И ЛОГИКА БОЛЬШОЙ КОРЗИНЫ
    ========================================= */
 
 function tryRestoreSearchFromUrl() {
@@ -954,7 +883,6 @@ function tryRestoreCartFromUrl() {
             });
             if (dData) {
                 restoredDate = dData.replace('_', ' ');
-               // Теперь: если подчеркивания НЕТ, это заказ от менеджера
                 isManagerOrder = !dData.includes('_');  
             }
             updateBar();
@@ -982,7 +910,6 @@ async function init() {
             Promise.all([fetchCbrRate(), fetchGoogleSettings()]).then(() => {
                 calculateFinalLogic(); 
 
-                // Восстановление состояния из URL
                 tryRestoreSearchFromUrl();
                 const cartRestored = tryRestoreCartFromUrl();
                 
@@ -1004,17 +931,15 @@ async function init() {
     });
     fetchNews();
 }
-    // --- 7.3 УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ КОРЗИНЫ ---
-    
-    function updateCartStatusUI() {
-        const container = document.getElementById('modalStatusBadge');
-        if (!container) return;
-        if (cart.length === 0) { container.innerHTML = ''; return; }
-        container.innerHTML = `<span class="status-mini-badge new">Ваш заказ</span>`;
-    }
 
-    /* === ОБНОВЛЕННАЯ ФУНКЦИЯ ОТРИСОВКИ КОРЗИНЫ === */
-/* === ОБНОВЛЕННАЯ ОТРИСОВКА БОЛЬШОЙ КОРЗИНЫ (С НУМЕРАЦИЕЙ) === */
+function updateCartStatusUI() {
+    const container = document.getElementById('modalStatusBadge');
+    if (!container) return;
+    if (cart.length === 0) { container.innerHTML = ''; return; }
+    container.innerHTML = `<span class="status-mini-badge new">Ваш заказ</span>`;
+}
+
+// --- ОТРИСОВКА ВНУТРЕННОСТЕЙ БОЛЬШОЙ КОРЗИНЫ ---
 function renderCartItems() {
     const div = document.getElementById('cartItems'); 
     const headerLinks = document.getElementById('modalHeaderLinks'); 
@@ -1109,56 +1034,30 @@ function renderCartItems() {
     </div>`;
 }
 
-/* === ФУНКЦИЯ ДЛЯ ССЫЛКИ "ДОБАВИМ ЕЩЕ" === */
-function addMoreItems() {
-    closeModal();
-    
-    setTimeout(() => {
-        const input = document.getElementById('search');
-        if (input) {
-            // РАСКОММЕНТИРУЙ ЭТО ДЛЯ УДОБСТВА:
-            input.value = ''; 
-            filters.search = ''; 
-            render(); // Сбрасываем список на "Интро"
-            
-            input.focus(); // Ставим курсор, клавиатура открывается
-        }
-    }, 300);
-}
+// --- ОТКРЫТИЕ И ЗАКРЫТИЕ ---
+let scrollPos = 0;
 
-    // --- 7.4 ОТКРЫТИЕ / ЗАКРЫТИЕ ---
-
-    let scrollPos = 0;
-
-/* === УМНОЕ ОТКРЫТИЕ КОРЗИНЫ === */
 function openCart() { 
-    isQuestionMode = false; // <-- ДОБАВИТЬ ЭТО: Жестко включаем режим "ЗАКАЗ"
-    // 1. ЕСЛИ ПУСТО — ВЕДЕМ К ПОИСКУ
+    isQuestionMode = false; 
+    
     if (cart.length === 0) {
-        // Плавный скролл наверх
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
         const searchWrap = document.querySelector('.inp-wrap');
         const searchInp = document.getElementById('search');
 
         if (searchWrap && searchInp) {
-            // Небольшая задержка, чтобы скролл успел доехать
             setTimeout(() => {
-                searchInp.focus(); // Ставим курсор
-                
-                // Запускаем анимацию встряски
+                searchInp.focus(); 
                 searchWrap.classList.remove('attention-please');
-                void searchWrap.offsetWidth; // Магия перезапуска CSS анимации
+                void searchWrap.offsetWidth; 
                 searchWrap.classList.add('attention-please');
-                
-                // Убираем класс после завершения
                 setTimeout(() => searchWrap.classList.remove('attention-please'), 600);
             }, 300);
         }
-        return; // ПРЕРЫВАЕМ ФУНКЦИЮ (Модалку не открываем)
+        return; 
     }
 
-    // 2. ЕСЛИ ЕСТЬ ТОВАРЫ — ОТКРЫВАЕМ МОДАЛКУ (Стандартная логика)
     const newID = generateOrderID(); 
     const idEl = document.getElementById('modalOrderId');
 
@@ -1179,53 +1078,40 @@ function openCart() {
     document.body.style.top = `-${scrollPos}px`;
     document.body.style.width = '100%';
 
-    setTimeout(() => { 
-        modal.classList.add('active', 'open'); 
-    }, 10);
+    // [ФИКС]: Теперь модалка появляется мгновенно, без анимации transform
+    modal.classList.add('active', 'open'); 
 }
 
-    function closeModal() {
-        const modal = document.getElementById('modal');
-        if (!modal) return;
+function closeModal() {
+    const modal = document.getElementById('modal');
+    if (!modal) return;
 
-        document.body.style.overflow = '';
-        document.body.style.position = '';
-        window.scrollTo(0, scrollPos);
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    window.scrollTo(0, scrollPos);
 
-        modal.classList.remove('open');
-        
-        // Ждем 500мс, чтобы красивый CSS-эффект скольжения успел завершиться
-        setTimeout(() => { 
-            modal.classList.remove('active'); 
-            modal.style.display = 'none';
-            updateBar(); 
-        }, 500); // <--- БЫЛО 300, СТАЛО 500
-    }
+    modal.classList.remove('open', 'active');
+    modal.style.display = 'none';
+    updateBar(); 
+}
 
-    function addMoreItems() {
-        // Просто вызываем штатное закрытие
-        closeModal(); 
-        
-        // Через время анимации фокусируемся на поиске
-        setTimeout(() => {
-            const input = document.getElementById('search');
-            if (input) {
-                input.value = ''; 
-                input.focus(); 
-                filters.search = ''; 
-                render(); // Очищаем результаты поиска, чтобы показать интро
-            }
-        }, 300);
-    }
-
+function addMoreItems() {
+    closeModal(); 
+    
+    setTimeout(() => {
+        const input = document.getElementById('search');
+        if (input) {
+            input.value = ''; 
+            input.focus(); 
+            filters.search = ''; 
+            render(); 
+        }
+    }, 100);
+}
 /* =========================================
-   BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ (CLEAN)
+   BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ
    ========================================= */
 
-/**
- * Универсальное окно контактов
- * type: 'question' (вопрос), 'search' (не нашли), 'order' (заказ)
- */
 /**
  * УНИВЕРСАЛЬНЫЙ ЦЕНТР СВЯЗИ
  * type: 'question', 'search', 'order', 'news'
@@ -1301,13 +1187,7 @@ function generateOrderID() {
     return `${d}${m}${y}-${h}${min}`;
 }
 
-// 2. ОТКРЫТИЕ ОКНА "ВОПРОС" (Из меню) - заменили на универсальную openContact()
-
-
-// 3. ОТКРЫТИЕ ПРЕДПРОСМОТРА ЗАКАЗА - заменили на универсальную
-
-
-// 4. ПЕРЕХОД В ДАЙЛЕР
+// 2. ПЕРЕХОД В ДАЙЛЕР
 function switchToContactForm() {
     closeContact();
     setTimeout(() => {
@@ -1317,7 +1197,7 @@ function switchToContactForm() {
     }, 300);
 }
 
-// 5. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (WA / TG / Email)
+// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (WA / TG / Email)
 function submitFinal(app) {
     if (app === 'wa' || app === 'tg' || app === 'email') {
         lastClickedChannel = (app === 'wa') ? 'WhatsApp' : (app === 'tg' ? 'Telegram' : 'E-mail');
@@ -1327,25 +1207,21 @@ function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
     let finalMsg = "";
 
-    // Собираем КРАСИВЫЙ текст для клиента (не шифр!)
     if (isQuestionMode) {
          finalMsg = manualInput ? manualInput.value.trim() : "Вопрос по препарату";
     } else {
-         // Берем полный текст заказа (со списком лекарств), а не только ссылку!
          const orderData = getOrderTextAndLink();
          finalMsg = orderData ? orderData.text : "Запрос заказа"; 
     }
 
     if (app === 'wa') {
         window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-        // Для WhatsApp можно сразу показать успех, так как это прямой переход
         showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), 'WhatsApp', finalMsg);
         closeContact();
     } else if (app === 'tg') {
-        // Для Telegram сначала копируем и показываем окно подтверждения
         try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
         closeContact(); 
-        document.getElementById('tgOverlayPreview').innerText = finalMsg; // Тут будет список лекарств!
+        document.getElementById('tgOverlayPreview').innerText = finalMsg; 
         document.getElementById('tgOverlay').style.display = 'flex'; 
     } else if (app === 'email') {
         window.location.href = `mailto:med.zakaz.de@gmail.com?subject=RxDE&body=${encodeURIComponent(finalMsg)}`;
@@ -1353,44 +1229,37 @@ function submitFinal(app) {
     }
 }
 
-// Когда клиент в окне Телеграма нажал "ОТМЕНА" или "ПЕРЕЙТИ"
-function closeTgOverlay() {
-    document.getElementById('tgOverlay').style.display = 'none';
-    const mini = document.getElementById('miniCart');
-    if (mini) mini.style.display = 'flex'; // Всегда возвращаем корзину!
-}
-
-// 6. ПЕРЕХОД В ТЕЛЕГРАМ
+// 4. ПЕРЕХОД В ТЕЛЕГРАМ ИЗ ОКНА-ПОДСКАЗКИ
 function goToTelegram() {
     closeTgOverlay(); 
     const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
     window.open(`https://t.me/${username}`, '_blank'); 
 }
 
-// 7. ЗАКРЫТИЕ ОКНА ТЕЛЕГРАМ
+// 5. ЗАКРЫТИЕ ОКНА ТЕЛЕГРАМ
 function closeTgOverlay() {
     const overlay = document.getElementById('tgOverlay');
     if (overlay) overlay.style.display = 'none';
     restoreMiniCart();
 }
 
-// 8. ЗАКРЫТИЕ ОБЩЕГО ОКНА КОНТАКТОВ
+// 6. ЗАКРЫТИЕ ОБЩЕГО ОКНА КОНТАКТОВ
 function closeContact() {
     const overlay = document.getElementById('contactOverlay');
     if (overlay) overlay.style.display = 'none';
     restoreMiniCart();
 }
 
-// 9. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ВОЗВРАТА КОРЗИНЫ
+// 7. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ВОЗВРАТА КОРЗИНЫ
 function restoreMiniCart() {
     const mini = document.getElementById('miniCart');
     if (mini) {
-        mini.style.display = 'flex'; // Просто показываем её, невзирая на количество
-        updateBar(); // Пересчитываем цифры
+        mini.style.display = 'flex'; 
+        updateBar(); 
     }
 }
 
-    /* =========================================
+/* =========================================
    BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
    ========================================= */
 
@@ -1432,8 +1301,6 @@ function getOrderTextAndLink() {
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
 
-            // --- ЛОГИКА НУМЕРАЦИИ ---
-            // Если в корзине больше одного товара — ставим номер, если один — пусто
             const prefix = cart.length > 1 ? `${idx + 1}.\n` : "";
             
             text += `${prefix}${fullDesc}...${math}\n\n`;
@@ -1459,7 +1326,6 @@ function getOrderTextAndLink() {
     currentPreparedText = text; 
     return { text: text, link: fullLink };
 }
-
    /* =========================================
    BLOCK 8: АНИМАЦИЯ (МУЛЬТИ + ПОДНЫРИВАНИЕ)
    ========================================= */
@@ -1482,12 +1348,10 @@ function animateFly(sRect, isRemoving = false, productSize = 0) {
 
     // 3. ЛОГИКА КОЛИЧЕСТВА (ГЕЙМИФИКАЦИЯ)
     let count = 1;
-    
     const sizeVal = parseInt(productSize) || 0;
     if (sizeVal >= 150) count = 3;      // Много
     else if (sizeVal >= 100) count = 2; // Средне
     else count = 1;                     // Мало
-    
 
     // 4. ЗАПУСК ОЧЕРЕДИ
     playSound(isRemoving);
@@ -1495,7 +1359,7 @@ function animateFly(sRect, isRemoving = false, productSize = 0) {
     for (let i = 0; i < count; i++) {
         setTimeout(() => {
             createSinglePill(sRect, tRect, isRemoving, targetId);
-        }, i * 150); // Чуть увеличил интервал (150мс), чтобы очередь была заметнее
+        }, i * 150); 
     }
 }
 
@@ -1512,10 +1376,10 @@ function createSinglePill(sRect, tRect, isRemoving, targetId) {
     `;
 
     // Координаты
-    const pX = sRect.left + sRect.width/2 - 20; // Товар
-    const pY = sRect.top + sRect.height/2 - 20; 
-    const cX = tRect.left + tRect.width/2 - 20; // Корзина
-    const cY = tRect.top + tRect.height/2 - 20; 
+    const pX = sRect.left + sRect.width / 2 - 20; // Товар
+    const pY = sRect.top + sRect.height / 2 - 20; 
+    const cX = tRect.left + tRect.width / 2 - 20; // Корзина
+    const cY = tRect.top + tRect.height / 2 - 20; 
     
     // ТОЧКА "ПОДВАЛА" (ниже корзины)
     const underY = cY + 30; 
@@ -1540,7 +1404,7 @@ function createSinglePill(sRect, tRect, isRemoving, targetId) {
             fly.style.opacity = '0';
             
             setTimeout(() => fly.remove(), 800);
-        }, 1000); // Пауза внизу
+        }, 1000); 
     } 
     
     // --- ДОБАВЛЕНИЕ (НЫРНУЛА ПОД КОРЗИНУ -> ПРЫГНУЛА) ---
@@ -1575,7 +1439,7 @@ function createSinglePill(sRect, tRect, isRemoving, targetId) {
                 fly.remove();
             }, 200); 
             
-        }, 800); // Пауза перед прыжком
+        }, 800); 
     }
 }
 
@@ -1589,14 +1453,14 @@ function handleLogoClick(e) {
     if (e) e.preventDefault(); // Это не дает курсору уйти из поиска
 
     if (clickTimer) {
-        // ДВОЙНОЙ КЛИК
+        // ДВОЙНОЙ КЛИК (Желтый - копируем поисковую выдачу)
         clearTimeout(clickTimer);
         clickTimer = null;
-        copyFilterResults(); // Желтый (Фильтр)
+        copyFilterResults(); 
     } else {
-        // ОДИНОЧНЫЙ КЛИК
+        // ОДИНОЧНЫЙ КЛИК (Зеленый - копируем корзину)
         clickTimer = setTimeout(() => {
-            copyCartData();  // Зеленый (Корзина)
+            copyCartData();  
             clickTimer = null;
         }, 300);
     }
@@ -1609,21 +1473,18 @@ function blinkLogo(color) {
     const className = (color === 'green') ? 'flash-green' : 'flash-yellow';
     
     logo.classList.add(className);
-    
     if (navigator.vibrate) navigator.vibrate(50);
 
     setTimeout(() => {
         logo.classList.remove(className);
-    }, 400); // Погорело чуть-чуть и стало снова черным
+    }, 400); 
 }
+
 function copyCartData() {
-    if (cart.length === 0) {
-        // Если корзина пуста, можно просто мигнуть желтым или ничего не делать
-        return;
-    }
+    if (cart.length === 0) return;
+    
     const data = getOrderTextAndLink();
-    if(data) {
-        // В data.text уже вшита ссылка, берем целиком
+    if (data) {
         navigator.clipboard.writeText(data.text).then(() => blinkLogo('green'));
     }
 }
@@ -1631,12 +1492,14 @@ function copyCartData() {
 function copyFilterResults() {
     if (!filters.search || filters.search.length < 2) return;
 
-    // 1. Фильтруем базу (учитываем Name, Substance, Category, Form_RU и PZN)
+    const query = filters.search.trim().toLowerCase();
+    const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+    const wordVars = queryWords.map(w => getSearchVariations(w));
+
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
-        const vars = getSearchVariations(filters.search.trim());
-        return vars.some(v => pool.includes(v));
+        return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
     if (results.length === 0) return;
@@ -1654,7 +1517,7 @@ function copyFilterResults() {
     text +=     `д.в.:  [${activeSubstance}]\n`;
     text +=     `___\n\n`;
 
-    // 2. Группируем по немецкому полю Form
+    // Группируем по немецкому полю Form
     const groups = {};
     results.forEach(r => {
         const key = r.Form || "OTHER"; 
@@ -1662,19 +1525,18 @@ function copyFilterResults() {
         groups[key].push(r);
     });
 
-    // 3. Отрисовка групп
+    // Отрисовка групп
     Object.keys(groups).sort().forEach(formName => {
         const firstInGroup = groups[formName][0];
         const formRu = firstInGroup.Form_RU;
         
-        // Тот самый солидный заголовок: REKTALSCHAUM (РЕКТАЛЬНАЯ ПЕНА):
+        // [ФИКС]: Добавлен хэштег # перед формой выпуска
         const displayTitle = formRu 
-            ? `${formName.toUpperCase()} (${formRu.toUpperCase()}):` 
-            : `${formName.toUpperCase()}:`;
+            ? `#${formName.toUpperCase()} (${formRu.toUpperCase()}):` 
+            : `#${formName.toUpperCase()}:`;
 
         text += `${displayTitle}\n`;
 
-        // Сортировка внутри группы по цене (от меньшей к большей)
         groups[formName].sort((a, b) => {
             const pA = parseFloat(String(a.Price).replace(',', '.'));
             const pB = parseFloat(String(b.Price).replace(',', '.'));
@@ -1683,13 +1545,10 @@ function copyFilterResults() {
 
         groups[formName].forEach(r => {
             const pEur = Math.round(parseFloat(String(r.Price).replace(',', '.')));
-            // Считаем рубли для каждой строки
             const pRub = getRubPrice(pEur).toLocaleString('ru-RU');
-            
-            text += `  ${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${pEur}€ (${pRub} ₽)\n`;
+            // [ФИКС]: Добавлен двойной перенос \n\n для пустой строки между позициями
+            text += `  ${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${pEur}€ (${pRub} ₽)\n\n`;
         });
-        
-        text += `\n`;
     });
 
     const baseUrl = window.location.origin + window.location.pathname;
@@ -1701,9 +1560,6 @@ function copyFilterResults() {
     });
 }
 
-/* =========================================
-   BLOCK 10: УМНОЕ ОКНО УСПЕХА
-   ========================================= */
 
 /* =========================================
    BLOCK 10: УМНОЕ ОКНО УСПЕХА
@@ -1713,7 +1569,7 @@ function showSuccess(type, orderId, phone, msg = "") {
     const popup = document.getElementById('successPopup');
     if (!popup) return;
     
-    // 1. Играем zakaz.mp3 (Звук №3)
+    // 1. Играем звук успеха (zakaz.mp3)
     if (typeof audioOrder !== 'undefined') {
         audioOrder.currentTime = 0;
         audioOrder.volume = 0.5;
@@ -1725,8 +1581,13 @@ function showSuccess(type, orderId, phone, msg = "") {
     const subTitleEl = document.getElementById('succSubTitle');
     const idEl = document.getElementById('succID');
 
-    idEl.style.display = (orderId.includes('РЕЗЕРВ') || orderId === 'FAQ') ? 'none' : 'inline-block';
-    if (idEl.style.display !== 'none') idEl.innerText = `#${orderId}`;
+    // Скрываем ID для общих вопросов или резервных форм
+    const isSpecial = (orderId.includes('РЕЗЕРВ') || orderId === 'FAQ');
+    idEl.style.display = isSpecial ? 'none' : 'inline-block';
+    
+    if (!isSpecial) {
+        idEl.innerText = `#${orderId}`;
+    }
 
     if (orderId.includes('РЕЗЕРВ')) {
         titleEl.innerText = "Связь восстановлена!";
@@ -1737,20 +1598,25 @@ function showSuccess(type, orderId, phone, msg = "") {
     }
     
     popup.classList.add('show');
-    
-
 }
 
 function closeSuccess() {
     const popup = document.getElementById('successPopup');
     if (popup) {
         popup.classList.remove('show');
-        closeModal(); // Закрываем большую корзину
+        
+        // Закрываем основную модалку корзины, если она открыта
+        const modal = document.getElementById('modal');
+        if (modal && modal.classList.contains('active')) {
+            closeModal();
+        }
     }
 }
 /* =========================================
-   BLOCK 11: УНИВЕРСАЛЬНЫЙ ПЕРЕХВАТ "НАЗАД"
+   BLOCK 11: УНИВЕРСАЛЬНЫЙ ПЕРЕХВАТ "НАЗАД" (Mobile Optimized)
    ========================================= */
+
+// Создаем фейковую точку в истории, чтобы первый "Назад" пришелся на наш обработчик
 window.history.pushState({ noExit: true }, "");
 
 window.addEventListener('popstate', function(event) {
@@ -1758,32 +1624,28 @@ window.addEventListener('popstate', function(event) {
     const contact = document.getElementById('contactOverlay');
     const info = document.getElementById('infoOverlay');
     const tgOver = document.getElementById('tgOverlay');
-    const dialer = document.getElementById('dialerOverlay');
 
+    // Проверяем, открыто ли хоть одно окно
     const isAnyOpen = (modal && modal.classList.contains('active')) ||
                       (contact && contact.style.display === 'flex') ||
                       (info && info.style.display === 'flex') ||
-                      (tgOver && tgOver.style.display === 'flex') ||
-                      (dialer && dialer.style.display === 'flex');
+                      (tgOver && tgOver.style.display === 'flex');
 
     if (isAnyOpen) {
-        if (modal) closeModal();
-        if (contact) closeContact();
-        if (info) closeInfo();
-        if (tgOver) closeTgOverlay();
-        if (dialer) closeDialer();
+        // Закрываем всё по очереди
+        if (modal && modal.classList.contains('active')) closeModal();
+        if (contact && contact.style.display === 'flex') closeContact();
+        if (info && info.style.display === 'flex') closeInfo();
+        if (tgOver && tgOver.style.display === 'flex') closeTgOverlay();
         
+        // Возвращаем фейковую точку, чтобы не выйти при следующем нажатии
         window.history.pushState({ noExit: true }, "");
-        return;
-    }
-
-    if (confirm("Вы точно хотите выйти из магазина?")) {
-        window.history.back();
     } else {
-        window.history.pushState({ noExit: true }, "");
+        // Если все окна закрыты, позволяем системный выход (стандартное поведение)
+        // Если нужно жестко запретить выход - раскомментируй pushState ниже
+        // window.history.pushState({ noExit: true }, "");
     }
 });
-
 /* =========================================
    BLOCK 12: ЖИВАЯ ЛЕНТА И НОВОСТИ (ФИНАЛ)
    ========================================= */
@@ -1824,12 +1686,12 @@ function formatNewsText(text, index = -1) {
     if (!text) return "";
     let formatted = text;
 
-    // ТЕПЕРЬ ВЫЗЫВАЕМ УНИВЕРСАЛЬНУЮ openContact С ТИПОМ 'news'
+    // Кнопка вопроса привязана к универсальной openContact
     formatted = formatted.replace(/\[vopros\]/gi, 
         `<span class="n-inline-btn" onclick="openContact('news', ${index}); event.stopPropagation();">💬 Задать вопрос</span>`
     );
 
-    // Хештеги (оставляем как было — это удобно для поиска)
+    // Хештеги для быстрого поиска
     formatted = formatted.replace(/#([a-zA-Zа-яА-ЯёЁ0-9_]+)/g, 
         `<span class="n-hashtag" onclick="setSearchFromNews('$1'); event.stopPropagation();">#$1</span>`
     );
@@ -1841,37 +1703,27 @@ function formatNewsText(text, index = -1) {
 window.setSearchFromNews = function(word) {
     const input = document.getElementById('search');
     if (input) {
-        // Очищаем слово от знака # если он пришел
         const cleanWord = word.replace('#', '');
-        
-        // Вставляем слово С ПРОБЕЛОМ в конце
         input.value = cleanWord + ' '; 
         filters.search = cleanWord + ' ';
         
-        // Запускаем поиск и подсказки
         render(true); 
         renderSuggestions(input.value); 
         
-        // Возвращаем курсор и клавиатуру
         setTimeout(() => {
             input.focus();
-            // Ставим курсор в самый конец
             input.setSelectionRange(input.value.length, input.value.length);
         }, 100);
         
         window.scrollTo({ top: 0, behavior: 'smooth' }); 
     }
-};;
+};
 
-// 4. Интерактив: Вопрос по конкретной новости
-
-
-// 5. Главная отрисовка (SEO H1 + Лента)
+// 4. Главная отрисовка (SEO H1 + Лента)
 function renderNewsFeed() {
     const intro = document.getElementById('introBlock');
     if (!intro) return;
 
-    // 1. Чистый SEO-заголовок
     let html = `
         <div style="text-align:center; margin: 10px 0 20px 0;">
             <h1 style="font-size: 22px; margin-bottom: 4px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
@@ -1879,12 +1731,10 @@ function renderNewsFeed() {
         </div>
     `;
 
-    // 2. Отрисовка ленты новостей
     if (newsDB && newsDB.length > 0) {
         html += `<div class="notepad-wrap"><div class="notepad-header">Заметки сервиса</div>`;
         
         newsDB.slice(0, newsToShow).forEach((item, index) => {
-            // Логика тегов: Архив (серое), Важное (красное), Остальное (синее)
             const age = getNewsAge(item.Date);
             const isOld = age > 90;
             const isUrgent = (item.Tag || '').toLowerCase().includes("важн");
@@ -1895,7 +1745,7 @@ function renderNewsFeed() {
             html += `
                 <div class="notepad-item">
                     <div class="np-date-row">
-                        <span class="np-date-text" style="font-family:Georgia,serif;">
+                        <span class="np-date-text">
                             ${item.Date} 
                             <span style="font-weight:800; font-size:11px; text-decoration:underline;">
                                 (${getRelativeTime(item.Date)})
@@ -1907,7 +1757,6 @@ function renderNewsFeed() {
                 </div>`;
         });
 
-        // Кнопка "Показать еще"
         if (newsToShow < newsDB.length) {
             html += `<button class="btn-notepad-more" onclick="showOldNews()">ПОКАЗАТЬ ПРЕДЫДУЩИЕ 🔽</button>`;
         }
@@ -1921,29 +1770,33 @@ function showOldNews() {
     newsToShow += 5;
     renderNewsFeed(); 
 }
+
+// ФИНАЛЬНЫЙ ЗАПУСК ВСЕГО САЙТА
+window.onload = init;
+
+
     // ЗАПУСК ПРИЛОЖЕНИЯ
-        init();
+init();
 
-
- /* =========================================
-   BLOCK 13: УЛУЧШЕННЫЙ ДАЙЛЕР (PC + MULTI-MODE + TRACKING)
+/* =========================================
+   BLOCK 13: УЛУЧШЕННЫЙ ДАЙЛЕР (PC + TRACKING)
    ========================================= */
 
 let dialerNumber = "";
-let dialerModes = { msg: true, call: false }; // "Пишите мне" активно по умолчанию
+let dialerModes = { msg: true, call: false }; 
 let lastClickedChannel = "мессенджере";
 let isWaitingForReturn = false;
 
-// 1. ОТСЛЕЖИВАНИЕ ВОЗВРАТА (Ловит клиента после клика по WA/TG)
+// 1. ОТСЛЕЖИВАНИЕ ВОЗВРАТА
 window.onfocus = function() {
     if (isWaitingForReturn) {
         setTimeout(() => {
             if (isWaitingForReturn) showDialer();
-        }, 1000); // Пауза 1 сек, чтобы окно не "пугало" мгновенно
+        }, 1000);
     }
 };
 
-// 2. ПОДДЕРЖКА КЛАВИАТУРЫ (Для ноутбуков и ПК)
+// 2. ПОДДЕРЖКА КЛАВИАТУРЫ
 window.addEventListener('keydown', function(e) {
     const dialer = document.getElementById('dialerOverlay');
     if (dialer && dialer.style.display === 'flex') {
@@ -1953,30 +1806,29 @@ window.addEventListener('keydown', function(e) {
     }
 });
 
-// 3. УПРАВЛЕНИЕ ОКНОМ
 function showDialer() {
     isWaitingForReturn = false;
-    document.getElementById('dialerOverlay').style.display = 'flex';
+    const overlay = document.getElementById('dialerOverlay');
+    if (!overlay) return;
     
-    // Синхронизируем кнопки при открытии
+    overlay.style.display = 'flex';
     document.getElementById('dialBtnMsg').classList.toggle('active', dialerModes.msg);
     document.getElementById('dialBtnCall').classList.toggle('active', dialerModes.call);
-    
     renderDialerDisplay();
 }
 
 function closeDialer() {
     document.getElementById('dialerOverlay').style.display = 'none';
-    dialerNumber = ""; // Сброс номера для следующего раза
+    dialerNumber = "";
     isWaitingForReturn = false;
+    restoreMiniCart();
 }
 
-// 4. ЛОГИКА НАБОРА (С щелчком и вибрацией)
 function dial(num) {
     if (dialerNumber.length < 10) {
-        playClickSound(); // Фирменный щелчок
+        playClickSound();
         dialerNumber += num;
-        if (navigator.vibrate) navigator.vibrate(25); // Тактильный отклик
+        if (navigator.vibrate) navigator.vibrate(25);
         renderDialerDisplay();
     }
 }
@@ -1993,21 +1845,14 @@ function renderDialerDisplay() {
     const container = document.getElementById('dialerDisplay');
     if (!container) return;
     
-    // Префикс зафиксирован, он не должен «прыгать»
     let html = '<div class="dial-cell filled">+7</div><div style="width:8px"></div>';
-    
     for (let i = 0; i < 10; i++) {
         const digit = dialerNumber[i] || "";
-        // Если цифра есть — добавляем класс filled для анимации
         html += `<div class="dial-cell ${digit ? 'filled' : ''}">${digit}</div>`;
-        
-        // Разделители групп (как в реальном телефоне) для легкого чтения
         if (i === 2 || i === 5) html += '<div style="width:6px"></div>';
     }
-
     container.innerHTML = html;
 
-    // Кнопка «Отправить» теперь просто плавно меняет прозрачность
     const btn = document.getElementById('dialSubmit');
     if (dialerNumber.length === 10) {
         btn.style.opacity = "1";
@@ -2018,28 +1863,22 @@ function renderDialerDisplay() {
     }
 }
 
-// 5. УМНЫЙ МУЛЬТИВЫБОР (Не дает выключить обе кнопки сразу)
 function setDialMode(mode) {
     const activeCount = Object.values(dialerModes).filter(v => v).length;
-    
     if (dialerModes[mode] && activeCount === 1) {
-        // Если кнопка последняя активная — просто "трясем" её
         const btnId = mode === 'msg' ? 'dialBtnMsg' : 'dialBtnCall';
         const btn = document.getElementById(btnId);
         btn.classList.add('attention-please');
         setTimeout(() => btn.classList.remove('attention-please'), 400);
         return;
     }
-
     dialerModes[mode] = !dialerModes[mode]; 
-    
     document.getElementById('dialBtnMsg').classList.toggle('active', dialerModes.msg);
     document.getElementById('dialBtnCall').classList.toggle('active', dialerModes.call);
 }
 
-// 6. ФИНАЛЬНАЯ ОТПРАВКА В ТАБЛИЦУ
 function submitDialer() {
-    const fullNumber = "+7" + dialerNumber; // Формат +79001112233
+    const fullNumber = "+7" + dialerNumber;
     let modes = [];
     if (dialerModes.msg) modes.push("МЕССЕНДЖЕР");
     if (dialerModes.call) modes.push("ЗВОНОК");
@@ -2051,72 +1890,51 @@ function submitDialer() {
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
-            body: new URLSearchParams({ 
-                "text": finalMsg, 
-                "phone": fullNumber // Отправляем чистый номер
-            })
+            body: new URLSearchParams({ "text": finalMsg, "phone": fullNumber })
         });
     }
-
     closeDialer();
-    showSuccess('order', 'РЕЗЕРВ', fullNumber, "Специалист свяжется с вами.");
+    showSuccess('order', 'РЕЗЕРВ', fullNumber);
 }
 
-// 7. СИНТЕЗАТОР ЗВУКА (Web Audio API — без файлов mp3)
 function playClickSound() {
     try {
         const context = new (window.AudioContext || window.webkitAudioContext)();
         const osc = context.createOscillator();
         const gain = context.createGain();
-
         osc.type = 'sine';
         osc.frequency.setValueAtTime(1100, context.currentTime);
-
         gain.gain.setValueAtTime(0, context.currentTime);
         gain.gain.linearRampToValueAtTime(0.08, context.currentTime + 0.01);
         gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.08);
-
         osc.connect(gain);
         gain.connect(context.destination);
-
         osc.start();
         osc.stop(context.currentTime + 0.1);
     } catch(e) { console.log("Audio blocked"); }
 }
-
 </script>
+
 <div id="tgOverlay" class="info-overlay" onclick="closeTgOverlay()">
     <div class="info-box" onclick="event.stopPropagation()">
         <div id="tgOverlayTitle" class="info-title" style="color: #0088cc;">СКОПИРОВАНО</div>
-        
-        <div id="tgOverlayPreview" style="background: #f0f4f8; padding: 12px; border-radius: 8px; font-size: 12px; color: #555; margin-bottom: 15px; border-left: 3px solid #0088cc; text-align: left; max-height: 80px; overflow-y: auto; word-break: break-word; line-height: 1.4;">
-        </div>
-        
+        <div id="tgOverlayPreview" style="background: #f0f4f8; padding: 12px; border-radius: 8px; font-size: 12px; color: #555; margin-bottom: 15px; border-left: 3px solid #0088cc; text-align: left; max-height: 80px; overflow-y: auto; word-break: break-word; line-height: 1.4;"></div>
         <p style="font-size: 14px; color: #333; margin-bottom: 20px; line-height: 1.4; text-align: center;">
-            Текст находится в буфере обмена.<br>
-            Нажмите кнопку ниже, чтобы открыть чат, и <b>вставьте</b> скопированный текст в поле ввода.
+            Текст в буфере обмена.<br>Откройте чат и <b>вставьте</b> текст.
         </p>
-        
-        <button onclick="goToTelegram()" class="cp-submit-full" style="background: #0088cc; border: none; color: #fff; border-radius: 10px; font-weight: 700; font-size: 14px; letter-spacing: 0.5px; height: 50px; cursor: pointer; transition: 0.2s;">
-            ПЕРЕЙТИ В ТЕЛЕГРАМ
-        </button>
-        
+        <button onclick="goToTelegram()" class="cp-submit-full" style="background: #0088cc;">ПЕРЕЙТИ В ТЕЛЕГРАМ</button>
         <button onclick="closeTgOverlay()" class="s-close-btn" style="background:none; color:#888; margin-top:10px; width: 100%;">ОТМЕНА</button>
     </div>
 </div>
 
-
 <div id="dialerOverlay" class="info-overlay" style="z-index: 9999999; display:none; align-items: flex-end;">
     <div class="info-box dialer-box" onclick="event.stopPropagation()">
-        
         <div style="text-align: center; margin-bottom: 15px;">
             <div style="font-size: 15px; color: #000; font-weight: 700; line-height: 1.2;">
                 Связь — штука капризная.<br>Найдем удобный канал?
             </div>
         </div>
-
         <div id="dialerDisplay" style="display: flex; justify-content: center; gap: 4px; margin-bottom: 20px;"></div>
-
         <div class="dial-grid">
             <button class="d-num" onclick="dial(1)">1</button>
             <button class="d-num" onclick="dial(2)">2</button>
@@ -2131,17 +1949,14 @@ function playClickSound() {
             <button class="d-num" onclick="dial(0)">0</button>
             <button class="d-num d-back" onclick="dialErase()">⌫</button>
         </div>
-
         <div style="display: flex; gap: 8px; margin-top: 20px;">
-            <button id="dialBtnMsg" class="dial-mode-btn active" onclick="setDialMode('msg')">💬 ПИШИТЕ В МЕССЕНДЖЕР</button>
-            <button id="dialBtnCall" class="dial-mode-btn" onclick="setDialMode('call')">📞 МОЖНО ПОЗВОНИТЬ</button>
+            <button id="dialBtnMsg" class="dial-mode-btn active" onclick="setDialMode('msg')">💬 МЕССЕНДЖЕР</button>
+            <button id="dialBtnCall" class="dial-mode-btn" onclick="setDialMode('call')">📞 ЗВОНОК</button>
         </div>
-
         <button id="dialSubmit" class="cp-submit-full" onclick="submitDialer()" style="margin-top: 15px; height: 50px; opacity: 0.3;" disabled>ОТПРАВИТЬ</button>
         <button onclick="closeDialer()" style="width:100%; background:none; border:none; color:#bbb; font-size:12px; margin-top:10px; cursor:pointer;">НЕТ, Я СПРАВЛЮСЬ</button>
     </div>
 </div>
-
 
 </body>
 </html>
