@@ -498,7 +498,8 @@ function handleInput(updateUrl = true) {
     }
 }
 
-function render(isNewSearch = false) {
+// Теперь здесь ДВА параметра. Второй (isTrackComplete) помогает корректно работать с треками.
+function render(isNewSearch = false, isTrackComplete = false) {
     const list = document.getElementById('list'); 
     const intro = document.getElementById('introBlock');
     const banner = document.getElementById('nanoBanner'); 
@@ -506,28 +507,11 @@ function render(isNewSearch = false) {
 
     if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
     
-    const input = document.getElementById('search');
-    const rawQueryForMask = input.value.toUpperCase(); 
-    const maskEl = document.getElementById('searchMask');
-
-    // 1. УМНАЯ СЕРАЯ МАСКА (Только для треков)
-    if (maskEl) {
-        maskEl.innerHTML = ""; 
-        const isLikelyTrackInt = /^[A-Z]{1,2}/.test(rawQueryForMask);
-        const isLikelyTrackRu = /^\d+/.test(rawQueryForMask);
-
-        if (isLikelyTrackInt && rawQueryForMask.length < 13) {
-            const template = "XX000000000DE"; 
-            maskEl.innerHTML = `<span style="opacity:0;">${rawQueryForMask}</span>${template.substring(rawQueryForMask.length)}`;
-        } else if (isLikelyTrackRu && rawQueryForMask.length < 14) {
-            const template = "00000000000000";
-            maskEl.innerHTML = `<span style="opacity:0;">${rawQueryForMask}</span>${template.substring(rawQueryForMask.length)}`;
-        }
-    }
-
-    const rawQuery = input.value.trim();
+    // Берем данные из глобального фильтра, который мы сохраняем в handleInput
+    const rawQuery = filters.search.trim();
     const query = rawQuery.toLowerCase();
 
+    // 1. ЕСЛИ ПОИСК ПУСТОЙ — ПОКАЗЫВАЕМ ГЛАВНУЮ (Новости/Баннер)
     if (!query) { 
         list.innerHTML = '';
         intro.style.display = 'block'; 
@@ -539,7 +523,7 @@ function render(isNewSearch = false) {
     intro.style.display = 'none';
     if (banner) banner.style.display = 'none'; 
 
-    let htmlBuffer = '';
+    // 2. ФИЛЬТРАЦИЯ БАЗЫ ДАННЫХ
     const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
@@ -549,29 +533,72 @@ function render(isNewSearch = false) {
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
-    // 2. БЛОКИРОВКА ОШИБКИ "МЫ НЕ НАШЛИ" ПРИ ВВОДЕ ТРЕКА
+    // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ
     if (results.length === 0) {
-        const isPotentialTrack = /^[A-Z]{1,2}/.test(rawQueryForMask) || /^\d{4,}/.test(rawQueryForMask);
-        if (isPotentialTrack) {
-            list.innerHTML = ''; // Ничего не пишем, пока юзер вводит цифры
-            return;
+        // Если handleInput сказал нам, что это трек — ничего не пишем
+        if (isTrackComplete) { list.innerHTML = ''; return; }
+        
+        // Если это похоже на начало трека — тоже молчим
+        const cleanForCheck = rawQuery.replace(/\s+/g, '');
+        if (/^[A-Z]{1,2}\d*/i.test(cleanForCheck) || /^\d{4,}/.test(cleanForCheck)) {
+            list.innerHTML = ''; return;
         }
+
         if (query.length < 2) return;
         
         list.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; background: #fff; border-radius: 12px; margin-top: 15px; border: 1px dashed #ccc;">
             <div style="font-size: 14px; font-weight: 800; color: #333; margin-bottom: 10px;">Мы не нашли «${rawQuery}»</div>
-            <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат может называться иначе в аптеках Германии или требует ручного поиска.</div>
+            <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат может называться иначе или требует ручного поиска.</div>
             <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 16px 20px; border-radius: 10px; font-weight: 800; width: 100%;">НАЙТИ ЧЕРЕЗ ФАРМАЦЕВТА</button>
         </div>`;
         return;
     }
 
-    // 3. ОТРИСОВКА КАРТОЧЕК
+    // 4. ОТРИСОВКА КАРТОЧЕК С СУММОЙ СТРОКИ
+    let htmlBuffer = '';
     results.forEach(r => {
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
-        htmlBuffer += `<div class="card ${q > 0 ? 'selected' : ''}"><img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)"><div class="card-body"><div class="c-title">${r.Name_DE}</div><div class="card-bottom"><div class="c-meta-box"><div style="font-size:13px;">${r.Form || ''}</div><div>${r.Hersteller || ''}</div><div>PZN: ${r.PZN}</div></div><div style="display:flex; align-items:center; gap:12px;"><div class="u-price">${Math.round(p)} €</div><div class="qty-capsule-wrap">${q > 0 ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` : `<button class="btn-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`}</div></div></div></div></div>`;
+        
+        // Считаем сумму сразу (Цена х Кол-во)
+        const rowSumEur = Math.round(p * q);
+        const rowSumRub = getRubPrice(rowSumEur);
+
+        htmlBuffer += `
+        <div class="card ${q > 0 ? 'selected' : ''}">
+            <img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)">
+            <div class="card-body">
+                <div class="c-title">${r.Name_DE}</div>
+                <div class="card-bottom">
+                    <div class="c-meta-box">
+                        <div style="font-size:13px;">${r.Form || ''}</div>
+                        <div>${r.Hersteller || ''}</div>
+                        <div>PZN: ${r.PZN}</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div class="u-price">${Math.round(p)} €</div>
+                        <div class="qty-capsule-wrap">
+                            ${q > 0 ? `
+                                <div class="qty-capsule">
+                                    <button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button>
+                                    <span class="q-val">${q}</span>
+                                    <button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button>
+                                </div>
+                            ` : `
+                                <button class="btn-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>
+                            `}
+                        </div>
+                        ${q > 0 ? `
+                            <div class="sum-box">
+                                <div class="s-eur">${rowSumEur} €</div>
+                                <div class="s-rub">${rowSumRub.toLocaleString()} ₽</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
     });
     list.innerHTML = htmlBuffer;
 }
@@ -809,7 +836,7 @@ function modQty(pzn, d, event) {
     render(false); 
     
     // [ДОБАВЛЕНО АККУРАТНО]: Эффект проседания грузовика (тяжелый вес)
-    triggerTruckEffect();
+   // triggerTruckEffect();
 
     // Перерисовываем внутренности открытой модалки, если она сейчас на экране
     if (document.getElementById('modal').classList.contains('active')) {
@@ -818,7 +845,7 @@ function modQty(pzn, d, event) {
 }
 /* =========================================
     BLOCK 6: МИНИ-ЧЕК (ИСПРАВЛЕННЫЙ)
-    ========================================= */
+    ======================================//=== */
 
 function updateBar() {
     const bar = document.getElementById('miniCart');
@@ -1058,37 +1085,47 @@ function renderCartItems() {
         return;
     }
 
-    cart.forEach((item, index) => {
-        const r = db.find(x => String(x.PZN) === String(item.pzn));
-        if (r) {
-            const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
-            const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
-            div.innerHTML += `
-            <div style="display: flex; padding: 12px 0; border-bottom: 1px solid #f5f5f5; align-items: center;">
-                <div style="font-size: 13px; color: #999; font-weight: 700; width: 22px; flex-shrink: 0;">${index + 1}.</div>
-                <div style="flex: 1; min-width: 0; padding-right: 8px;">
-                    <div class="c-title" style="font-size: 14px; margin-bottom: 2px; line-height: 1.1;">${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}</div>
-                    <div style="font-size: 11px; color: #888; line-height: 1.3; word-break: break-word;">
-                        ${r.Hersteller} <span style="opacity:0.5; margin:0 4px;">|</span> PZN: ${r.PZN}
+    // Находим цикл cart.forEach внутри renderCartItems и обновляем вывод:
+
+cart.forEach((item, index) => {
+    const r = db.find(x => String(x.PZN) === String(item.pzn));
+    if (r) {
+        const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
+        const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
+        
+        // Считаем суммы для строки
+        const rowSumEur = Math.round(p * item.qty);
+        const rowSumRub = getRubPrice(rowSumEur);
+
+        div.innerHTML += `
+        <div style="display: flex; padding: 12px 0; border-bottom: 1px solid #f5f5f5; align-items: center;">
+            <div style="font-size: 13px; color: #999; font-weight: 700; width: 22px; flex-shrink: 0;">${index + 1}.</div>
+            <div style="flex: 1; min-width: 0; padding-right: 8px;">
+                <div class="c-title" style="font-size: 14px; margin-bottom: 2px; line-height: 1.1;">
+                    ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
+                </div>
+                <div style="font-size: 11px; color: #888; line-height: 1.3; word-break: break-word;">
+                    ${r.Form ? r.Form + ' <span style="opacity:0.5; margin:0 4px;">|</span> ' : ''} 
+                    ${r.Hersteller} <span style="opacity:0.5; margin:0 4px;">|</span> PZN: ${r.PZN}
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                <div style="font-size: 14px; font-weight: 700; color: #000;">${Math.round(p)} €</div>
+                <div class="qty-capsule-wrap">
+                    <div class="qty-capsule">
+                        <button class="q-btn" onclick="modQty('${item.pzn}',-1, event)">−</button>
+                        <span class="q-val">${item.qty}</span>
+                        <button class="q-btn" onclick="modQty('${item.pzn}',1, event)">+</button>
                     </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                    <div style="font-size: 14px; font-weight: 700; color: #000;">${Math.round(p)} €</div>
-                    <div class="qty-capsule-wrap">
-                        <div class="qty-capsule">
-                            <button class="q-btn" onclick="modQty('${item.pzn}',-1, event)">−</button>
-                            <span class="q-val">${item.qty}</span>
-                            <button class="q-btn" onclick="modQty('${item.pzn}',1, event)">+</button>
-                        </div>
-                    </div>
-                    <div class="sum-box" style="min-width: 65px;">
-                        <div class="s-eur">${Math.round(p * item.qty)} €</div>
-                        <div class="s-rub">${getRubPrice(p * item.qty).toLocaleString()} ₽</div>
-                    </div>
+                <div class="sum-box" style="min-width: 65px;">
+                    <div class="s-eur">${rowSumEur} €</div>
+                    <div class="s-rub">${rowSumRub.toLocaleString()} ₽</div>
                 </div>
-            </div>`;
-        }
-    });
+            </div>
+        </div>`;
+    }
+});;
 
     const shipRub = getRubPrice(shipEur);
     div.innerHTML += `
@@ -1419,13 +1456,11 @@ function getOrderTextAndLink() {
    ========================================= */
 
 function animateFly(sRect, isRemoving = false, productSize = 0) {
-    // 1. Проверки
     if (!sRect || (sRect.left === 0 && sRect.top === 0)) {
         playSound(isRemoving);
         return;
     }
     
-    // 2. Определяем цель
     const modal = document.getElementById('modal');
     const isModalOpen = modal && modal.classList.contains('active');
     const targetId = isModalOpen ? 'footerTotalSum' : 'miniCart';
@@ -1434,20 +1469,32 @@ function animateFly(sRect, isRemoving = false, productSize = 0) {
     if (!targetEl) return;
     const tRect = targetEl.getBoundingClientRect();
 
-    // 3. ЛОГИКА КОЛИЧЕСТВА (ГЕЙМИФИКАЦИЯ)
     let count = 1;
     const sizeVal = parseInt(productSize) || 0;
-    if (sizeVal >= 150) count = 3;      // Много
-    else if (sizeVal >= 100) count = 2; // Средне
-    else count = 1;                     // Мало
+    if (sizeVal >= 150) count = 3;      
+    else if (sizeVal >= 100) count = 2; 
+    else count = 1;                     
 
-    // 4. ЗАПУСК ОЧЕРЕДИ
+    // Играем звук сразу
     playSound(isRemoving);
     
-    for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-            createSinglePill(sRect, tRect, isRemoving, targetId);
-        }, i * 150); 
+    if (isRemoving) {
+        // ПРИ УДАЛЕНИИ: один резкий прыжок (отдача) и вылет очереди
+        triggerTruckEffect();
+        for (let i = 0; i < count; i++) {
+            setTimeout(() => createSinglePill(sRect, tRect, true, targetId), i * 150);
+        }
+    } else {
+        // ПРИ ДОБАВЛЕНИИ: грузовик вздрагивает от КАЖДОЙ капсулы
+        for (let i = 0; i < count; i++) {
+            // 1. Запуск капсулы
+            setTimeout(() => {
+                createSinglePill(sRect, tRect, false, targetId);
+            }, i * 150);
+
+            // 2. Прыжок грузовика ровно в момент "удара" (через 850мс после вылета)
+            setTimeout(triggerTruckEffect, 850 + (i * 150));
+        }
     }
 }
 
@@ -1517,15 +1564,8 @@ function createSinglePill(sRect, tRect, isRemoving, targetId) {
             fly.style.opacity = '0';
             
             // Удар об корзину
-            setTimeout(() => {
-                const target = document.getElementById(targetId);
-                if (target) {
-                    const blinkClass = 'pulse';
-                    target.classList.add(blinkClass);
-                    setTimeout(() => target.classList.remove(blinkClass), 600);
-                }
-                fly.remove();
-            }, 200); 
+          // ОСТАВЬ ТОЛЬКО ЭТО:
+            setTimeout(() => fly.remove(), 200);
             
         }, 800); 
     }

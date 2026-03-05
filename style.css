@@ -19,14 +19,14 @@ body {
     background: var(--bg); 
     color: var(--txt); 
     margin: 0; 
-    padding-bottom: 150px; /* Отступ, чтобы корзина не перекрывала контент */
+    padding-bottom: 0 !important; /* Убрали лишнее место под футером */
     -webkit-tap-highlight-color: transparent;
 }
 
 .cont { 
     max-width: 600px; 
     margin: 0 auto; 
-    padding: 0 0 220px 0; /* <-- Вот она, наша защита от перекрытия корзиной */
+    padding: 0 !important; /* Убрали гигантский отступ внутри контейнера */
     background: #fff; 
     min-height: 100vh; 
 }
@@ -833,10 +833,12 @@ body {
 
 /* футер */
 .site-footer {
-    background: #f9f9f9;
-    padding: 30px 20px 100px 20px; /* Снизу 100px, чтобы капсула с грузовиком ничего не закрывала */
-    border-top: 1px solid #eee;
-    margin-top: 40px;
+    background: #f9f9f9 !important;
+    /* 20px сверху, 20px по бокам, 80px снизу (запас под кнопку грузовика) */
+    padding: 20px 20px 80px 20px !important; 
+    border-top: 1px solid #eee !important;
+    margin-top: 40px !important;
+    box-sizing: border-box !important;
 }
 
 .disclaimer-text {
@@ -924,3 +926,4 @@ body {
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08) !important; 
     transform: translateY(-1px) !important; 
 }
+
