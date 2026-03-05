@@ -927,3 +927,69 @@ body {
     transform: translateY(-1px) !important; 
 }
 
+/* Метка DHL */
+.dhl-badge {
+    position: absolute;
+    right: 50px; /* Слева от крестика */
+    top: 50%;
+    transform: translateY(-50%);
+    background: #005691;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 6px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Состояние "Магия включена" */
+.search-container.is-dhl .dhl-badge { opacity: 1; }
+.search-container.is-dhl .search-input { color: #005691 !important; font-family: monospace !important; letter-spacing: 2px; }
+
+/* Маска-подсказка (опционально, если хочешь видеть хвост DE) */
+.dhl-ghost-mask {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #b0bec5;
+    font-family: monospace;
+    letter-spacing: 2px;
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+}
+.search-container.is-dhl .dhl-ghost-mask { display: block; }
+
+/* Контейнер для выравнивания слоев */
+.search-container { position: relative; display: flex; align-items: center; }
+
+/* Слой-подсказка (лежит под инпутом) */
+.search-hint-layer {
+    position: absolute;
+    left: 15px; /* Совпадает с padding инпута */
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: monospace !important; /* Моноширинный для точности */
+    font-size: 16px;
+    letter-spacing: 2px; /* Расстояние между буквами */
+    color: #ccc;
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+    white-space: pre;
+}
+
+/* Настраиваем сам инпут для точности наслоения */
+.search-container.is-dhl .search-input {
+    font-family: monospace !important;
+    letter-spacing: 2px !important;
+    background: transparent !important; /* Чтобы видеть слой под ним */
+    position: relative;
+    z-index: 2;
+}
+
+.search-container.is-dhl .search-hint-layer { display: block; }
