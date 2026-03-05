@@ -993,3 +993,40 @@ body {
 }
 
 .search-container.is-dhl .search-hint-layer { display: block; }
+
+/* Умный бейдж DHL в строке поиска */
+.dhl-badge {
+    position: absolute;
+    right: 45px; /* Отодвигаем левее крестика очистки */
+    top: 50%;
+    transform: translateY(-50%);
+    background: #e3f2fd;
+    color: var(--p); /* Синий по умолчанию */
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    z-index: 10;
+    transition: all 0.2s ease;
+    display: none; /* Скрыт пока не начали вводить трек */
+}
+
+/* Показываем бейдж, когда включается магия */
+.search-container.is-dhl .dhl-badge {
+    display: block;
+}
+
+/* Режим ОШИБКИ (Красный + Тряска) */
+.dhl-badge.error {
+    background: #ffebee !important;
+    color: #d32f2f !important;
+    animation: shake-attention 0.4s ease-in-out;
+}
+
+/* Режим УСПЕХА (Зеленый) */
+.dhl-badge.success {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+}

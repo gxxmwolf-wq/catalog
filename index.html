@@ -497,17 +497,13 @@ function handleInput(updateUrl = true) {
 
     // 1. ПОДГОТОВКА ДАННЫХ И УМНАЯ ОЧИСТКА ВСТАВЛЕННЫХ ССЫЛОК
     let rawVal = input.value;
-
-    // Если клиент вставил целую ссылку вместо трека
     if (/(http|pochta\.ru|tracking|#)/i.test(rawVal)) {
-        // Ищем в этой каше 13-значный международный трек или 14 цифр РФ
         const trackMatch = rawVal.match(/([A-Za-z]{2}\d{9}[A-Za-z]{2}|\d{14})/);
         if (trackMatch) {
             rawVal = trackMatch[0].toUpperCase();
-            input.value = rawVal; // Магия: мгновенно стираем ссылку, оставляя только трек!
+            input.value = rawVal; 
         }
     }
-
     const val = rawVal.trim().toUpperCase(); 
     const len = val.length;
 
@@ -515,37 +511,53 @@ function handleInput(updateUrl = true) {
     const prefix = val.substring(0, 2);
     const isDhlPrefix = ['CR', 'CY', 'CK', 'RM', 'CE'].includes(prefix);
     const thirdChar = val[2];
-
-    // Магия включается, если префикс верный И (символов мало ИЛИ третий символ — цифра)
     const isTrackMode = isDhlPrefix && (!thirdChar || /\d/.test(thirdChar));
 
     if (isTrackMode) {
         container.classList.add('is-dhl');
-
-        // Шаблон из 11 точек и хвоста DE (всего 13 символов)
         const template = "...........DE"; 
         
-        // Создаем маску
-        if (hint) {
-            hint.innerHTML = `<span style="opacity:0">${val}</span>${template.substring(len)}`;
-        }
-
-        // Живой счетчик цифр
-        const digitsEntered = Math.max(0, len - 2);
-        const digitsLeft = Math.max(0, 9 - digitsEntered);
+        // Строго считаем введенные ЦИФРЫ (исключая префикс)
+        const contentAfterPrefix = val.substring(2);
+        const digitsCount = (contentAfterPrefix.match(/\d/g) || []).length;
+        const isTooLong = len > 13;
 
         if (dhlLabel) {
-            if (len < 11) {
-                dhlLabel.innerHTML = `DHL • ${digitsLeft}`;
-            } else {
-                dhlLabel.innerHTML = `DHL ✓`; 
+            // Сбрасываем старые цвета перед новой проверкой
+            dhlLabel.classList.remove('error', 'success');
+            
+            if (digitsCount > 9 || isTooLong) {
+                // ❌ ПЕРЕБОР: Слишком много цифр или символов
+                dhlLabel.innerHTML = `ОШИБКА: ЛИШНЕЕ`;
+                dhlLabel.classList.add('error');
+                if (hint) hint.innerHTML = ""; // Убираем маску, она сломалась
+                
+                // Тактильный удар по пальцам (двойная вибрация)
+                if (navigator.vibrate) navigator.vibrate([20, 50, 20]); 
+            } 
+            else if (digitsCount === 9 && len === 13) {
+                // ✅ ИДЕАЛЬНО: Ровно 9 цифр и 13 символов
+                dhlLabel.innerHTML = `ФОРМАТ ВЕРЕН ✓`;
+                dhlLabel.classList.add('success');
+                if (hint) hint.innerHTML = ""; // Маска больше не нужна
+            } 
+            else {
+                // 🔄 В ПРОЦЕССЕ ВВОДА (Синий цвет)
+                if (digitsCount < 9) {
+                    dhlLabel.innerHTML = `ОСТАЛОСЬ ЦИФР: ${9 - digitsCount}`;
+                } else {
+                    dhlLabel.innerHTML = `ЖДЕМ БУКВЫ`;
+                }
+                // Рисуем маску
+                if (hint) {
+                    hint.innerHTML = `<span style="opacity:0">${val}</span>${template.substring(len)}`;
+                }
             }
         }
     } else {
         // Выключаем магию
         container.classList.remove('is-dhl');
         if (hint) hint.innerHTML = "";
-        if (dhlLabel) dhlLabel.innerHTML = "DHL ТРЕК";
     }
 
     // 3. ОБНОВЛЕНИЕ ГЛОБАЛЬНЫХ ПАРАМЕТРОВ И URL
@@ -563,14 +575,14 @@ function handleInput(updateUrl = true) {
     const isCompleteTrack = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(cleanTrack) || /^\d{14}$/.test(cleanTrack);
     
     if (isCompleteTrack) {
-        input.blur(); // Просто прячем клавиатуру
+        input.blur(); 
     }
 
     // 5. ОБЫЧНЫЙ РЕНДЕР ТОВАРОВ И ПОДСКАЗОК
     render(false, isTrackMode);
     
     if (typeof renderSuggestions === 'function') {
-        renderSuggestions(rawVal); // Отрисует серую, желтую или зеленую плашку
+        renderSuggestions(rawVal); 
     }
 }
 
@@ -682,16 +694,25 @@ function render(isNewSearch = false, isTrackComplete = false) {
 function renderSuggestions(inputText) {
     const box = document.getElementById('suggestRow');
     if (!box) return; 
-    box.innerHTML = ''; 
+    box.innerHTML = ''; // При стирании текста в ноль плашка убивается здесь
     
     const rawVal = inputText.trim().toUpperCase();
     if (!rawVal) return;
 
-    // --- 1. ЛОГИКА ТРЕКОВ (3 СОСТОЯНИЯ) ---
-    const isPotentialTrack = /^[A-Z]{1,2}/.test(rawVal) || /^\d{4,}/.test(rawVal);
-    const isCompleteTracking = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(rawVal) || /^\d{14}$/.test(rawVal);
+    // --- 1. СТРОГАЯ ЛОГИКА ТРЕКОВ ---
+    const cleanTrack = rawVal.replace(/\s/g, '');
+    const isCompleteTracking = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(cleanTrack) || /^\d{14}$/.test(cleanTrack);
     
-    // СОСТОЯНИЕ 1: СЕРЫЙ (В процессе ввода)
+    // Умный детектор: отсекаем лекарства от треков
+    const prefix = cleanTrack.substring(0, 2);
+    const isDhlPrefix = ['CR', 'CY', 'CK', 'RM', 'CE'].includes(prefix);
+    const thirdChar = cleanTrack[2];
+    const isRussianTrack = /^\d{4,}/.test(cleanTrack) && cleanTrack.length <= 14;
+
+    // Считаем треком только если: правильные 2 буквы И (3-й символ отсутствует ИЛИ это цифра)
+    const isPotentialTrack = (isDhlPrefix && (!thirdChar || /\d/.test(thirdChar))) || isRussianTrack;
+    
+    // СОСТОЯНИЕ 1: СЕРЫЙ (Только если это реально трек)
     if (isPotentialTrack && !isCompleteTracking) {
         box.innerHTML = `
             <div class="s-chip" style="background: #f5f7fa; border: 1px dashed #dcdcdc; color: #888; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; cursor: default;">
@@ -707,13 +728,13 @@ function renderSuggestions(inputText) {
 
     // ТРЕК ВВЕДЕН ПОЛНОСТЬЮ
     if (isCompleteTracking) {
-        const myOrder = (typeof newsDB !== 'undefined') ? newsDB.find(n => n.Text && n.Text.includes(rawVal)) : null;
+        const myOrder = (typeof newsDB !== 'undefined') ? newsDB.find(n => n.Text && n.Text.includes(cleanTrack)) : null;
         
-       if (!myOrder) {
-            // СОСТОЯНИЕ 2: ЧУЖОЙ ТРЕК (Мягкий золотисто-желтый)
+        if (!myOrder) {
+            // СОСТОЯНИЕ 2: ЖЕЛТЫЙ (Чужой)
             box.innerHTML = `
                 <div class="s-chip" style="background: #fffdf0; border: 1px solid #ffe082; color: #b08d00; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02);" 
-                     onclick="navigator.clipboard.writeText('${rawVal}').then(() => window.open('https://www.pochta.ru/tracking#${rawVal}', '_blank'))">
+                     onclick="navigator.clipboard.writeText('${cleanTrack}').then(() => window.open('https://www.pochta.ru/tracking#${cleanTrack}', '_blank'))">
                     <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3; padding-right: 10px;">
                         <span style="font-weight: 800; font-size: 14px; color: #8e7200;">Трек номер идентифицирован</span>
                         <span style="font-size: 12px; color: #b08d00; margin-top: 2px;">Посылка создана не в нашей системе. По ссылке сможете узнать статус.</span>
@@ -722,7 +743,7 @@ function renderSuggestions(inputText) {
                 </div>
             `;
         } else {
-            // СОСТОЯНИЕ 3: ЗЕЛЕНЫЙ (Наш -> In-line раскрытие)
+            // СОСТОЯНИЕ 3: ЗЕЛЕНЫЙ (Наш)
             const safeText = myOrder.Text.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\n/g, '<br>');
             
             box.innerHTML = `
@@ -743,7 +764,8 @@ function renderSuggestions(inputText) {
         return; 
     }
 
-    // --- 2. ОБЫЧНЫЕ ПОДСКАЗКИ СЛОВ ---
+    // --- 2. ОБЫЧНЫЕ ПОДСКАЗКИ СЛОВ (Лекарства) ---
+    // (Дальше идет твой стандартный код с Set, matches и candidates. Его не трогаем!)
     const trimmedInput = inputText.trim();
     const userWords = trimmedInput.toLowerCase().split(/\s+/);
     const isTrailingSpace = inputText.endsWith(' ');
@@ -831,18 +853,19 @@ function checkEnter(event) {
         const query = searchInput.value.trim().toUpperCase();
         if (!query) return;
 
-        // Проверка на трек
-        const isTracking = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(query) || /^\d{14}$/.test(query);
+        // Проверка на завершенный трек
+        const cleanTrack = query.replace(/\s/g, '');
+        const isCompleteTrack = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(cleanTrack) || /^\d{14}$/.test(cleanTrack);
 
-        if (isTracking) {
-            // Если это трек — просто прячем клавиатуру. 
-            // Все действия перенесены на чипсы под поиском.
+        if (isCompleteTrack) {
             searchInput.blur(); 
-            return; 
+            return; // Оставляем плашку трека
         }
 
-        // Если НЕ трек — выполняем обычный поиск
+        // ЕСЛИ ЭТО НЕ ТРЕК (или просто слово)
         searchInput.blur(); 
+        const box = document.getElementById('suggestRow');
+        if (box) box.innerHTML = ''; // ЖЕСТКО СНОСИМ серую плашку-мусор
         render(false); 
     }
 }
