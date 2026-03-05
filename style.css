@@ -108,16 +108,6 @@ body {
     min-width: 70px;
 }
 
-/* =========================================
-   СТРОКА ПОИСКА И ЛОГОТИП
-   ========================================= */
-.inp-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    background: #fff;
-    padding: 10px 10px 12px 10px; 
-}
 
 .embedded-logo {
     display: flex !important;
@@ -148,10 +138,23 @@ body {
 .flash-green .de-part { color: var(--ok) !important; }
 .flash-yellow .de-part { color: #ffc107 !important; }
 
-/* Инпут поиска */
+/* =========================================
+   ВОССТАНОВЛЕННЫЙ БЛОК ПОИСКА (ШИРОКИЙ)
+   ========================================= */
+.inp-wrap {
+    position: relative; /* Важно для позиционирования крестика */
+    display: flex;
+    align-items: center;
+    padding: 8px 12px !important;
+    background: #fff;
+    margin-bottom: 0 !important; /* Убираем дыру под поиском, не ломая сам инпут */
+    
+}
+
+/* Возвращаем твои оригинальные размеры */
 .search-input {
     flex: 1; 
-    background-color: #f0f2f5 !important;
+    background-color: transparent !important; /* УБРАЛИ ЦВЕТ, чтобы видеть маску под ним */
     border: 2px solid transparent !important; 
     border-radius: 12px !important; 
     font-size: 16px !important; 
@@ -164,6 +167,8 @@ body {
     color: #333 !important;
     outline: none !important;
     -webkit-appearance: none;
+    position: relative;
+    z-index: 2; /* Инпут сверху, маска снизу */
 }
 
 .search-input:focus {
@@ -176,19 +181,18 @@ body {
 .search-input::placeholder { color: #888 !important; font-weight: 500 !important; transition: opacity 0.2s !important; }
 .search-input:focus::placeholder { opacity: 0.5 !important; }
 
-/* Крестик очистки */
+/* Крестик очистки строго по центру */
 .cls-btn {
     position: absolute !important;
     right: 25px !important; 
     top: 50% !important;
-    transform: translateY(-55%) !important; 
+    transform: translateY(-50%) !important; /* Ровно по центру высоты поля */
     width: 32px !important;
     height: 32px !important;
     display: flex !important;
     align-items: center;
     justify-content: center;
-    line-height: 1 !important; 
-    z-index: 200 !important; /* [ФИКС]: Чтобы крестик точно нажимался */
+    z-index: 200 !important; 
     color: #bbb;
     font-size: 19px; 
     cursor: pointer;
@@ -218,7 +222,7 @@ body {
 }
 .s-chip:active { background: var(--p); color: #fff; transform: scale(0.95); }
 
-//* =========================================
+/* =========================================
    BLOCK 3: СПИСОК ТОВАРОВ И КАРТОЧКИ
    ========================================= */
 #list { padding: 0 10px; }
@@ -283,86 +287,187 @@ body {
 .s-rub { font-size: 14px; font-weight: 500; color: #000; }
 
 /* =========================================
-   КНОПКИ ДОБАВЛЕНИЯ В КОРЗИНУ
+   КНОПКИ ДОБАВЛЕНИЯ В КОРЗИНУ (ИСПРАВЛЕНО)
    ========================================= */
 
-/* Кнопка "ДОБАВИТЬ" */
-.btn-capsule-add { 
-    background: var(--p); color: #fff; border: none; padding: 0 14px; 
-    height: 30px; border-radius: 15px; font-weight: 700; font-size: 12px; 
-    cursor: pointer; transition: transform 0.1s, background 0.2s;
+/* Кнопка "ДОБАВИТЬ" (синяя капсула) */
+.btn-add, .btn-capsule-add {
+    background: var(--p) !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 0 14px !important;
+    height: 30px !important;
+    border-radius: 15px !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    cursor: pointer !important;
+    transition: transform 0.1s, background 0.2s !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
-.btn-capsule-add:active { background: #004475; transform: scale(0.95); }
-
-/* Блок счетчика (+ / 1 / -) */
-.qty-capsule {
-    display: inline-flex; align-items: center; flex-wrap: nowrap; white-space: nowrap;
+.btn-add:active, .btn-capsule-add:active {
+    background: #004475 !important;
+    transform: scale(0.95) !important;
 }
 
-.q-btn { 
-    width: 26px; height: 26px; box-sizing: border-box; border-radius: 50%; 
-    border: 1px solid #333; background: #fff; color: #333; 
-    font-weight: 900; font-size: 16px; cursor: pointer; 
-    text-align: center; line-height: 24px; padding: 0; margin: 0; 
-    transition: background 0.2s, transform 0.1s;
+/* Блок счетчика (вместе с кнопками + и -) */
+.qty-capsule, .qty-capsule-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
 }
-.q-btn:active { background: #f0f0f0; transform: scale(0.9); }
 
-.q-val { padding: 0 8px; min-width: 18px; text-align: center; font-weight: 800; font-size: 14px; color: #000; }
+/* Сами круглые кнопки Плюс и Минус */
+.q-btn, .btn-qty {
+    width: 26px !important;
+    height: 26px !important;
+    box-sizing: border-box !important;
+    border-radius: 50% !important;
+    border: 1px solid #333 !important;
+    background: #fff !important;
+    color: #333 !important;
+    font-weight: 900 !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+}
+.q-btn:active, .btn-qty:active {
+    background: #f0f0f0 !important;
+    transform: scale(0.9) !important;
+}
+
+/* Цифра количества между плюсом и минусом */
+.q-val, .qty-val {
+    padding: 0 8px !important;
+    min-width: 18px !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+    font-size: 14px !important;
+    color: #000 !important;
+}
 
 
 /* =========================================
-   BLOCK 4: КОРЗИНА "SMART PILL" (ФИНАЛ)
+   BLOCK 4: КОРЗИНА "SMART TRUCK" (ФИНАЛ)
    ========================================= */
 .mini-cart-fab { 
-    /* [ФИКС]: Отодвигаем от края (защита от смахивания на Android) */
-    position: fixed; right: 25px !important; bottom: 35px !important; 
+    /* Позиционирование (защита от смахивания на S24/Android) */
+    position: fixed; 
+    right: 25px !important; 
+    bottom: 35px !important; 
+    z-index: 9000 !important;
     
-    height: 54px; min-width: 54px; border-radius: 27px;
+    /* Базовая форма - идеальный круг */
+    height: 54px; 
+    min-width: 54px; 
+    border-radius: 27px;
+    
+    /* Стиль: Сочный зеленый градиент */
     background: linear-gradient(135deg, #00e676 0%, #00c853 100%);
-    box-shadow: inset 0 2px 5px rgba(255,255,255,0.6), 0 8px 20px rgba(0, 150, 0, 0.3);
-    border: 2px solid #fff;
-    color: #fff;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 9000 !important; /* [ФИКС]: Под всеми модалками, но над списком */
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 8px 20px rgba(0, 150, 0, 0.3);
+    
+    /* [ИЗМЕНЕНО]: Окантовка теперь черная */
+    border: 2px solid #000;
+    
+    /* [ИЗМЕНЕНО]: Основной цвет текста теперь черный */
+    color: #000;
+    
+    /* Флекс-сетка */
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
     cursor: pointer !important;
     user-select: none;
+    
+    /* Анимация трансформации в капсулу */
     transition: all 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
     overflow: visible !important;
     touch-action: manipulation !important;
 }
 
+/* Активное состояние: Превращение в капсулу, когда есть товары */
 .mini-cart-fab.active { 
-    min-width: 140px; padding: 0 18px; 
+    min-width: 130px; 
+    padding: 0 16px; 
     justify-content: flex-start;
-    box-shadow: inset 0 2px 5px rgba(255,255,255,0.6), 0 12px 25px rgba(0, 150, 0, 0.4);
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 12px 25px rgba(0, 150, 0, 0.4);
 }
 
-.mini-cart-icon { 
-    font-size: 24px; flex-shrink: 0; 
-    filter: drop-shadow(0 2px 1px rgba(0,0,0,0.2));
-    margin: 0; 
+/* [ИСПРАВЛЕНО]: Полная зачистка от старых фоновых иконок и кругов */
+.mini-cart-icon {
+    background: none !important;
+    background-image: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px; 
+    padding: 0;
+    margin: 0;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    line-height: 1;
 }
 
+/* Текст цены внутри капсулы */
 .mini-cart-total { 
-    font-size: 15px; font-weight: 800; color: #000; 
-    white-space: nowrap; margin-left: auto; 
-    opacity: 0; width: 0; overflow: hidden;
+    font-size: 15px; 
+    font-weight: 800; 
+    /* [ИЗМЕНЕНО]: Шрифт цены теперь черный */
+    color: #000; 
+    white-space: nowrap; 
+    opacity: 0; 
+    width: 0; 
+    overflow: hidden;
     transition: all 0.2s ease;
 }
 
+/* Появление цены при активации */
 .mini-cart-fab.active .mini-cart-total { 
-    opacity: 1; width: auto; margin-left: 10px; 
+    opacity: 1; 
+    width: auto; 
+    margin-left: 10px; 
 }
 
 .mini-cart-badge { 
-    position: absolute; top: -4px; right: -4px; 
-    background: #d32f2f; color: #fff; 
-    min-width: 22px; height: 22px; border-radius: 50%; 
-    font-size: 11px; font-weight: 900; 
-    display: flex; align-items: center; justify-content: center; 
-    border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.3); 
+    position: absolute; 
+    top: -5px;      /* Чуть выше */
+    right: -5px;    /* Чуть правее, чтобы не закрывать 🚚 */
+    background: #d32f2f; 
+    color: #fff; 
+    min-width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    font-size: 11px; 
+    font-weight: 900; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 2px solid #000; /* Твоя новая черная окантовка */
     z-index: 1005; 
+}
+
+/* Анимация тяжелого груза только для иконки 🚚 */
+.truck-jump {
+    animation: truckLoad 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    transform-origin: bottom center; /* Проседает к земле */
+}
+
+@keyframes truckLoad {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    /* Жесткий удар по подвеске */
+    25% { transform: translate3d(0, 8px, 0) scale(1.15, 0.8); } 
+    /* Пружинит обратно */
+    50% { transform: translate3d(0, -4px, 0) scale(0.95, 1.05); } 
+    /* Остаточные колебания */
+    75% { transform: translate3d(0, 1px, 0) scale(1.02, 0.98); } 
+    100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
 /* =========================================
@@ -378,7 +483,6 @@ body {
     z-index: 990; cursor: pointer;
 }
 
-/* [ФИКС]: Максимальная плотность строк чека */
 .receipt-row { 
     display: flex; align-items: baseline; 
     font-size: 12px; color: #333; gap: 0;
@@ -403,7 +507,7 @@ body {
     font-weight: 900; color: #000; font-size: 15px; 
     margin-top: 5px; border-top: 1px dashed #ccc; padding-top: 5px; 
 }
-.receipt-row.color-ship { color: #666; font-style: normal; }
+.receipt-row.color-ship { color: #666; font-style: normal; }    
 
 /* =========================================
    BLOCK 5: АНИМАЦИЯ (3D ПИЛЮЛИ)
@@ -425,6 +529,7 @@ body {
     pointer-events: none;
 }
 
+
 .pulse { animation: pulse-anim 0.3s ease-in-out; }
 .pulse-remove { animation: pulse-anim 0.5s ease-in-out; }
 
@@ -433,6 +538,7 @@ body {
     50% { transform: scale(1.15); } 
     100% { transform: scale(1); } 
 }
+
 
 /* =========================================
    BLOCK 6: БОЛЬШАЯ КОРЗИНА (MODAL)
@@ -704,4 +810,117 @@ body {
     .sum-box { text-align: right !important; flex-shrink: 0 !important; min-width: auto !important; }
     .s-eur { font-size: 15px !important; font-weight: 700 !important; }
     .s-rub { font-size: 11px !important; color: #999 !important; }
+}
+
+#miniCart.pulse {
+    animation: truckLoad 0.4s ease-out;
+}
+
+/* Анимация "смотри сюда" (привлечение внимания к поиску) */
+@keyframes shake-attention {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.attention-please {
+    animation: shake-attention 0.5s ease-in-out !important;
+    /* Легкая серая подсветка фона для большего акцента */
+    background-color: #f9f9f9 !important; 
+    border-radius: 12px;
+    transition: background-color 0.3s;
+}
+
+/* футер */
+.site-footer {
+    background: #f9f9f9;
+    padding: 30px 20px 100px 20px; /* Снизу 100px, чтобы капсула с грузовиком ничего не закрывала */
+    border-top: 1px solid #eee;
+    margin-top: 40px;
+}
+
+.disclaimer-text {
+    font-size: 11px;
+    line-height: 1.6;
+    color: #888;
+    text-align: justify;
+    max-width: 800px;
+    margin: 0 auto 20px auto;
+}
+
+.footer-copy {
+    font-size: 10px;
+    color: #bbb;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}   
+
+.nano-banner-img {
+    display: block;
+    width: 100%;    /* <-- ЭТО КЛЮЧЕВОЕ СВОЙСТВО: ширина всегда 100% */
+    height: auto;   /* <-- Высота подстраивается автоматически, сохраняя пропорции */
+    max-height: 85px; /* Ограничиваем высоту для нано-формата */
+    object-fit: cover; /* Заполняем блок, не искажая картинку */
+}
+
+/* ==========================================
+   УБИРАЕМ ДЫРЫ: ПОИСК -> БАННЕР -> ЗАМЕТКИ
+   ========================================== */
+
+
+
+
+/* 2. Прижимаем баннер вплотную к шапке и к заметкам */
+.nano-banner-wrap {
+    margin-top: 4px !important; /* Зазор сверху до поиска */
+    margin-bottom: 10px !important; /* Зазор снизу до заметок */
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+/* 3. Прижимаем блок Заметок вплотную к баннеру */
+.intro-section {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.notepad-wrap {
+    margin-top: 0 !important; /* Срезаем дыру над рамкой "Заметки сервиса" */
+}
+/* =========================================
+   ЧИСТЫЙ БЛОК ПОИСКА
+   ========================================= */
+.search-container {
+    flex: 1;
+    background-color: #f0f2f5;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    height: 48px;
+}
+
+.search-input {
+    flex: 1; 
+    background-color: #f0f2f5 !important;
+    border: 2px solid transparent !important; 
+    border-radius: 12px !important; 
+    font-size: 16px !important; 
+    font-weight: 600 !important;
+    padding: 0 45px 0 15px !important; 
+    height: 100% !important; 
+    margin: 0 !important;
+    box-shadow: none !important;
+    transition: all 0.25s ease !important; 
+    color: #333 !important;
+    outline: none !important;
+    -webkit-appearance: none;
+    width: 100%;
+}
+
+.search-input:focus {
+    background-color: #ffffff !important; 
+    border-color: var(--p) !important; 
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08) !important; 
+    transform: translateY(-1px) !important; 
 }

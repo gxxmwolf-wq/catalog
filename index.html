@@ -38,17 +38,19 @@
 <body>
 <div class="cont">
     <div class="sticky">
-        <div class="top-menu-bar">
+        <div class="top-menu-bar" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #fff; border-bottom: 1px solid #f0f0f0;">
+            
             <div style="display: flex; align-items: center;">
                 <div class="tm-item" onclick="showInfo('exp')">ОПЫТ</div>
                 <span class="tm-sep">|</span>
                 <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
                 <span class="tm-sep">|</span>
-                <div class="tm-item live-glow" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>
+                <div class="tm-item live-glow" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>  
             </div>      
-            <div class="rates-compact">
-                <div>ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
-                <div>Курс: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
+
+            <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
+                <div style="white-space: nowrap;">ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
+                <div style="white-space: nowrap;">Расчетный: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
             </div>
         </div>
 
@@ -56,33 +58,40 @@
             <div class="embedded-logo" onmousedown="handleLogoClick(event)">
                 <span class="rx-part">RX</span><span class="de-part">DE</span>
             </div>
-            <input type="text" id="search" 
-                   class="search-input" 
-                   placeholder="Поиск (рус / lat)..." 
-                   oninput="handleInput()" 
-                   onkeydown="checkEnter(event)" 
-                   autocomplete="off" 
-                   autocorrect="off" 
-                   spellcheck="false"
-                   enterkeyhint="search">
+
+            <div class="search-container" style="position: relative; flex: 1; background-color: #f0f2f5; border-radius: 12px; display: flex; align-items: center; height: 48px;">
+                <input type="text" id="search" 
+                       class="search-input" 
+                       placeholder="трек-номер или поиск..." 
+                       oninput="handleInput()" 
+                       onkeydown="checkEnter(event)" 
+                       autocomplete="off"
+                       autocorrect="off" 
+                       spellcheck="false"
+                       enterkeyhint="search"
+                       style="flex: 1; background-color: transparent; border: 2px solid transparent; border-radius: 12px; font-size: 16px; font-weight: 600; padding: 0 45px 0 15px; height: 100%; width: 100%; color: #333; outline: none;">
+            </div>
+            
             <span class="cls-btn" id="clearBtn" onclick="clearSearch()">✕</span>
         </div>
 
         <div id="suggestRow" class="suggestions-row"></div>
     </div>
-
+    
     <div id="list"></div>
-    <div id="introBlock" class="intro-section">
-        <h1 style="font-size: 22px; margin-bottom: 5px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
-        <p style="font-size: 14px; color: #888;">Deutsche Qualität. Поиск по базе медикаментов.</p>
-    </div>
+
+<div id="nanoBanner" class="nano-banner-wrap">
+    <img src="Banner.png" alt="Доставка из аптек Германии" class="nano-banner-img">
 </div>
+
+<div id="introBlock" class="intro-section">
+    </div>
 
 <div id="miniCart" class="mini-cart-fab" onclick="openCart()">
     <div id="miniReceipt" class="mini-receipt" onclick="event.stopPropagation(); openCart()"></div>
-    <div class="mini-cart-badge" id="miniCount">0</div>
-    <div class="mini-cart-icon">🛒</div>
-    <div class="mini-cart-total" id="miniPrice">0 €</div>
+    <div class="mini-cart-badge" id="miniCount" style="display:none;">0</div>
+    <div class="mini-cart-icon">🚚</div> 
+    <div id="miniPrice" class="mini-cart-total"></div>
 </div>
 
 <div id="modal" class="modal" onclick="closeModal()">
@@ -198,6 +207,18 @@ let cartBackup = null; // Сюда будем сохранять корзину 
 const audioAdd = new Audio("sounds/add.mp3");
 const audioRem = new Audio("sounds/remove.mp3");
 const audioOrder = new Audio("sounds/zakaz.mp3"); // Звук №3 (успех)
+
+// Эффект физического веса для грузовика RXDE
+// Эффект физического веса: прыгает только сам грузовик!
+function triggerTruckEffect() {
+    // Ищем именно иконку внутри капсулы
+    const icon = document.querySelector('#miniCart .mini-cart-icon');
+    if (!icon) return;
+    
+    icon.classList.remove('truck-jump');
+    void icon.offsetWidth; // Магия перерисовки
+    icon.classList.add('truck-jump');
+}
 
 /**
  * Функция для озвучки действий (Добавление/Удаление)
@@ -410,9 +431,8 @@ window.onclick = function(event) {
     if (event.target == info) closeInfo();
     if (event.target == contact) closeContact();
 }
-
 /* =========================================
-   BLOCK 4: УМНЫЙ ДВИЖОК (NAME + CAT + PZN)
+   BLOCK 4: УМНЫЙ ДВИЖОК (NAME + CAT + PZN) И ТРЕКИНГ
    ========================================= */
 
 function levenshtein(a, b) {
@@ -448,226 +468,202 @@ function getSearchVariations(word) {
 
 function handleInput(updateUrl = true) {
     const input = document.getElementById('search');
-    filters.search = input.value;
+    const rawVal = input.value; 
+    
+    // Очищаем от случайных пробелов для проверки на трек (вдруг скопировали криво)
+    const cleanTrackVal = rawVal.replace(/\s+/g, '').toUpperCase(); 
+    
+    filters.search = rawVal; 
+
     if (updateUrl) {
         const url = new URL(window.location);
-        if (input.value.trim()) url.searchParams.set('q', input.value.trim());
+        if (rawVal.trim()) url.searchParams.set('q', rawVal.trim());
         else url.searchParams.delete('q');
         window.history.replaceState({}, '', url);
     }
-    render(true); 
-    renderSuggestions(input.value);
+
+    // Жесткая проверка: это полноценный трек? (13 символов инт. или 14 цифр РФ)
+    const isTracking = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(cleanTrackVal) || /^\d{14}$/.test(cleanTrackVal);
+    
+    if (isTracking) {
+        // МГНОВЕННЫЙ ПЕРЕХВАТ: Прячем клавиатуру и рисуем плашку
+        input.blur(); 
+        if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
+        render(false, true); // true = блокируем ошибку "ничего не найдено"
+        renderSuggestions(cleanTrackVal, true); 
+    } else {
+        // ОБЫЧНЫЙ ПОИСК
+        render(false, false); 
+        renderSuggestions(rawVal, false);
+    }
 }
 
 function render(isNewSearch = false) {
     const list = document.getElementById('list'); 
     const intro = document.getElementById('introBlock');
+    const banner = document.getElementById('nanoBanner'); 
     if (!list || !intro) return;
 
     if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
     
-    const query = filters.search.trim().toLowerCase();
-    
+    const input = document.getElementById('search');
+    const rawQueryForMask = input.value.toUpperCase(); 
+    const maskEl = document.getElementById('searchMask');
+
+    // 1. УМНАЯ СЕРАЯ МАСКА (Только для треков)
+    if (maskEl) {
+        maskEl.innerHTML = ""; 
+        const isLikelyTrackInt = /^[A-Z]{1,2}/.test(rawQueryForMask);
+        const isLikelyTrackRu = /^\d+/.test(rawQueryForMask);
+
+        if (isLikelyTrackInt && rawQueryForMask.length < 13) {
+            const template = "XX000000000DE"; 
+            maskEl.innerHTML = `<span style="opacity:0;">${rawQueryForMask}</span>${template.substring(rawQueryForMask.length)}`;
+        } else if (isLikelyTrackRu && rawQueryForMask.length < 14) {
+            const template = "00000000000000";
+            maskEl.innerHTML = `<span style="opacity:0;">${rawQueryForMask}</span>${template.substring(rawQueryForMask.length)}`;
+        }
+    }
+
+    const rawQuery = input.value.trim();
+    const query = rawQuery.toLowerCase();
+
     if (!query) { 
         list.innerHTML = '';
         intro.style.display = 'block'; 
+        if (banner) banner.style.display = 'block'; 
         renderNewsFeed(); 
         return; 
     }
     
     intro.style.display = 'none';
+    if (banner) banner.style.display = 'none'; 
+
     let htmlBuffer = '';
-
-    const firstWord = query.split(/\s+/)[0]; 
-    const matchedNews = newsDB.filter(n => 
-        n.Text.toLowerCase().includes(firstWord) || 
-        (n.Tag && n.Tag.toLowerCase().includes(firstWord))
-    ).slice(0, 3);
-
-    if (matchedNews.length > 0) {
-        htmlBuffer += `<div class="context-news-wrap" style="margin-bottom:20px;">`;
-        matchedNews.forEach((n, idx) => {
-            const age = getNewsAge(n.Date);
-            const isOld = age > 90;
-            const tagLabel = isOld ? "АРХИВНАЯ ЗАПИСЬ" : (n.Tag || "ВАЖНО").toUpperCase();
-            const tagBg = isOld ? "#8E8E93" : "#D32F2F";
-            const timeInfo = `(${getRelativeTime(n.Date)})`;
-
-            htmlBuffer += `
-                <div class="notepad-item context-match" style="border-left:4px solid ${tagBg}; background:#fffbfb; margin-bottom:8px;">
-                    <div class="np-date-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <span class="np-date-text" style="font-size:11px; color:#999;">
-                            ${n.Date} <span style="text-decoration:underline; font-weight:600;">${timeInfo}</span>
-                        </span>
-                        <span class="np-tag-top" style="background:${tagBg}; font-size:9px; padding:2px 6px; border-radius:4px; color:#fff;">
-                            ${tagLabel}
-                        </span>
-                    </div>
-                    <div class="np-body" style="font-size:13px; line-height:1.4; color:#333;">
-                        ${formatNewsText(n.Text, idx)}
-                    </div>
-                </div>`;
-        });
-        htmlBuffer += `</div>`;
-    }
-
     const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
     const wordVars = queryWords.map(w => getSearchVariations(w));
 
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        let pznStr = r.PZN ? `pzn pzn${r.PZN} ${r.PZN}` : '';
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${pznStr}`.toLowerCase();
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
+    // 2. БЛОКИРОВКА ОШИБКИ "МЫ НЕ НАШЛИ" ПРИ ВВОДЕ ТРЕКА
     if (results.length === 0) {
-        if (query.length < 3) return;
+        const isPotentialTrack = /^[A-Z]{1,2}/.test(rawQueryForMask) || /^\d{4,}/.test(rawQueryForMask);
+        if (isPotentialTrack) {
+            list.innerHTML = ''; // Ничего не пишем, пока юзер вводит цифры
+            return;
+        }
+        if (query.length < 2) return;
         
         list.innerHTML = `
-            <div style="margin: 20px 10px; padding: 25px 20px; border: 1px solid #f0f0f0; border-radius: 15px; background: #fafafa; text-align: center;">
-                <div style="font-size: 15px; color: #444; line-height: 1.6; margin-bottom: 18px;">
-                    По текущему запросу ничего не найдено. <br>
-                    <span style="color: #888; font-size: 13px;">
-                        Если вы уверены в написании — напишите нам. <br>
-                        Мы расширим поиск и вернемся с результатом!
-                    </span>
-                </div>
-                <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 12px 25px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px; box-shadow: 0 4px 12px rgba(0,86,145,0.15);">
-                    ЗАПРОСИТЬ ПОИСК
-                </button>
-            </div>
-        `;
+        <div style="text-align: center; padding: 40px 20px; background: #fff; border-radius: 12px; margin-top: 15px; border: 1px dashed #ccc;">
+            <div style="font-size: 14px; font-weight: 800; color: #333; margin-bottom: 10px;">Мы не нашли «${rawQuery}»</div>
+            <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат может называться иначе в аптеках Германии или требует ручного поиска.</div>
+            <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 16px 20px; border-radius: 10px; font-weight: 800; width: 100%;">НАЙТИ ЧЕРЕЗ ФАРМАЦЕВТА</button>
+        </div>`;
         return;
     }
 
+    // 3. ОТРИСОВКА КАРТОЧЕК
     results.forEach(r => {
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
         const q = getQty(r.PZN);
-        const altText = `${r.Name_DE} — PZN ${r.PZN}`;
-        
-        htmlBuffer += `
-            <div class="card ${q > 0 ? 'selected' : ''}">
-                <img src="img/${r.PZN}.webp" 
-                     class="product-thumb" 
-                     loading="eager" 
-                     fetchpriority="high"
-                     alt="${altText}" 
-                     onerror="handleImgError(this)">
-                <div class="card-body">
-                    <div class="c-title">${r.Name_DE} ${r.R && r.R !== "0" ? '<span class="b-rx">RX</span>' : ''}</div>
-                    
-                    <div class="card-bottom">
-                        <div class="c-meta-box"><div>${r.Hersteller}</div><div>PZN: ${r.PZN}</div></div>
-                        <div class="c-ctrl">
-                            <div class="u-price">${Math.round(p)} €</div>
-                            <div class="qty-capsule-wrap">
-                                ${q > 0 
-                                    ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` 
-                                    : `<button class="btn-capsule-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`}
-                            </div>
-                            <div class="sum-box">${q > 0 ? `<div class="s-eur">${Math.round(p*q)} €</div><div class="s-rub">${getRubPrice(p*q).toLocaleString()} ₽</div>` : ''}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+        htmlBuffer += `<div class="card ${q > 0 ? 'selected' : ''}"><img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)"><div class="card-body"><div class="c-title">${r.Name_DE}</div><div class="card-bottom"><div class="c-meta-box"><div style="font-size:13px;">${r.Form || ''}</div><div>${r.Hersteller || ''}</div><div>PZN: ${r.PZN}</div></div><div style="display:flex; align-items:center; gap:12px;"><div class="u-price">${Math.round(p)} €</div><div class="qty-capsule-wrap">${q > 0 ? `<div class="qty-capsule"><button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button><span class="q-val">${q}</span><button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button></div>` : `<button class="btn-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>`}</div></div></div></div></div>`;
     });
-
     list.innerHTML = htmlBuffer;
 }
 
-function renderSuggestions(inputText) {
+function renderSuggestions(inputText, isTrack = false) {
     const box = document.getElementById('suggestRow');
     if (!box) return; 
     box.innerHTML = ''; 
     
-    const rawVal = inputText.toLowerCase(); 
-    const trimVal = rawVal.trim();
-    if (!trimVal) return;
+    if (!inputText || !inputText.trim()) return;
 
-    const userWords = trimVal.split(/\s+/);
-    const isTrailingSpace = rawVal.endsWith(' ');
+    // --- 1. ЛОГИКА ТРЕКА (СВОЙ / ЧУЖОЙ) ---
+    if (isTrack) {
+        const myOrder = (typeof newsDB !== 'undefined') ? newsDB.find(n => n.Text && n.Text.includes(inputText)) : null;
+        
+        if (!myOrder) {
+            box.innerHTML = `
+                <div class="s-chip" style="background: #f5f7fa; border: 1px solid #dcdcdc; color: #555; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02);" onclick="window.open('https://www.pochta.ru/tracking#${inputText}', '_blank')">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3;">
+                        <span style="font-weight: 800; font-size: 14px; color: #333;">Трек-номер идентифицирован</span>
+                        <span style="font-size: 12px; color: #777; margin-top: 2px;">Стороннее отправление. Отследить на Почте России</span>
+                    </div>
+                    <span style="font-size: 24px; font-weight: 300;">›</span>
+                </div>
+            `;
+        } else {
+            box.innerHTML = `
+                <div class="s-chip" style="background: #e8f5e9; border: 1px solid #81c784; color: #2e7d32; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.03);" onclick="processTracking('${inputText}')">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3;">
+                        <span style="font-weight: 800; font-size: 14px;">📦 Заказ RXDE найден</span>
+                        <span style="font-size: 12px; color: #2e7d32; margin-top: 2px;">Нажмите для просмотра статуса и деталей</span>
+                    </div>
+                    <span style="font-size: 24px; font-weight: 300;">›</span>
+                </div>
+            `;
+        }
+        return; 
+    }
+
+    // --- 2. ОБЫЧНЫЕ ПОДСКАЗКИ СЛОВ (ИСПРАВЛЕН ЯКОРЬ) ---
+    const trimmedInput = inputText.trim(); // Решает проблему "пустого последнего слова"
+    const userWords = trimmedInput.toLowerCase().split(/\s+/);
+    const isTrailingSpace = inputText.endsWith(' ');
     const lastWord = userWords[userWords.length - 1];
     const lastWordVars = getSearchVariations(lastWord).map(v => v.toLowerCase());
 
     const matches = db.filter(r => {
         if (!r.Name_DE) return false;
         const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
-        
-        return userWords.every(word => {
-            const vars = getSearchVariations(word);
-            return vars.some(v => pool.includes(v));
-        });
+        return userWords.every(word => getSearchVariations(word).some(v => pool.includes(v)));
     });
 
     if (matches.length === 0) return;
 
     let candidates = new Set();
-
     matches.forEach(r => {
         const fieldsToSearch = [r.Name_DE, r.Name_RU].filter(Boolean);
-        let anchorFoundInName = false;
-
+        let anchorFound = false;
         fieldsToSearch.forEach(nameText => {
             const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
-            
             if (!isTrailingSpace) {
                 for (let part of nameParts) {
-                    const pLow = part.toLowerCase();
-                    if (lastWordVars.some(v => pLow.startsWith(v)) && pLow !== lastWord.toLowerCase()) {
-                        candidates.add(part.replace(/[()]/g, ''));
-                        anchorFoundInName = true;
+                    if (lastWordVars.some(v => part.toLowerCase().startsWith(v)) && part.toLowerCase() !== lastWord.toLowerCase()) {
+                        candidates.add(part.replace(/[()]/g, '')); anchorFound = true;
                     }
                 }
             } else {
                 for (let i = 0; i < nameParts.length - 1; i++) {
-                    const partLow = nameParts[i].toLowerCase();
-                    if (lastWordVars.some(v => partLow === v)) {
-                        const nextPart = nameParts[i + 1];
-                        if (nextPart) candidates.add(nextPart.replace(/[()]/g, ''));
-                        anchorFoundInName = true;
-                        break; 
+                    if (lastWordVars.some(v => nameParts[i].toLowerCase() === v)) {
+                        if (nameParts[i + 1]) candidates.add(nameParts[i + 1].replace(/[()]/g, ''));
+                        anchorFound = true; break; 
                     }
                 }
             }
         });
-
-        if (userWords.length === 1 && !isTrailingSpace && r.Form_RU) {
-            candidates.add(r.Form_RU);
-        }
-
-        if (!anchorFoundInName) {
-            const mainName = r.Name_RU || r.Name_DE;
-            const brand = mainName.split(/[\s,]+/)[0];
+        if (userWords.length === 1 && !isTrailingSpace && r.Form_RU) candidates.add(r.Form_RU);
+        if (!anchorFound) {
+            const brand = (r.Name_RU || r.Name_DE).split(/[\s,]+/)[0];
             if (brand) candidates.add(brand);
         }
-
-        if (userWords.length === 1 && !isTrailingSpace && r.Category && candidates.size < 4) {
-            candidates.add(r.Category);
-        }
     });
 
-    let finalChips = Array.from(candidates).filter(c => {
-        const cLow = c.toLowerCase();
-        return !userWords.some(uw => uw.toLowerCase() === cLow);
-    });
-
-    finalChips.slice(0, 8).forEach(word => {
+    Array.from(candidates).filter(c => !userWords.some(uw => uw.toLowerCase() === c.toLowerCase())).slice(0, 8).forEach(word => {
         const chip = document.createElement('div');
-        chip.className = 's-chip'; 
-        chip.innerText = word;
-        
+        chip.className = 's-chip'; chip.innerText = word;
         chip.onclick = () => {
             if (navigator.vibrate) navigator.vibrate(15); 
-            
             const input = document.getElementById('search');
             let words = input.value.trim().split(/\s+/);
-            if (!isTrailingSpace) words[words.length - 1] = word;
-            else words.push(word);
-            
+            if (!isTrailingSpace) words[words.length - 1] = word; else words.push(word);
             input.value = words.join(' ') + ' ';
-            handleInput(); 
-            input.focus();
+            handleInput(); input.focus();
         };
         box.appendChild(chip);
     });
@@ -695,6 +691,71 @@ function clearSearch() {
     }
 }
 
+function checkEnter(event) {
+    if (event.key === 'Enter') {
+        const searchInput = document.getElementById('search');
+        if (searchInput) searchInput.blur(); // Просто прячем клавиатуру
+    }
+}
+
+function processTracking(track) {
+    document.getElementById('search').blur();
+    const cleanTrack = track.trim().toUpperCase();
+
+    // Ищем в твоей базе заказов (newsDB)
+    const myOrder = typeof newsDB !== 'undefined' && newsDB.find(n => n.Text && n.Text.includes(cleanTrack));
+
+    document.getElementById('infoTitle').innerText = "ОТСЛЕЖИВАНИЕ ПОСЫЛКИ";
+    let contentHtml = "";
+
+    if (myOrder) {
+        contentHtml = `
+            <div style="text-align:center;">
+                <div style="font-size:20px; font-weight:900; color:var(--p); margin-bottom:10px;">${cleanTrack}</div>
+                <div style="background:#f0f7ff; padding:15px; border-radius:10px; border:1px solid #d0e3ff; text-align:left; font-size:14px; line-height:1.5;">
+                    <b style="color:#000;">Статус RXDE:</b><br>${myOrder.Text}
+                </div>
+                <p style="font-size:11px; color:#999; margin-top:10px;">Эксклюзивно для клиентов RXDE.online</p>
+            </div>`;
+    } else {
+        contentHtml = `
+            <div style="text-align:center;">
+                <div style="font-size:18px; font-weight:700; color:#333; margin-bottom:10px;">${cleanTrack}</div>
+                <p style="font-size:13px; color:#666; margin-bottom:15px;">Трек-номер принят в систему. Для просмотра детального пути по РФ нажмите кнопку ниже:</p>
+                <a href="https://www.pochta.ru/tracking#${cleanTrack}" target="_blank" 
+                   style="display:block; background:#000; color:#fff; text-decoration:none; padding:14px; border-radius:8px; font-weight:700; font-size:14px;">
+                   ПРОВЕРИТЬ НА ПОЧТЕ РОССИИ
+                </a>
+            </div>`;
+    }
+
+    document.getElementById('infoContent').innerHTML = contentHtml;
+    document.getElementById('infoOverlay').style.display = 'flex';
+    
+    document.getElementById('search').value = '';
+    render(); 
+}
+
+function showInternalStatus(trackNum) {
+    const orderData = newsDB.find(n => n.Text.includes(trackNum));
+    const statusText = orderData ? orderData.Text : "Заказ обрабатывается на складе в Германии...";
+    
+    document.getElementById('infoTitle').innerText = "СТАТУС ДОСТАВКИ RXDE";
+    document.getElementById('infoContent').innerHTML = `
+        <div style="text-align:center; padding:10px;">
+            <div style="font-size:18px; font-weight:900; color:#000; margin-bottom:15px; border-bottom: 2px solid #000; padding-bottom: 5px;">
+                ${trackNum}
+            </div>
+            <div style="font-size:14px; line-height:1.6; color:#333; background:#fff; padding:15px; border: 1px solid #eee; border-radius:10px; text-align: left; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                ${statusText}
+            </div>
+            <div style="margin-top:20px; font-size:10px; color:#bbb; text-transform: uppercase; letter-spacing: 1px;">
+                Обновлено сегодня • Лицензированный сервис RXDE
+            </div>
+        </div>
+    `;
+    document.getElementById('infoOverlay').style.display = 'flex';
+}
  /* =========================================
    BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
    ========================================= */
@@ -747,19 +808,24 @@ function modQty(pzn, d, event) {
     updateBar(); 
     render(false); 
     
+    // [ДОБАВЛЕНО АККУРАТНО]: Эффект проседания грузовика (тяжелый вес)
+    triggerTruckEffect();
+
     // Перерисовываем внутренности открытой модалки, если она сейчас на экране
     if (document.getElementById('modal').classList.contains('active')) {
         renderCartItems(); 
     }
 }
-
 /* =========================================
-   BLOCK 6: МИНИ-ЧЕК (ИСПРАВЛЕННЫЙ)
-   ========================================= */
+    BLOCK 6: МИНИ-ЧЕК (ИСПРАВЛЕННЫЙ)
+    ========================================= */
 
 function updateBar() {
     const bar = document.getElementById('miniCart');
     const receipt = document.getElementById('miniReceipt');
+    const countEl = document.getElementById('miniCount');
+    const priceEl = document.getElementById('miniPrice');
+    
     if (!bar || !receipt) return;
 
     let totalEur = 0, count = 0;
@@ -780,19 +846,27 @@ function updateBar() {
     const fmtEur = grandTotalEur.toLocaleString('ru-RU');
     const fmtRub = grandTotalRub.toLocaleString('ru-RU');
 
-    document.getElementById('miniCount').innerText = count;
-
-    // 1. МИНИ-КНОПКА
-    if (count > 0) {
-        bar.classList.add('active');
-        document.getElementById('miniPrice').innerHTML = 
-            `<b style="color:#000;">${fmtEur}€</b> <span style="font-size:10px; color:#000; opacity:0.6; margin-left:4px;">${fmtRub}₽</span>`;
-    } else {
-        bar.classList.remove('active');
-        document.getElementById('miniPrice').innerText = "0 €";
+    // Обновляем бейдж (красный круг)
+    // Находим этот кусок в твоем updateBar и заменяем:
+    if (countEl) {
+        countEl.innerText = count;
+        countEl.style.display = 'flex'; // Всегда показываем, даже если там 0
     }
 
-    // 2. МИНИ-ЧЕК (Показываем только на больших экранах > 767px)
+    if (count > 0) {
+        bar.classList.add('active');
+// [ИСПРАВЛЕНО]: Евро поменьше, Рубли покрупнее, слово "лист" удалено
+priceEl.innerHTML = `
+    <span style="font-size:12px; color:#000; opacity:0.7; margin-right:6px;">${fmtEur}€</span>
+    <b style="font-size:15px; color:#000;">${fmtRub} ₽</b>
+`;
+    } else {
+        bar.classList.remove('active');
+        priceEl.innerText = ""; 
+        // countEl.style.display = 'none'; <-- ЭТУ СТРОКУ УДАЛИ ИЛИ ЗАКОММЕНТИРУЙ
+    }
+
+    // 2. МИНИ-ЧЕК (Показываем только на ПК)
     if (count > 0 && window.innerWidth > 767) { 
         let rowsHtml = '';
         let displayItems = (activeItems.length <= 5) ? activeItems : [...activeItems.slice(0, 3), { isSeparator: true }, ...activeItems.slice(-2)];
@@ -815,12 +889,12 @@ function updateBar() {
             ${rowsHtml}
             <div class="receipt-divider" style="height:1px; border-bottom:1px dashed #eee; margin:6px 0;"></div>
             <div class="receipt-row color-ship" style="color:#666;">
-                <span class="name">Почтовый тариф</span>
+                <span class="name">Логистический сбор</span>
                 <span class="dots"></span>
                 <span class="calc">${shipEur} €</span>
             </div>
             <div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center; justify-content:space-between; width:100%;">
-                <span>ИТОГО:</span>
+                <span>ЛИСТ ДОСТАВКИ:</span>
                 <div style="text-align:right;">
                     <span style="font-size:13px; font-weight:400; color:#555; margin-right:4px;">${fmtEur} €</span>
                     <span style="color:#ccc; font-weight:300;">|</span>
@@ -833,18 +907,18 @@ function updateBar() {
         receipt.style.display = 'none'; 
     }
 
-    // 3. ФУТЕР БОЛЬШОЙ КОРЗИНЫ
+    // 3. ФУТЕР МОДАЛКИ (Большая корзина)
     const footerTotalContainer = document.querySelector('.modal-footer-sticky .footer-total-compact');
     if (footerTotalContainer) {
         footerTotalContainer.innerHTML = `
             <div style="width:100%; display:flex; flex-direction:column; align-items:flex-end;">
-                <div style="font-size:11px; color:#999; margin-bottom:4px; font-weight:700;">Всего позиций: ${count}</div>
+                <div style="font-size:11px; color:#999; margin-bottom:4px; font-weight:700;">Позиций в листе: ${count}</div>
                 <div style="display:flex; align-items:baseline; gap:8px;">
                     <span style="font-size: 16px; opacity: 0.6; color: #000;">${fmtEur} €</span>
                     <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
                     <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${fmtRub} ₽</span>
                 </div>
-                <div style="font-size:11px; color:#999; margin-top:2px;">С учетом всех расходов</div>
+                <div style="font-size:11px; color:#999; margin-top:2px;">Итоговая стоимость обеспечения</div>
             </div>
         `;
     }
@@ -951,8 +1025,8 @@ function renderCartItems() {
     headerLinks.innerHTML = `
         <div onclick="addMoreItems()" style="display: flex; align-items: center; cursor: pointer;">
             <span style="font-size: 24px; color: var(--p); line-height: 1; margin-right: 4px;">‹</span>
-            <span style="color: var(--p); font-weight: 800; font-size: 12px;">ДОБАВИТЬ</span>
-        </div>
+            <span style="color: var(--p); font-weight: 800; font-size: 12px;">ДОБАВИТЬ В ЛИСТ</span>
+         </div>
         <span style="color: #eee; margin: 0 10px;">|</span>
         <div onclick="event.stopPropagation(); handleCartToggle();" 
              style="font-size: 11px; font-weight: 800; color: ${clearColor}; text-transform: uppercase; cursor: pointer;">
@@ -1038,26 +1112,39 @@ function renderCartItems() {
 let scrollPos = 0;
 
 function openCart() { 
-    isQuestionMode = false; 
+    isQuestionMode = false; // Жестко включаем режим "ЗАКАЗ"
     
+    // 1. ЕСЛИ ПУСТО — ВЕДЕМ К ПОИСКУ
     if (cart.length === 0) {
+        // Плавный скролл наверх
         window.scrollTo({ top: 0, behavior: 'smooth' });
         
         const searchWrap = document.querySelector('.inp-wrap');
         const searchInp = document.getElementById('search');
 
         if (searchWrap && searchInp) {
+            // Задержка 300мс нужна, чтобы скролл успел доехать до верха,
+            // иначе появление клавиатуры на Android дернет экран
             setTimeout(() => {
-                searchInp.focus(); 
+                searchInp.focus(); // Ставим курсор и вызываем клавиатуру
+                
+                // Запускаем анимацию встряски "смотри сюда"
                 searchWrap.classList.remove('attention-please');
-                void searchWrap.offsetWidth; 
+                void searchWrap.offsetWidth; // Магия перезапуска CSS анимации
                 searchWrap.classList.add('attention-please');
+                
+                // Убираем класс после завершения
                 setTimeout(() => searchWrap.classList.remove('attention-please'), 600);
             }, 300);
         }
-        return; 
+        
+        // Дергаем иконку грузовика, чтобы юзер понял, что клик сработал
+        triggerTruckEffect(); 
+        
+        return; // ПРЕРЫВАЕМ ФУНКЦИЮ (Модалку не открываем)
     }
 
+    // 2. ЕСЛИ ЕСТЬ ТОВАРЫ — ОТКРЫВАЕМ МОДАЛКУ (Стандартная логика)
     const newID = generateOrderID(); 
     const idEl = document.getElementById('modalOrderId');
 
@@ -1078,8 +1165,9 @@ function openCart() {
     document.body.style.top = `-${scrollPos}px`;
     document.body.style.width = '100%';
 
-    // [ФИКС]: Теперь модалка появляется мгновенно, без анимации transform
-    modal.classList.add('active', 'open'); 
+    setTimeout(() => { 
+        modal.classList.add('active', 'open'); 
+    }, 10);
 }
 
 function closeModal() {
@@ -1136,8 +1224,8 @@ function openContact(type, index = null) {
     manualInput.style.display = 'none';
 
     if (type === 'order') {
-        title.innerText = "ПРЕДПРОСМОТР ЗАЯВКИ";
-        let visualPreview = "СОСТАВ ЗАЯВКИ:\n\n";
+    title.innerText = "СОГЛАСОВАТЬ ДОСТАВКУ";
+    let visualPreview = "ЛИСТ ДОСТАВКИ:\n\n"; // Вместо "Состав заявки"
         cart.forEach((item, idx) => {
             const r = db.find(x => String(x.PZN) === String(item.pzn));
             if (r) visualPreview += `${idx + 1}. ${r.Name_DE} — ${item.qty} шт.\n`;
@@ -1159,7 +1247,7 @@ function openContact(type, index = null) {
             manualInput.value = `Здравствуйте! Не нашли в поиске: "${q.toUpperCase()}".\nПомогите найти этот препарат или аналог: `;
         } 
         else if (type === 'news' && index !== null && newsDB[index]) {
-            title.innerText = "ВОПРОС ПО НОВОСТИ";
+            title.innerText = "ЗАДАТЬ ВОПРОС";
             const n = newsDB[index];
             const cleanText = n.Text.replace(/\[vopros\]/gi, '').trim();
             manualInput.value = `Здравствуйте! Вопрос по новости от ${n.Date}:\n«${cleanText}»\n\nМой вопрос: `;
@@ -1434,7 +1522,7 @@ function createSinglePill(sRect, tRect, isRemoving, targetId) {
                 if (target) {
                     const blinkClass = 'pulse';
                     target.classList.add(blinkClass);
-                    setTimeout(() => target.classList.remove(blinkClass), 300);
+                    setTimeout(() => target.classList.remove(blinkClass), 600);
                 }
                 fly.remove();
             }, 200); 
@@ -1552,7 +1640,7 @@ function copyFilterResults() {
     });
 
     const baseUrl = window.location.origin + window.location.pathname;
-    text += `ссылка на поисковый запрос: ${baseUrl}?q=${encodeURIComponent(filters.search.trim())}`;
+    text += `Ваш сервис доставки лекарств: ${baseUrl}?q=${encodeURIComponent(filters.search.trim())}`;
 
     // Копируем и мигаем желтым
     navigator.clipboard.writeText(text).then(() => {
@@ -1720,19 +1808,16 @@ window.setSearchFromNews = function(word) {
 };
 
 // 4. Главная отрисовка (SEO H1 + Лента)
+// ВОТ ТАК ДОЛЖНО СТАТЬ (БЕЗ H1 и <p>):
 function renderNewsFeed() {
     const intro = document.getElementById('introBlock');
     if (!intro) return;
 
-    let html = `
-        <div style="text-align:center; margin: 10px 0 20px 0;">
-            <h1 style="font-size: 22px; margin-bottom: 4px; color: #000; font-weight: 700; letter-spacing: -0.5px;">Доставка лекарств из Германии</h1>
-            <p style="font-size: 14px; color: #888; margin: 0;">Deutsche Qualität. Поиск по базе медикаментов.</p>
-        </div>
-    `;
+    let html = ``; // Пустая строка! Мы убрали старый текст.
 
     if (newsDB && newsDB.length > 0) {
         html += `<div class="notepad-wrap"><div class="notepad-header">Заметки сервиса</div>`;
+        // ... дальше идет твой обычный код вывода новостей ...
         
         newsDB.slice(0, newsToShow).forEach((item, index) => {
             const age = getNewsAge(item.Date);
@@ -1958,5 +2043,14 @@ function playClickSound() {
     </div>
 </div>
 
+
+<footer class="site-footer">
+    <div class="footer-content">
+        <p class="disclaimer-text">
+            <strong>RXDE.online</strong> — информационно-логистический сервис. Мы не являемся аптечной организацией, не осуществляем торговлю, дистанционную продажу или доставку лекарственных препаратов. Сервис обеспечивает логистическое сопровождение (курьерская и почтовая служба) Вашего частного заказа из лицензированных аптек Германии. Вся информация на сайте носит ознакомительный характер.
+        </p>
+        <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
+    </div>
+</footer>
 </body>
 </html>
