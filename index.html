@@ -1585,7 +1585,7 @@ function getOrderTextAndLink() {
             itemsSumEur += sum;
             breakdown.push(sum);
 
-            const fullDesc = `${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
+            const fullDesc = `${r.Name_DE}, ${r.Form}, ${r.Hersteller}, PZN ${r.PZN}`;
             let math = item.qty > 1 
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
