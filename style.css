@@ -1056,9 +1056,15 @@ body {
 }
 
 .photo-pan-container {
-    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-    overflow: auto; /* Разрешает скролл/вождение пальцем */
-    padding: 20px; box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: auto; /* Разрешаем прокрутку */
+    -webkit-overflow-scrolling: touch; /* ВКЛЮЧАЕМ плавный скролл для iOS/Android */
+    padding: 0; /* Убираем падинги, чтобы не мешали скроллу */
+    box-sizing: border-box;
 }
 
 #photoZoomed {
@@ -1069,5 +1075,10 @@ body {
 
 /* Режим сильного увеличения при клике */
 #photoZoomed.zoomed-in {
-    max-width: none; max-height: none; width: 180vw; cursor: zoom-out;
+    max-width: none;
+    max-height: none;
+    width: 200vw; /* Увеличим до 200%, чтобы точно было что скроллить */
+    cursor: zoom-out;
+    margin: auto; /* Центрируем увеличенное фото в контейнере */
+    display: block; /* Убираем лишние отступы инлайнового элемента */
 }
