@@ -927,15 +927,24 @@ function closePhoto() {
 }
 
 // Увеличение по клику на саму фотографию (чтобы возить пальцем)
+// Логика клика по самому фото
 document.addEventListener('DOMContentLoaded', () => {
     const zoomedImg = document.getElementById('photoZoomed');
     if(zoomedImg) {
         zoomedImg.addEventListener('click', function(e) {
-            e.stopPropagation(); // Не закрываем окно при клике на фото
-            this.classList.toggle('zoomed-in');
+            e.stopPropagation(); // Блокируем стандартное действие
+            
+            // Проверяем ширину экрана
+            if (window.innerWidth >= 768) {
+                // Если это ноутбук/ПК — закрываем окно
+                closePhoto();
+            } else {
+                // Если это телефон — делаем зум (увеличиваем)
+                this.classList.toggle('zoomed-in');
+            }
         });
     }
-});
+});;
 
 
  /* =========================================
