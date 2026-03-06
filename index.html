@@ -655,7 +655,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
 
         htmlBuffer += `
         <div class="card ${q > 0 ? 'selected' : ''}">
-            <img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)">
+            <img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
             <div class="card-body">
                 <div class="c-title">${r.Name_DE}</div>
                 <div class="card-bottom">
@@ -909,6 +909,35 @@ function showInternalStatus(trackNum) {
     `;
     document.getElementById('infoOverlay').style.display = 'flex';
 }
+// --- ЛОГИКА ФОТОГАЛЕРЕИ ---
+function openPhoto(src) {
+    const overlay = document.getElementById('photoOverlay');
+    const img = document.getElementById('photoZoomed');
+    img.src = src;
+    img.classList.remove('zoomed-in'); // Сбрасываем увеличение при новом открытии
+    overlay.style.display = 'flex';
+    // Небольшая задержка для плавной анимации появления
+    setTimeout(() => overlay.classList.add('show'), 10);
+}
+
+function closePhoto() {
+    const overlay = document.getElementById('photoOverlay');
+    overlay.classList.remove('show');
+    setTimeout(() => overlay.style.display = 'none', 200);
+}
+
+// Увеличение по клику на саму фотографию (чтобы возить пальцем)
+document.addEventListener('DOMContentLoaded', () => {
+    const zoomedImg = document.getElementById('photoZoomed');
+    if(zoomedImg) {
+        zoomedImg.addEventListener('click', function(e) {
+            e.stopPropagation(); // Не закрываем окно при клике на фото
+            this.classList.toggle('zoomed-in');
+        });
+    }
+});
+
+
  /* =========================================
    BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
    ========================================= */
@@ -2218,5 +2247,13 @@ function playClickSound() {
         <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
     </div>
 </footer>
+
+<div id="photoOverlay" class="photo-overlay" onclick="closePhoto()">
+    <div class="photo-close">✕</div>
+    <div class="photo-pan-container">
+        <img id="photoZoomed" src="" alt="Фото препарата">
+    </div>
+</div>
+
 </body>
 </html>
