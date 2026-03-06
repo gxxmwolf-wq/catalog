@@ -1059,26 +1059,30 @@ body {
     width: 100%;
     height: 100%;
     display: flex;
-    align-items: center;
+    align-items: center; /* Центрируем, пока фото маленькое */
     justify-content: center;
-    overflow: auto; /* Разрешаем прокрутку */
-    -webkit-overflow-scrolling: touch; /* ВКЛЮЧАЕМ плавный скролл для iOS/Android */
-    padding: 0; /* Убираем падинги, чтобы не мешали скроллу */
-    box-sizing: border-box;
+    overflow: auto; 
+    -webkit-overflow-scrolling: touch;
 }
 
 #photoZoomed {
-    max-width: 100%; max-height: 90vh; object-fit: contain;
-    border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    transition: transform 0.2s ease; cursor: zoom-in;
+    max-width: 100%;
+    max-height: 95vh;
+    object-fit: contain;
+    border-radius: 12px;
+    transition: transform 0.2s ease, width 0.2s ease;
+    cursor: zoom-in;
+    flex-shrink: 0; /* Не даем флексу сжимать картинку */
 }
 
-/* Режим сильного увеличения при клике */
+/* Режим увеличения */
 #photoZoomed.zoomed-in {
     max-width: none;
     max-height: none;
-    width: 200vw; /* Увеличим до 200%, чтобы точно было что скроллить */
+    /* Умный размер: на мобилках 200% ширины, на больших экранах не более 1200px */
+    width: 150vw; 
+    max-width: 1200px; 
     cursor: zoom-out;
-    margin: auto; /* Центрируем увеличенное фото в контейнере */
-    display: block; /* Убираем лишние отступы инлайнового элемента */
+    margin: auto; 
+    display: block;
 }
