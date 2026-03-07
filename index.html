@@ -617,7 +617,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
 
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
@@ -660,7 +660,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
                 <div class="c-title">${r.Name_DE}</div>
                 <div class="card-bottom">
                     <div class="c-meta-box">
-                        <div style="font-size:13px;">${r.Form || ''}</div>
+                        <div style="font-size:13px;">${r.Form_DE || ''}</div>
                         <div>${r.Hersteller || ''}</div>
                         <div>PZN: ${r.PZN}</div>
                     </div>
@@ -774,7 +774,7 @@ function renderSuggestions(inputText) {
 
     const matches = db.filter(r => {
         if (!r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance_DE||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
         return userWords.every(word => getSearchVariations(word).some(v => pool.includes(v)));
     });
 
@@ -1269,7 +1269,7 @@ cart.forEach((item, index) => {
                     ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
                 </div>
                 <div style="font-size: 11px; color: #888; line-height: 1.3; word-break: break-word;">
-                    ${r.Form ? r.Form + ' <span style="opacity:0.5; margin:0 4px;">|</span> ' : ''} 
+                    ${r.Form_DE ? r.Form_DE + ' <span style="opacity:0.5; margin:0 4px;">|</span> ' : ''} 
                     ${r.Hersteller} <span style="opacity:0.5; margin:0 4px;">|</span> PZN: ${r.PZN}
                 </div>
             </div>
@@ -1585,7 +1585,7 @@ function getOrderTextAndLink() {
             itemsSumEur += sum;
             breakdown.push(sum);
 
-            const fullDesc = `${r.Name_DE}, ${r.Form}, ${r.Hersteller}, PZN ${r.PZN}`;
+            const fullDesc = `${r.Name_DE}, ${r.Form_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
             let math = item.qty > 1 
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
@@ -1790,7 +1790,7 @@ function copyFilterResults() {
 
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance_DE||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
@@ -1798,7 +1798,7 @@ function copyFilterResults() {
 
     const dateNow = new Date().toLocaleDateString('ru-RU');
     const queryUpper = filters.search.trim().toUpperCase();
-    const activeSubstance = results[0].Substance || "—";
+    const activeSubstance = results[0].Substance_DE || "—";
     
     // Шапка отчета
     let text =  `дата:  [${dateNow}]\n`;
@@ -1812,7 +1812,7 @@ function copyFilterResults() {
     // Группируем по немецкому полю Form
     const groups = {};
     results.forEach(r => {
-        const key = r.Form || "OTHER"; 
+        const key = r.Form_DE || "OTHER"; 
         if (!groups[key]) groups[key] = [];
         groups[key].push(r);
     });
