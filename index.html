@@ -975,11 +975,11 @@ function modQty(pzn, d, event) {
     // 2. Тактильный отклик (Haptic Feedback)
     if (navigator.vibrate) {
         if (d > 0) {
-            // Одиночный четкий "тик" при добавлении (+)
-            navigator.vibrate(10); 
+            // Ставим 100 мс для жесткой проверки!
+            navigator.vibrate(100); 
         } else {
-            // Двойной микро-отклик при удалении (-)
-            navigator.vibrate([7, 30, 7]); 
+            // Ставим мощную очередь для проверки
+            navigator.vibrate([100, 50, 100]); 
         }
     }
 
