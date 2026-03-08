@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#ffffff">
     
+
+
+
+    
     <title>RXDE.online — сервис доставки лекарств из Германии</title>
     <meta name="description" content="Сервис доставки аптечных препаратов из Германии. Заказ онлайн, гарантия подлинности.">
     <link rel="canonical" href="https://rxde.online/">
@@ -622,6 +626,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
     });
 
     // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ
+    // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ
     if (results.length === 0) {
         // Если handleInput сказал нам, что это трек — ничего не пишем
         if (isTrackComplete) { list.innerHTML = ''; return; }
@@ -639,11 +644,11 @@ function render(isNewSearch = false, isTrackComplete = false) {
             <div style="font-size: 14px; font-weight: 800; color: #333; margin-bottom: 10px;">В каталоге не найдено: «${rawQuery}»</div>
             <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат может называться иначе в Европе или требует индивидуального запроса. Мы произведем расширенный ручной поиск.</div>
             <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 16px 20px; border-radius: 10px; font-weight: 800; width: 100%; cursor: pointer;">ЗАПРОСИТЬ РАСШИРЕННЫЙ ПОИСК</button>
-        </div>`;;
+        </div>`;
         return;
     }
 
-    // 4. ОТРИСОВКА КАРТОЧЕК С СУММОЙ СТРОКИ
+    // 4. ОТРИСОВКА КАРТОЧЕК С СУММОЙ СТРОКИ, RX И PDF
     let htmlBuffer = '';
     results.forEach(r => {
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
@@ -653,11 +658,19 @@ function render(isNewSearch = false, isTrackComplete = false) {
         const rowSumEur = Math.round(p * q);
         const rowSumRub = getRubPrice(rowSumEur);
 
+        // --- НОВАЯ ЛОГИКА БЕЙДЖЕЙ ---
+        const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
+        const hasPdf = r.PDF && r.PDF.trim() !== "";
+
         htmlBuffer += `
         <div class="card ${q > 0 ? 'selected' : ''}">
-            <img src="img/${r.PZN}.webp" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
+            <img src="img/${r.PZN}.webp" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
             <div class="card-body">
-                <div class="c-title">${r.Name_DE}</div>
+                <div class="c-title">
+                    ${r.Name_DE} 
+                    ${isRx ? '<span class="b-rx">RX</span>' : ''}
+                    ${hasPdf ? `<a href="pdf/${r.PZN}.pdf" target="_blank" class="pdf-link" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
+                </div>
                 <div class="card-bottom">
                     <div class="c-meta-box">
                         <div style="font-size:13px;">${r.Form_DE || ''}</div>
