@@ -663,7 +663,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
 
         // --- НОВАЯ ЛОГИКА БЕЙДЖЕЙ ---
         const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
-        const hasPdf = r.PDF && r.PDF.trim() !== "";
+        const hasPdf = String(r.PDF).trim() === "1";
 
         htmlBuffer += `
         <div class="card ${q > 0 ? 'selected' : ''}">
