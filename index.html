@@ -648,11 +648,14 @@ function render(isNewSearch = false, isTrackComplete = false) {
         return;
     }
 
-    // 4. ОТРИСОВКА КАРТОЧЕК С СУММОЙ СТРОКИ, RX И PDF
+    /// 4. ОТРИСОВКА КАРТОЧЕК С СУММОЙ СТРОКИ, RX И PDF
     let htmlBuffer = '';
     results.forEach(r => {
+        // --- 1. ВОТ НАША ЗАЩИТА ОТ ПРОБЕЛОВ ---
+        const cleanPZN = String(r.PZN).trim();
+
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
-        const q = getQty(r.PZN);
+        const q = getQty(cleanPZN); // Считаем корзину по чистому PZN
         
         // Считаем сумму сразу (Цена х Кол-во)
         const rowSumEur = Math.round(p * q);
@@ -664,30 +667,30 @@ function render(isNewSearch = false, isTrackComplete = false) {
 
         htmlBuffer += `
         <div class="card ${q > 0 ? 'selected' : ''}">
-            <img src="img/${r.PZN}.webp" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
+            <img src="img/${cleanPZN}.jpg" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
             <div class="card-body">
                 <div class="c-title">
                     ${r.Name_DE} 
                     ${isRx ? '<span class="b-rx">RX</span>' : ''}
-                    ${hasPdf ? `<a href="pdf/${r.PZN}.pdf" target="_blank" class="pdf-link" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
+                    ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
                 </div>
                 <div class="card-bottom">
                     <div class="c-meta-box">
                         <div style="font-size:13px;">${r.Form_DE || ''}</div>
                         <div>${r.Hersteller || ''}</div>
-                        <div>PZN: ${r.PZN}</div>
+                        <div>PZN: ${cleanPZN}</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
                         <div class="u-price">${Math.round(p)} €</div>
                         <div class="qty-capsule-wrap">
                             ${q > 0 ? `
                                 <div class="qty-capsule">
-                                    <button class="q-btn" onclick="modQty('${r.PZN}',-1, event)">−</button>
+                                    <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
                                     <span class="q-val">${q}</span>
-                                    <button class="q-btn" onclick="modQty('${r.PZN}',1, event)">+</button>
+                                    <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
                                 </div>
                             ` : `
-                                <button class="btn-add" onclick="modQty('${r.PZN}',1, event)">Добавить</button>
+                                <button class="btn-add" onclick="modQty('${cleanPZN}',1, event)">Добавить</button>
                             `}
                         </div>
                         ${q > 0 ? `
