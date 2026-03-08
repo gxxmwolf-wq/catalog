@@ -1329,6 +1329,11 @@ cart.forEach((item, index) => {
 let scrollPos = 0;
 
 function openCart() { 
+    // 1. Добавляем виброотклик (20 мс - плотный, но короткий щелчок)
+    if (navigator.vibrate) {
+        navigator.vibrate(20); 
+    }
+
     isQuestionMode = false; // Жестко включаем режим "ЗАКАЗ"
     
     // 1. ЕСЛИ ПУСТО — ВЕДЕМ К ПОИСКУ
@@ -1388,6 +1393,11 @@ function openCart() {
 }
 
 function closeModal() {
+    // Микро-отклик при закрытии крестиком или тапом мимо окна
+    if (navigator.vibrate) {
+        navigator.vibrate(10); 
+    }
+
     const modal = document.getElementById('modal');
     if (!modal) return;
 
@@ -1423,7 +1433,16 @@ function addMoreItems() {
  * index: нужен только для типа 'news'
  */
 function openContact(type, index = null) {
-    closeModal(); 
+    // Уверенный тактильный отклик для главных действий
+    if (navigator.vibrate) {
+        if (type === 'order') {
+            navigator.vibrate(30); // Плотный клик для оформления заказа
+        } else {
+            navigator.vibrate(15); // Легкий клик для "Задать вопрос"
+        }
+    }
+
+    closeModal();
     
     const overlay = document.getElementById('contactOverlay');
     const title = document.getElementById('contactTitle');
