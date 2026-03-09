@@ -621,7 +621,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
 
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
+const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Substance_RU||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
@@ -798,7 +798,11 @@ function renderSuggestions(inputText) {
 
     let candidates = new Set();
     matches.forEach(r => {
-        const fieldsToSearch = [r.Name_DE, r.Name_RU].filter(Boolean);
+        // 2. ВОТ ГЛАВНОЕ: ДОБАВЛЯЕМ ВЕЩЕСТВА В ИСТОЧНИК ДЛЯ ЧИПОВ
+    const fieldsToSearch = [r.Name_DE, r.Name_RU, r.Substance_DE, r.Substance_RU].filter(Boolean);
+    
+    // ... дальше твой код без изменений
+   
         let anchorFound = false;
         fieldsToSearch.forEach(nameText => {
             const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
