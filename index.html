@@ -1395,9 +1395,10 @@ function renderCartItems() {
         return;
     }
 
-    // Находим цикл cart.forEach внутри renderCartItems и обновляем вывод:
+    // НОВОЕ: Умный счетчик, который не считает пустышки
+    let printIdx = 1;
 
-cart.forEach((item, index) => {
+    cart.forEach((item, index) => {
         // Очищаем PZN от случайных пробелов
         const cleanPZN = String(item.pzn).trim();
         const r = db.find(x => String(x.PZN).trim() === cleanPZN);
@@ -1405,27 +1406,33 @@ cart.forEach((item, index) => {
         if (r) {
             const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
             const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
-            
-            // ВЕРНУЛИ ПРОВЕРКУ НА PDF ДЛЯ КОРЗИНЫ
             const hasPdf = String(r.PDF).trim() === "1"; 
             
-            // Считаем суммы для строки
             const rowSumEur = Math.round(p * item.qty);
             const rowSumRub = getRubPrice(rowSumEur);
 
-            // Используем полную структуру карточки из поиска (class="card selected")
-           // Обычная чистая карточка без синей подсветки
-                div.innerHTML += `
-                <div class="card" style="position: relative; margin-bottom: 15px; border-left: none;">
+            // МАГИЯ СТАТУСОВ: Проверяем, нулевая ли цена
+            const isZero = (p === 0);
+            
+            // Если цена 0 — ставим прочерк. Если есть цена — ставим номер и увеличиваем счетчик
+            const displayNum = isZero ? '—' : printIdx++;
+            const badgeBg = isZero ? '#999' : 'var(--p)';
+            
+            // Стили для отсутствующих товаров (полупрозрачность и зачеркивание)
+            const opacityStyle = isZero ? 'opacity: 0.6; filter: grayscale(100%);' : '';
+            const titleStyle = isZero ? 'text-decoration: line-through; color: #888;' : '';
+
+            div.innerHTML += `
+            <div class="card" style="position: relative; margin-bottom: 15px; border-left: none; ${opacityStyle}">
                 
-                <div style="position: absolute; top: -1px; left: -1px; background: var(--p); color: #fff; width: 22px; height: 22px; border-radius: 12px 0 6px 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; z-index: 2;">
-                    ${index + 1}
+                <div style="position: absolute; top: -1px; left: -1px; background: ${badgeBg}; color: #fff; width: 22px; height: 22px; border-radius: 12px 0 6px 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; z-index: 2;">
+                    ${displayNum}
                 </div>
 
                 <img src="img/${cleanPZN}.jpg" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
                 
                 <div class="card-body">
-                    <div class="c-title">
+                    <div class="c-title" style="${titleStyle}">
                         ${r.Name_DE} 
                         ${isRx ? '<span class="b-rx">RX</span>' : ''}
                         ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
@@ -1445,7 +1452,7 @@ cart.forEach((item, index) => {
                             </div>
 
                             <div class="qty-capsule-wrap" style="display: flex; align-items: center;">
-                                ${p === 0 ? `
+                                ${isZero ? `
                                     <div style="font-size: 11px; color: #d32f2f; font-weight: 800; text-align: center; line-height: 1.1; letter-spacing: 0.5px;">
                                         НЕТ В<br>АПТЕКАХ
                                     </div>
@@ -1459,16 +1466,19 @@ cart.forEach((item, index) => {
                                 `}
                             </div>
 
+                            ${!isZero ? `
                             <div class="sum-box">
                                 <div class="s-eur">${rowSumEur} €</div>
                                 <div class="s-rub">${rowSumRub.toLocaleString()} ₽</div>
                             </div>
+                            ` : ''}
+                            
                         </div>
                     </div>
                 </div>
             </div>`;
         }
-    });;
+    });
 
     const shipRub = getRubPrice(shipEur);
     div.innerHTML += `
@@ -1760,7 +1770,7 @@ function getOrderTextAndLink() {
     if (cart.length === 0) return null;
     const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-    // НОВОЕ: Вспомогательная функция, которая мгновенно переводит &ouml; в ö, &amp; в & и т.д.
+    // Декодер для немецких кракозябр (превращает &ouml; в ö)
     const decodeHTML = (html) => {
         const txt = document.createElement("textarea");
         txt.innerHTML = html || "";
@@ -1772,39 +1782,46 @@ function getOrderTextAndLink() {
     const t = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     const urlDate = `${d}_${t}`; 
 
-    // 1. ШАПКА
-    let totalQty = cart.reduce((acc, item) => acc + item.qty, 0);
-    let text =  `дата:      [${d}]\n`;
-    text +=     `€/₽:       [${rateCalc}]\n`;
-    text +=     `всего уп:  [${totalQty} pack]\n\n`;
-
     let itemsSumEur = 0;
+    let totalQty = 0; 
     let breakdown = [shipEur];
+    let itemsText = ""; 
+    let printIdx = 1; // Независимый счетчик для текста
 
-    // 2. СПИСОК ТОВАРОВ
-    cart.forEach((item, idx) => {
+    // 1. ПРОХОДИМ ПО КОРЗИНЕ И ФИЛЬТРУЕМ ПУСТЫШКИ
+    cart.forEach((item) => {
         const r = db.find(x => String(x.pzn) === String(item.pzn) || String(x.PZN) === String(item.pzn));
         if (r) {
-            const price = Math.round(parseFloat(String(r.Price).replace(',', '.')));
+            const price = Math.round(parseFloat(String(r.Price).replace(',', '.')) || 0);
+            
+            // 🚨 ЕСЛИ ЦЕНА 0 — ПРОПУСКАЕМ ТОВАР В ТЕКСТЕ ЧЕКА ПОЛНОСТЬЮ!
+            if (price === 0) return; 
+
             const sum = price * item.qty;
             itemsSumEur += sum;
+            totalQty += item.qty; // Плюсуем только реальные упаковки
             breakdown.push(sum);
 
-            // Собираем строку и прогоняем через наш очиститель HTML
             const rawDesc = `${r.Name_DE}, ${r.Form_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
-            const fullDesc = decodeHTML(rawDesc);
+            const fullDesc = decodeHTML(rawDesc); // Очищаем от HTML-кодов
             
             let math = item.qty > 1 
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
 
-            const prefix = cart.length > 1 ? `${idx + 1}.\n` : "";
-            
-            text += `${prefix}${fullDesc}...${math}\n\n`;
+            // Ставим правильный, сдвинутый номер
+            itemsText += `${printIdx}.\n${fullDesc}...${math}\n\n`;
+            printIdx++; 
         }
     });
 
-    // 3. ИТОГО
+    // 2. ФОРМИРУЕМ ИТОГОВЫЙ ТЕКСТ (ШАПКА)
+    let text =  `дата:      [${d}]\n`;
+    text +=     `€/₽:       [${rateCalc}]\n`;
+    text +=     `всего уп:  [${totalQty} pack]\n\n`;
+
+    // 3. ДОБАВЛЯЕМ ТОВАРЫ И ИТОГО
+    text += itemsText;
     text += `Тариф почты из Германии до 5кг...${shipEur}€ (12-25 дней)\n\n`;
     
     const totalEur = itemsSumEur + shipEur;
@@ -1813,7 +1830,7 @@ function getOrderTextAndLink() {
     text += `${breakdown.join('+')}=${fmt(totalEur)}€\n`;
     text += `${fmt(totalEur)}€*${rateCalc}=${fmt(finalRub)} ₽\n\n`;
 
-    // 4. ССЫЛКА
+    // 4. ССЫЛКА (Сохраняет ВСЮ корзину, включая нулевые, для показа на сайте)
     const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
     const baseUrl = window.location.origin + window.location.pathname;
     const fullLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
@@ -1823,6 +1840,7 @@ function getOrderTextAndLink() {
     currentPreparedText = text; 
     return { text: text, link: fullLink };
 }
+
    /* =========================================
    BLOCK 8: АНИМАЦИЯ (МУЛЬТИ + ПОДНЫРИВАНИЕ)
    ========================================= */
