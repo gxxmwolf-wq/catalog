@@ -1162,55 +1162,73 @@ function updateBar() {
     const receipt = document.getElementById('miniReceipt');
     const countEl = document.getElementById('miniCount');
     const priceEl = document.getElementById('miniPrice');
-    
     if (!bar || !receipt) return;
 
-    let totalEur = 0, count = 0;
+    let totalEur = 0;
+    let totalPacks = 0; // Считаем упаковки
     let activeItems = [];
+    let printIdx = 1;
 
-    cart.forEach((item, idx) => {
-        const dbItem = db.find(r => String(r.PZN) === String(item.pzn));
+    // 1. Собираем данные безопасно
+    cart.forEach((item) => {
+        const dbItem = db.find(r => String(r.PZN).trim().padStart(8,'0') === String(item.pzn).trim().padStart(8,'0'));
         if (dbItem) {
-            const p = Math.round(parseFloat(dbItem.Price.replace(',', '.')));
-            totalEur += p * item.qty;
-            count += item.qty;
-            activeItems.push({ num: idx + 1, name: dbItem.Name_DE, p: p, q: item.qty, sum: p * item.qty });
+            // Бронебойная очистка цены прямо здесь (без внешних функций)
+            let cleanStr = String(dbItem.Price).replace(/[^0-9,.]/g, '').replace(',', '.');
+            const p = parseFloat(cleanStr) || 0;
+            
+            if (p > 0) {
+                totalEur += p * item.qty;
+                totalPacks += item.qty; 
+                // Сохраняем математику для отрисовки
+                activeItems.push({ 
+                    num: printIdx++, 
+                    name: dbItem.Name_DE, 
+                    p: Math.round(p), 
+                    q: item.qty, 
+                    sum: Math.round(p) * item.qty 
+                });
+            }
         }
     });
 
-    const grandTotalEur = totalEur + (count > 0 ? shipEur : 0);
+    const grandTotalEur = totalEur + (totalPacks > 0 ? shipEur : 0);
     const grandTotalRub = getRubPrice(grandTotalEur);
-    const fmtEur = grandTotalEur.toLocaleString('ru-RU');
-    const fmtRub = grandTotalRub.toLocaleString('ru-RU');
 
-    // Обновляем бейдж (красный круг)
-    // Находим этот кусок в твоем updateBar и заменяем:
-    if (countEl) {
-        countEl.innerText = count;
-        countEl.style.display = 'flex'; // Всегда показываем, даже если там 0
-    }
+    // 2. Обновляем бейдж (красный круг - упаковки)
+    if (countEl) { countEl.innerText = totalPacks; countEl.style.display = 'flex'; }
 
-    if (count > 0) {
+    // 3. Обновляем плашку с итогом
+    if (totalPacks > 0) {
         bar.classList.add('active');
-// [ИСПРАВЛЕНО]: Евро поменьше, Рубли покрупнее, слово "лист" удалено
-priceEl.innerHTML = `
-    <span style="font-size:12px; color:#000; opacity:0.7; margin-right:6px;">${fmtEur}€</span>
-    <b style="font-size:15px; color:#000;">${fmtRub} ₽</b>
-`;
+        priceEl.innerHTML = `<span style="font-size:12px; color:#000; opacity:0.7; margin-right:6px;">${grandTotalEur.toLocaleString('ru-RU')}€</span><b style="font-size:15px; color:#000;">${grandTotalRub.toLocaleString('ru-RU')} ₽</b>`;
     } else {
-        bar.classList.remove('active');
-        priceEl.innerText = ""; 
-        // countEl.style.display = 'none'; <-- ЭТУ СТРОКУ УДАЛИ ИЛИ ЗАКОММЕНТИРУЙ
+        bar.classList.remove('active'); priceEl.innerText = ""; 
     }
 
-    // 2. МИНИ-ЧЕК (Показываем только на ПК)
-    if (count > 0 && window.innerWidth > 767) { 
+    // 4. МИНИ-ЧЕК (ТОЛЬКО ПК + ПРАВИЛО "3 и 2")
+    if (totalPacks > 0 && window.innerWidth > 767) { 
         let rowsHtml = '';
-        let displayItems = (activeItems.length <= 5) ? activeItems : [...activeItems.slice(0, 3), { isSeparator: true }, ...activeItems.slice(-2)];
+        let n = activeItems.length;
+        let displayItems = [];
+
+        if (n <= 5) {
+            displayItems = activeItems; // Показывать все (1,2,3,4,5)
+        } else {
+            // Строго: первые 3, точки, последние 2
+            displayItems = [
+                activeItems[0], 
+                activeItems[1], 
+                activeItems[2], 
+                { isSeparator: true }, 
+                activeItems[n - 2], 
+                activeItems[n - 1]
+            ];
+        }
         
         displayItems.forEach(item => {
             if (item.isSeparator) {
-                rowsHtml += `<div class="receipt-row" style="justify-content:center; opacity:0.3; font-size:10px;">• • •</div>`;
+                rowsHtml += `<div class="receipt-row" style="justify-content:center; opacity:0.3; font-size:10px; margin: 2px 0;">• • •</div>`;
             } else {
                 rowsHtml += `
                 <div class="receipt-row">
@@ -1225,39 +1243,30 @@ priceEl.innerHTML = `
         receipt.innerHTML = `
             ${rowsHtml}
             <div class="receipt-divider" style="height:1px; border-bottom:1px dashed #eee; margin:6px 0;"></div>
-            <div class="receipt-row color-ship" style="color:#666;">
-                <span class="name">Логистический сбор</span>
-                <span class="dots"></span>
-                <span class="calc">${shipEur} €</span>
-            </div>
+            <div class="receipt-row color-ship" style="color:#666;"><span class="name">Логистический сбор</span><span class="dots"></span><span class="calc">${shipEur} €</span></div>
             <div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center; justify-content:space-between; width:100%;">
-                <span>ЛИСТ ДОСТАВКИ:</span>
-                <div style="text-align:right;">
-                    <span style="font-size:13px; font-weight:400; color:#555; margin-right:4px;">${fmtEur} €</span>
-                    <span style="color:#ccc; font-weight:300;">|</span>
-                    <span style="font-size:15px; margin-left:4px;">${fmtRub} ₽</span>
-                </div>
-            </div>
-        `;
+                <span>ЛИСТ ДОСТАВКИ:</span><div style="text-align:right;"><span style="font-size:13px; font-weight:400; color:#555; margin-right:4px;">${grandTotalEur.toLocaleString('ru-RU')} €</span><span style="color:#ccc; font-weight:300;">|</span><span style="font-size:15px; margin-left:4px;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span></div>
+            </div>`;
         receipt.style.display = 'flex';
     } else {
         receipt.style.display = 'none'; 
     }
 
-    // 3. ФУТЕР МОДАЛКИ (Большая корзина)
+    // 5. ФУТЕР БОЛЬШОЙ КОРЗИНЫ (Синий блок: Позиции и Упаковки)
     const footerTotalContainer = document.querySelector('.modal-footer-sticky .footer-total-compact');
     if (footerTotalContainer) {
         footerTotalContainer.innerHTML = `
-            <div style="width:100%; display:flex; flex-direction:column; align-items:flex-end;">
-                <div style="font-size:11px; color:#999; margin-bottom:4px; font-weight:700;">Позиций в листе: ${count}</div>
-                <div style="display:flex; align-items:baseline; gap:8px;">
-                    <span style="font-size: 16px; opacity: 0.6; color: #000;">${fmtEur} €</span>
-                    <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
-                    <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${fmtRub} ₽</span>
-                </div>
-                <div style="font-size:11px; color:#999; margin-top:2px;">Итоговая стоимость обеспечения</div>
+        <div style="width:100%; display:flex; flex-direction:column; align-items:flex-end;">
+            <div style="font-size:11px; color:#007bff; margin-bottom:4px; font-weight:800; text-transform: uppercase;">
+                ТОВАРНЫХ ПОЗИЦИЙ: ${activeItems.length} <span style="opacity: 0.4; margin: 0 4px;">|</span> УПАКОВОК: ${totalPacks}
             </div>
-        `;
+            <div style="display:flex; align-items:baseline; gap:8px;">
+                <span style="font-size: 16px; opacity: 0.6; color: #000;">${grandTotalEur.toLocaleString('ru-RU')} €</span>
+                <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
+                <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span>
+            </div>
+            <div style="font-size:11px; color:#999; margin-top:2px;">Итоговая стоимость обеспечения</div>
+        </div>`;
     }
     
     if(document.getElementById('cartRate')) {
@@ -1373,20 +1382,17 @@ function renderCartItems() {
 
     div.innerHTML = '';
 
+    // 1. ШАПКА ДЛЯ ВОССТАНОВЛЕННЫХ ЗАКАЗОВ
     if (restoredDate && cart.length > 0) {
         const title = isManagerOrder ? '👨‍⚕️ Заказ от менеджера' : '🛒 Сохраненная корзина';
-        const borderColor = isManagerOrder ? 'var(--p)' : '#ccc';
-        const bgColor = isManagerOrder ? '#e3f2fd' : '#f8f9fa';
         const dateNow = new Date().toLocaleDateString('ru-RU'); 
         div.innerHTML += `
-            <div style="background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="background: #f8f9fa; border-left: 4px solid ${isManagerOrder ? 'var(--p)' : '#ccc'}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="line-height: 1.2;">
                     <div style="font-weight: 800; color: #000; font-size: 11px; text-transform: uppercase;">${title}</div>
                     <div style="font-size: 10px; color: #666; margin-top: 2px;">Составлен ${restoredDate}</div>
                 </div>
-                <div style="text-align: right; font-size: 10px; color: #888; line-height: 1.2;">
-                    Текущие цены и курс<br>на <b style="color:#555;">${dateNow}</b>
-                </div>
+                <div style="text-align: right; font-size: 10px; color: #888; line-height: 1.2;">на <b style="color:#555;">${dateNow}</b></div>
             </div>`;
     }
 
@@ -1395,68 +1401,60 @@ function renderCartItems() {
         return;
     }
 
-    // НОВОЕ: Умный счетчик, который не считает пустышки
-    let printIdx = 1;
+    // --- 2. ПЕРЕМЕННЫЕ ДЛЯ ПОДСЧЕТА ---
+    let printIdx = 1;      
+    let realItemsCount = 0; 
+    let itemsSumEur = 0;
 
-    cart.forEach((item, index) => {
-        // Очищаем PZN от случайных пробелов
+    // --- 3. ЦИКЛ ОТРИСОВКИ ТОВАРОВ ---
+    cart.forEach((item) => {
         const cleanPZN = String(item.pzn).trim();
         const r = db.find(x => String(x.PZN).trim() === cleanPZN);
         
         if (r) {
             const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
+            const isZero = (p === 0);
+            
+            if (!isZero) {
+                realItemsCount++; 
+                itemsSumEur += (p * item.qty);
+            }
+
             const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
             const hasPdf = String(r.PDF).trim() === "1"; 
-            
             const rowSumEur = Math.round(p * item.qty);
             const rowSumRub = getRubPrice(rowSumEur);
 
-            // МАГИЯ СТАТУСОВ: Проверяем, нулевая ли цена
-            const isZero = (p === 0);
-            
-            // Если цена 0 — ставим прочерк. Если есть цена — ставим номер и увеличиваем счетчик
             const displayNum = isZero ? '—' : printIdx++;
             const badgeBg = isZero ? '#999' : 'var(--p)';
-            
-            // Стили для отсутствующих товаров (полупрозрачность и зачеркивание)
-            const opacityStyle = isZero ? 'opacity: 0.6; filter: grayscale(100%);' : '';
+            const cardStyle = isZero ? 'opacity: 0.6; filter: grayscale(100%);' : '';
             const titleStyle = isZero ? 'text-decoration: line-through; color: #888;' : '';
 
             div.innerHTML += `
-            <div class="card" style="position: relative; margin-bottom: 15px; border-left: none; ${opacityStyle}">
-                
+            <div class="card" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
                 <div style="position: absolute; top: -1px; left: -1px; background: ${badgeBg}; color: #fff; width: 22px; height: 22px; border-radius: 12px 0 6px 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; z-index: 2;">
                     ${displayNum}
                 </div>
-
-                <img src="img/${cleanPZN}.jpg" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
-                
+                <img src="img/${cleanPZN}.jpg" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)">
                 <div class="card-body">
                     <div class="c-title" style="${titleStyle}">
-                        ${r.Name_DE} 
-                        ${isRx ? '<span class="b-rx">RX</span>' : ''}
-                        ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
+                        ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
+                        ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link">📄 PDF</a>` : ''}
                     </div>
-                    
                     <div class="card-bottom">
                         <div class="c-meta-box">
-                            <div style="font-size:13px;">${r.Form_DE || ''}</div>
-                            <div>${r.Hersteller || ''}</div>
+                            <div style="font-size:12px; color:#666;">${r.Hersteller || ''}</div>
                             <div>PZN: ${cleanPZN}</div>
                         </div>
                         <div style="display:flex; align-items:center; gap:12px;">
-                            
                             <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.1;">
                                 <span style="font-size: 16px; font-weight: 800; color: #000;">${Math.round(p)} €</span>
                                 <span style="font-size: 12px; font-weight: 500; color: #888; margin-top: 2px;">${getRubPrice(p).toLocaleString('ru-RU')} ₽</span>
                             </div>
-
-                            <div class="qty-capsule-wrap" style="display: flex; align-items: center;">
+                            <div class="qty-capsule-wrap">
                                 ${isZero ? `
-                                    <div style="font-size: 11px; color: #d32f2f; font-weight: 800; text-align: center; line-height: 1.1; letter-spacing: 0.5px;">
-                                        НЕТ В<br>АПТЕКАХ
-                                    </div>
-                                    <button onclick="modQty('${cleanPZN}', -${item.qty}, event)" style="margin-left: 8px; background: none; border: none; font-size: 16px; color: #bbb; padding: 5px; cursor: pointer;">✕</button>
+                                    <div style="font-size: 10px; color: #d32f2f; font-weight: 800; text-align: center; line-height: 1;">НЕТ В<br>АПТЕКАХ</div>
+                                    <button onclick="modQty('${cleanPZN}', -${item.qty}, event)" style="margin-left: 8px; background: none; border: none; font-size: 16px; color: #bbb; cursor: pointer;">✕</button>
                                 ` : `
                                     <div class="qty-capsule">
                                         <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
@@ -1465,37 +1463,28 @@ function renderCartItems() {
                                     </div>
                                 `}
                             </div>
-
-                            ${!isZero ? `
-                            <div class="sum-box">
-                                <div class="s-eur">${rowSumEur} €</div>
-                                <div class="s-rub">${rowSumRub.toLocaleString()} ₽</div>
-                            </div>
-                            ` : ''}
-                            
+                            ${!isZero ? `<div class="sum-box"><div class="s-eur">${rowSumEur} €</div><div class="s-rub">${rowSumRub.toLocaleString()} ₽</div></div>` : ''}
                         </div>
                     </div>
                 </div>
             </div>`;
         }
     });
-
-    const shipRub = getRubPrice(shipEur);
+// --- 4. ФИНАЛЬНЫЙ БЛОК (ТОЛЬКО ПОЧТА) ---
     div.innerHTML += `
-    <div onclick="addMoreItems()" style="margin-top: 15px; margin-bottom: 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 14px 15px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: 0.2s;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="flex: 1; padding-right: 12px;">
-                <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 2px;">Тариф почты из Германии</div>
-                <div style="font-size: 11px; color: #888; margin-bottom: 12px;">12–25 дней</div>
-                <div style="font-size: 12px; font-weight: 800; color: var(--p); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">Добавить позиции ›</div>
-                <div style="font-size: 11px; color: #666; margin-top: 4px; font-weight: 400; letter-spacing: 0.2px;">Стоимость доставки не изменится</div>
+    <div onclick="addMoreItems()" style="margin-top: 15px; background: #fdfdfd; border: 1px dashed #ccc; border-radius: 12px; padding: 14px 15px; cursor: pointer;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 14px; font-weight: 600; color: #333;">Тариф почты из Германии</div>
+                <div style="font-size: 11px; color: #888;">12–25 дней (до 5кг)</div>
             </div>
-            <div style="text-align: right; flex-shrink: 0;">
+            <div style="text-align: right;">
                 <div style="font-size: 16px; font-weight: 800; color: #000;">${shipEur} €</div>
-                <div style="font-size: 13px; font-weight: 500; color: #666; margin-top: 2px;">${shipRub.toLocaleString('ru-RU')} ₽</div>
+                <div style="font-size: 12px; color: #666;">${getRubPrice(shipEur).toLocaleString('ru-RU')} ₽</div>
             </div>
         </div>
-    </div>`;
+    </div>
+    <div style="height: 20px;"></div>`;
 }
 
 // --- ОТКРЫТИЕ И ЗАКРЫТИЕ ---
