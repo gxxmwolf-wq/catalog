@@ -499,8 +499,52 @@ function handleInput(updateUrl = true) {
 
     if (!input || !container) return;
 
-    // 1. ПОДГОТОВКА ДАННЫХ И УМНАЯ ОЧИСТКА ВСТАВЛЕННЫХ ССЫЛОК
     let rawVal = input.value;
+
+    // ==========================================
+    // 🚨 МАГИЯ: ПЕРЕХВАТ ССЫЛКИ НА КОРЗИНУ 🚨
+    // ==========================================
+    if (rawVal.includes('?c=')) {
+        try {
+            // Извлекаем параметры (создаем фейковый URL, чтобы парсер не сломался, если вставили без http)
+            const tempUrl = rawVal.startsWith('http') ? new URL(rawVal) : new URL('http://dummy.com/' + rawVal);
+            const cData = tempUrl.searchParams.get('c');
+            const dData = tempUrl.searchParams.get('d');
+
+            if (cData) {
+                const pairs = cData.split(',');
+                cart = pairs.map(p => {
+                    const [pzn, qty] = p.split(':');
+                    return { pzn: String(pzn).padStart(8, '0'), qty: parseInt(qty) }; // Всегда добиваем PZN нулями
+                });
+                
+                if (dData) {
+                    restoredDate = dData.replace('_', ' ');
+                    isManagerOrder = !dData.includes('_');  
+                } else {
+                    restoredDate = "Импорт по ссылке";
+                    isManagerOrder = false;
+                }
+
+                // Очищаем строку поиска, убираем клавиатуру
+                input.value = '';
+                input.blur();
+                filters.search = '';
+                if (document.getElementById('suggestRow')) document.getElementById('suggestRow').innerHTML = '';
+                
+                // Сохраняем, обновляем интерфейс и плавно открываем корзину
+                localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+                updateBar();
+                setTimeout(openCart, 200);
+                return; // ⛔️ Прерываем обычный текстовый поиск!
+            }
+        } catch(e) {
+            console.log("Сбой перехвата ссылки");
+        }
+    }
+    // ==========================================
+
+    // 1. ПОДГОТОВКА ДАННЫХ И УМНАЯ ОЧИСТКА ВСТАВЛЕННЫХ ССЫЛОК (Треки)
     if (/(http|pochta\.ru|tracking|#)/i.test(rawVal)) {
         const trackMatch = rawVal.match(/([A-Za-z]{2}\d{9}[A-Za-z]{2}|\d{14})/);
         if (trackMatch) {
@@ -686,16 +730,18 @@ const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||'
                             <span style="font-size: 12px; font-weight: 500; color: #888; margin-top: 2px;">${getRubPrice(p).toLocaleString('ru-RU')} ₽</span>
                         </div>
                         <div class="qty-capsule-wrap">
-                            ${q > 0 ? `
-                                <div class="qty-capsule">
-                                    <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
-                                    <span class="q-val">${q}</span>
-                                    <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
-                                </div>
-                            ` : `
-                                <button class="btn-add" onclick="modQty('${cleanPZN}',1, event)">Добавить</button>
-                            `}
-                        </div>
+                                ${p === 0 ? `
+                                    <button class="btn-add" style="background: #f0f0f0; color: #aaa; border: 1px solid #e0e0e0; cursor: not-allowed;" disabled>Нет в аптеках</button>
+                                ` : (q > 0 ? `
+                                    <div class="qty-capsule">
+                                        <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
+                                        <span class="q-val">${q}</span>
+                                        <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
+                                    </div>
+                                ` : `
+                                    <button class="btn-add" onclick="modQty('${cleanPZN}',1, event)">Добавить</button>
+                                `)}
+                            </div>
                         ${q > 0 ? `
                             <div class="sum-box">
                                 <div class="s-eur">${rowSumEur} €</div>
@@ -876,7 +922,15 @@ function checkEnter(event) {
         const query = searchInput.value.trim().toUpperCase();
         if (!query) return;
 
-        // Проверка на завершенный трек
+        // --- ВЫЗОВ АДМИНКИ ЧЕРЕЗ ПОИСК ---
+        if (query === 'ADMIN' || query === 'АДМИН') {
+            searchInput.blur();
+            searchInput.value = '';
+            runAdminImport(); // Запускаем функцию-админку
+            return; 
+        }
+
+        // --- ОБЫЧНЫЙ ПОИСК И ТРЕКИ ---
         const cleanTrack = query.replace(/\s/g, '');
         const isCompleteTrack = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(cleanTrack) || /^\d{14}$/.test(cleanTrack);
 
@@ -892,6 +946,75 @@ function checkEnter(event) {
         render(false); 
     }
 }
+
+// ==========================================
+// 🚨 СЕКРЕТНЫЙ БЛОК МЕНЕДЖЕРА 🚨
+// ==========================================
+function runAdminImport() {
+    const rawText = prompt("👨‍⚕️ АДМИН-РЕЖИМ\nВставь текст заказа (скопируй всё сообщение целиком):");
+    
+    if (rawText) {
+        cart = []; 
+        const chunks = rawText.split(/PZN/i);
+        const missingPzns = new Set(); 
+        
+        for (let i = 1; i < chunks.length; i++) {
+            const chunk = chunks[i];
+            const pznMatch = chunk.match(/^[^0-9]*(\d{6,8})/);
+            
+            if (pznMatch) {
+                const cleanPzn = pznMatch[1].padStart(8, '0');
+                let qty = 1; 
+                
+                const qtyMatch = chunk.match(/(?:\*|x|х|-)\s*(\d+)\s*(?:pack|шт|уп)|(\d+)\s*(?:pack|шт|уп)/i);
+                if (qtyMatch) {
+                    qty = parseInt(qtyMatch[1] || qtyMatch[2]);
+                }
+                
+                // КЛАДЕМ В КОРЗИНУ АБСОЛЮТНО ВСЁ
+                const existing = cart.find(i => i.pzn === cleanPzn);
+                if (existing) {
+                    existing.qty += qty;
+                } else {
+                    cart.push({ pzn: cleanPzn, qty: qty });
+                }
+
+                // Проверяем наличие в базе
+                const existsInDB = db.some(r => String(r.PZN).trim() === cleanPzn);
+                if (!existsInDB) {
+                    missingPzns.add(cleanPzn);
+                }
+            }
+        }
+
+        // Предупреждение о неизвестных товарах
+        if (missingPzns.size > 0) {
+            const missingText = Array.from(missingPzns).join('\n');
+            prompt("⚠️ ВНИМАНИЕ: Этих товаров нет в базе!\n\nСкопируй список ниже, вставь в Гугл-таблицу и напиши 'НЕТ В НАЛИЧИИ', если они сняты с продажи:", missingText);
+        }
+
+        // Открываем корзину
+        if (cart.length > 0) {
+            localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+            restoredDate = "Импорт от " + new Date().toLocaleDateString('ru-RU');
+            isManagerOrder = true;
+            updateBar();
+            openCart();
+        } else if (missingPzns.size === 0) {
+            alert("Не удалось найти номера PZN в тексте.");
+        }
+    }
+}
+
+// ==========================================
+// 🎹 ГОРЯЧИЕ КЛАВИШИ ДЛЯ ПК (Alt + A)
+// ==========================================
+window.addEventListener('keydown', function(e) {
+    if (e.altKey && (e.key === 'a' || e.key === 'A' || e.key === 'ф' || e.key === 'Ф')) {
+        e.preventDefault(); 
+        runAdminImport();   
+    }
+});
 
 // Раскрывашка для "Своего" трека прямо под поиском
 function toggleTrackStatus(btnEl, statusText) {
@@ -1321,12 +1444,19 @@ cart.forEach((item, index) => {
                                 <span style="font-size: 12px; font-weight: 500; color: #888; margin-top: 2px;">${getRubPrice(p).toLocaleString('ru-RU')} ₽</span>
                             </div>
 
-                            <div class="qty-capsule-wrap">
-                                <div class="qty-capsule">
-                                    <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
-                                    <span class="q-val">${item.qty}</span>
-                                    <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
-                                </div>
+                            <div class="qty-capsule-wrap" style="display: flex; align-items: center;">
+                                ${p === 0 ? `
+                                    <div style="font-size: 11px; color: #d32f2f; font-weight: 800; text-align: center; line-height: 1.1; letter-spacing: 0.5px;">
+                                        НЕТ В<br>АПТЕКАХ
+                                    </div>
+                                    <button onclick="modQty('${cleanPZN}', -${item.qty}, event)" style="margin-left: 8px; background: none; border: none; font-size: 16px; color: #bbb; padding: 5px; cursor: pointer;">✕</button>
+                                ` : `
+                                    <div class="qty-capsule">
+                                        <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
+                                        <span class="q-val">${item.qty}</span>
+                                        <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
+                                    </div>
+                                `}
                             </div>
 
                             <div class="sum-box">
@@ -1630,6 +1760,13 @@ function getOrderTextAndLink() {
     if (cart.length === 0) return null;
     const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
+    // НОВОЕ: Вспомогательная функция, которая мгновенно переводит &ouml; в ö, &amp; в & и т.д.
+    const decodeHTML = (html) => {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = html || "";
+        return txt.value;
+    };
+
     const now = new Date();
     const d = now.toLocaleDateString('ru-RU');
     const t = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
@@ -1653,7 +1790,10 @@ function getOrderTextAndLink() {
             itemsSumEur += sum;
             breakdown.push(sum);
 
-            const fullDesc = `${r.Name_DE}, ${r.Form_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
+            // Собираем строку и прогоняем через наш очиститель HTML
+            const rawDesc = `${r.Name_DE}, ${r.Form_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
+            const fullDesc = decodeHTML(rawDesc);
+            
             let math = item.qty > 1 
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
