@@ -1768,20 +1768,34 @@ function getOrderTextAndLink() {
 
     const now = new Date();
     const d = now.toLocaleDateString('ru-RU');
-    const t = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    const urlDate = `${d}`; 
+    const urlDate = `${d}`; // Время убрано, как ты и просил
 
     let itemsSumEur = 0;
     let totalQty = 0; 
     let breakdown = [shipEur];
     let itemsText = ""; 
-    let printIdx = 1; // Независимый счетчик для текста
+    let printIdx = 1;
+
+    // --- НОВОЕ: Считаем реальные платные позиции (чтобы знать, прятать ли цифру 1) ---
+    // ИСПОЛЬЗУЕМ padStart ДЛЯ ЗАЩИТЫ ОТ ПОТЕРИ НУЛЯ В PZN!
+    const activeCount = cart.filter(item => {
+        const cleanPZN = String(item.pzn).trim().padStart(8, '0');
+        const r = db.find(x => String(x.PZN || x.pzn).trim().padStart(8, '0') === cleanPZN);
+        if (!r) return false;
+        // Бронебойная очистка цены на случай пробелов в таблице
+        const price = Math.round(parseFloat(String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0);
+        return price > 0;
+    }).length;
 
     // 1. ПРОХОДИМ ПО КОРЗИНЕ И ФИЛЬТРУЕМ ПУСТЫШКИ
     cart.forEach((item) => {
-        const r = db.find(x => String(x.pzn) === String(item.pzn) || String(x.PZN) === String(item.pzn));
+        // ИСПОЛЬЗУЕМ padStart ДЛЯ ЗАЩИТЫ ОТ ПОТЕРИ НУЛЯ В PZN!
+        const cleanPZN = String(item.pzn).trim().padStart(8, '0');
+        const r = db.find(x => String(x.PZN || x.pzn).trim().padStart(8, '0') === cleanPZN);
+        
         if (r) {
-            const price = Math.round(parseFloat(String(r.Price).replace(',', '.')) || 0);
+            // Бронебойная очистка цены (защита от пробелов)
+            const price = Math.round(parseFloat(String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0);
             
             // 🚨 ЕСЛИ ЦЕНА 0 — ПРОПУСКАЕМ ТОВАР В ТЕКСТЕ ЧЕКА ПОЛНОСТЬЮ!
             if (price === 0) return; 
@@ -1798,8 +1812,11 @@ function getOrderTextAndLink() {
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
 
-            // Ставим правильный, сдвинутый номер
-            itemsText += `${printIdx}.\n${fullDesc}...${math}\n\n`;
+            // --- НОВОЕ: Прячем номер 1, если товар всего один ---
+            const prefix = activeCount > 1 ? `${printIdx}.\n` : "";
+            
+            // Ставим правильный номер (или без него)
+            itemsText += `${prefix}${fullDesc}...${math}\n\n`;
             printIdx++; 
         }
     });
@@ -1807,11 +1824,13 @@ function getOrderTextAndLink() {
     // 2. ФОРМИРУЕМ ИТОГОВЫЙ ТЕКСТ (ШАПКА)
     let text =  `дата:      [${d}]\n`;
     text +=     `€/₽:       [${rateCalc}]\n`;
-    text +=     `всего уп:  [${totalQty} pack]\n\n`;
+    text +=     `позиций:   [${activeCount}]\n`;  // Добавлена строка позиций
+    text +=     `упаковок:  [${totalQty} pack]\n\n`; // Переименовано в упаковки
 
     // 3. ДОБАВЛЯЕМ ТОВАРЫ И ИТОГО
     text += itemsText;
-    text += `Тариф почты из Германии до 5кг...${shipEur}€ (12-25 дней)\n\n`;
+    // --- НОВОЕ: ИЗ ЕВРОПЫ ---
+    text += `Тариф почты из Европы до 5кг...${shipEur}€ (12-25 дней)\n\n`;
     
     const totalEur = itemsSumEur + shipEur;
     const finalRub = Math.floor((totalEur * parseFloat(rateCalc)) / 100) * 100;
