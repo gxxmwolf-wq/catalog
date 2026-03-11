@@ -665,19 +665,22 @@ function render(isNewSearch = false, isTrackComplete = false) {
 
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Substance_RU||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Substance_RU||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
-    // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ
-    // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ
+    // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ (ОБНОВЛЕНО: АККУРАТНЫЙ ФИЛЬТР)
     if (results.length === 0) {
-        // Если handleInput сказал нам, что это трек — ничего не пишем
+        // Если handleInput сказал нам, что это трек DHL — ничего не пишем
         if (isTrackComplete) { list.innerHTML = ''; return; }
         
-        // Если это похоже на начало трека — тоже молчим
         const cleanForCheck = rawQuery.replace(/\s+/g, '');
-        if (/^[A-Z]{1,2}\d*/i.test(cleanForCheck) || /^\d{4,}/.test(cleanForCheck)) {
+        
+        // Прячем плашку ТОЛЬКО если это длинный трек-номер РФ (9-14 цифр) или готовый международный трек
+        const isRussianTrack = /^\d{9,14}$/.test(cleanForCheck);
+        const isIntlTrack = /^[A-Za-z]{2}\d{9}[A-Za-z]{2}$/i.test(cleanForCheck);
+
+        if (isRussianTrack || isIntlTrack) {
             list.innerHTML = ''; return;
         }
 
@@ -741,7 +744,7 @@ const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||'
                                 ` : `
                                     <button class="btn-add" onclick="modQty('${cleanPZN}',1, event)">Добавить</button>
                                 `)}
-                            </div>
+                        </div>
                         ${q > 0 ? `
                             <div class="sum-box">
                                 <div class="s-eur">${rowSumEur} €</div>
