@@ -18,7 +18,7 @@
       "@context": "https://schema.org",
       "@type": "DeliveryService",
       "name": "RXDE.online",
-      "description": "Сервис доставки медикаментов из аптек Германии",
+      "description": "Сервис доставки из аптек Германии",
       "areaServed": "RU",
       "url": "https://rxde.online",
       "logo": "https://rxde.online/favicon.png"
@@ -2059,7 +2059,7 @@ function copyFilterResults() {
     });
 
     const baseUrl = window.location.origin + window.location.pathname;
-    text += `Ваш сервис доставки лекарств: ${baseUrl}?q=${encodeURIComponent(filters.search.trim())}`;
+    text += `Ваш сервис доставки: ${baseUrl}?q=${encodeURIComponent(filters.search.trim())}`;
 
     // Копируем и мигаем желтым
     navigator.clipboard.writeText(text).then(() => {
