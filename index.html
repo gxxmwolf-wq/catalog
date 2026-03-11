@@ -2027,7 +2027,8 @@ function copyFilterResults() {
 
     let results = db.filter(r => {
         if (!r || !r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance_DE||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
+        // [ИСПРАВЛЕНО]: Добавили Form_DE и Substance_RU, чтобы поиск для буфера совпадал с экраном
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Substance_RU||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
         return wordVars.every(vars => vars.some(v => pool.includes(v)));
     });
 
@@ -2067,13 +2068,16 @@ function copyFilterResults() {
         text += `${displayTitle}\n`;
 
         groups[formName].sort((a, b) => {
-            const pA = parseFloat(String(a.Price).replace(',', '.'));
-            const pB = parseFloat(String(b.Price).replace(',', '.'));
+            // [ИСПРАВЛЕНО]: Бронебойная очистка цены для правильной сортировки (от дешевых к дорогим)
+            const pA = parseFloat(String(a.Price).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
+            const pB = parseFloat(String(b.Price).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
             return pA - pB;
         });
 
         groups[formName].forEach(r => {
-            const pEur = Math.round(parseFloat(String(r.Price).replace(',', '.')));
+            // [ИСПРАВЛЕНО]: Бронебойная очистка цены для вывода в текст
+            const cleanPrice = parseFloat(String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0;
+            const pEur = Math.round(cleanPrice);
             const pRub = getRubPrice(pEur).toLocaleString('ru-RU');
             // [ФИКС]: Добавлен двойной перенос \n\n для пустой строки между позициями
             text += `  ${r.Name_DE}, ${r.Hersteller}, PZN ${r.PZN}...${pEur}€ (${pRub} ₽)\n\n`;
