@@ -1415,7 +1415,9 @@ function renderCartItems() {
         const r = db.find(x => String(x.PZN).trim() === cleanPZN);
         
         if (r) {
-            const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
+            // [ИСПРАВЛЕНО]: Бронебойная очистка цены
+            const cleanPrice = String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.');
+            const p = parseFloat(cleanPrice) || 0;
             const isZero = (p === 0);
             
             if (!isZero) {
@@ -1446,6 +1448,7 @@ function renderCartItems() {
                     </div>
                     <div class="card-bottom">
                         <div class="c-meta-box">
+                            <div style="font-size:13px;">${r.Form_DE || ''}</div>
                             <div style="font-size:12px; color:#666;">${r.Hersteller || ''}</div>
                             <div>PZN: ${cleanPZN}</div>
                         </div>
