@@ -1849,7 +1849,7 @@ function getOrderTextAndLink() {
     const baseUrl = window.location.origin + window.location.pathname;
     const fullLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
 
-    text += `Для Вашего удобства ЗАКАЗ с актуальной ценой доступен по ссылке:\n${fullLink}`;
+    text += `Актуальная цена в любой момент времени:\n${fullLink}`;
     
     currentPreparedText = text; 
     return { text: text, link: fullLink };
