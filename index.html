@@ -117,57 +117,62 @@
             <div id="cartItems"></div>
         </div>
         
-        <div class="modal-footer-sticky">
-            <div class="footer-total-compact" style="margin-bottom: 15px; text-align: right;">
-                <span id="footerTotalSum" style="color:var(--p); font-weight: 900; font-size: 24px;">0 €</span>
+      <div class="modal-footer-sticky" id="footerTotalContent" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap-reverse; gap: 15px;">
             </div>
-            
-            <button onclick="openContact('order')" style="width: 100%; background: var(--p); color: #fff; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 10px; transition: transform 0.2s;">
-                ОФОРМИТЬ ЗАКАЗ <span style="font-size: 18px;">›</span>
-            </button>
-        </div>
         
     </div>
 </div>
 
 <div id="infoOverlay" class="info-overlay" onclick="closeInfo()">
-    <div class="info-box" onclick="event.stopPropagation()">
-        <div id="infoTitle" class="info-title"></div>
-        <div id="infoContent" class="info-content"></div>
-        <button onclick="closeInfo()" class="s-close-btn" style="margin-top:20px">ПОНЯТНО</button>
+    <div class="info-box" onclick="event.stopPropagation()" style="position: relative; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 15px; flex-shrink: 0;">
+            <div id="infoTitle" class="info-title" style="margin: 0; padding: 0; border: none; font-size: 18px;"></div>
+            <div onclick="closeInfo()" style="font-size: 22px; color: #999; cursor: pointer; padding: 0 5px; line-height: 1;">✕</div>
+        </div>
+        
+        <div id="infoContent" class="info-content" style="overflow-y: auto; flex: 1; padding-right: 5px;"></div>
+        
+        <button onclick="closeInfo()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; flex-shrink: 0;">ПОНЯТНО</button>
     </div>
 </div>
 
 <div id="contactOverlay" class="info-overlay" onclick="closeContact()">
-    <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;">
-        <div id="contactTitle" class="info-title" style="text-align: center; font-size: 16px;">ПРЕДПРОСМОТР</div>
+    <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; position: relative;">
         
-        <div id="orderPreviewBox" style="background: #f8f9fa; border: 1px solid #eee; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; color: #333; margin-bottom: 20px; white-space: pre-wrap; word-break: break-word; line-height: 1.4; max-height: 250px; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div id="contactTitle" class="info-title" style="margin: 0; padding: 0; border: none; font-size: 18px; text-align: left;">ВАШ ВОПРОС</div>
+            <div onclick="closeContact()" style="font-size: 22px; color: #999; cursor: pointer; padding: 0 5px; line-height: 1;">✕</div>
         </div>
         
-        <textarea id="manualMsgInput" class="universal-textarea" style="display:none;" placeholder="Напишите ваш вопрос..."></textarea>
+        <div id="orderPreviewBox" style="display: none;"></div>
+        
+        <textarea id="manualMsgInput" class="universal-textarea" style="display:none; width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 14px; margin-bottom: 20px; resize: none; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);" placeholder="Напишите ваш вопрос..."></textarea>
         
         <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px;">Для отправки выберите удобный канал связи:</div>
+            <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px;">Выберите удобный чат для отправки:</div>
             
-            <button onclick="submitFinal('wa')" style="width: 100%; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.2);">
-                WhatsApp
-            </button>
-            
-            <button onclick="submitFinal('tg')" style="width: 100%; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 10px rgba(0, 136, 204, 0.2);">
-                Telegram
-            </button>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="submitFinal('wa')" style="flex: 1; height: 46px; background: #fff; color: #25D366; border: 1px solid #25D366; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">
+                    WhatsApp
+                </button>
+                <button onclick="submitFinal('tg')" style="flex: 1; height: 46px; background: #fff; color: #0088cc; border: 1px solid #0088cc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">
+                    Telegram
+                </button>
+            </div>
 
-            <button onclick="submitFinal('email')" style="width: 100%; height: 50px; background: #333; color: #fff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;">
-                E-mail
+            <button onclick="submitFinal('email')" style="width: 100%; height: 46px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                ✉️ Написать на E-mail
             </button>
             
-            <button onclick="switchToContactForm()" style="width: 100%; height: 50px; background: #f8f9fa; color: #333; border: 1px solid #dcdcdc; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;">
-                📞 Оставить номер телефона
+            <button onclick="switchToContactForm()" style="width: 100%; height: 46px; background: #f8f9fa; color: #555; border: 1px dashed #bbb; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 5px;">
+                📞 Мессенджеры недоступны?
             </button>
         </div>
 
-        <button onclick="closeContact()" class="s-close-btn" style="background:none; color:#888; margin-top:15px; width: 100%;">НАЗАД К ЛИСТУ ЗАКАЗА</button>
+        <button id="contactBackBtn" onclick="closeContact()" style="background: none; border: none; color: #888; margin-top: 15px; width: 100%; font-size: 13px; text-decoration: underline; cursor: pointer;">
+            ОТМЕНА
+        </button>
     </div>
 </div>
 
@@ -178,7 +183,7 @@
     <div id="succSubTitle" style="font-size: 14px; color: #555; margin-bottom: 15px; line-height: 1.4;"></div>
     
     <div id="succID" class="s-order-id" style="display: none;">#0000</div>
-    <button onclick="closeSuccess()" class="s-close-btn">ПОНЯТНО</button>
+    <button onclick="closeSuccess()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">ПОНЯТНО</button>
 </div>
 
 <script>
@@ -687,10 +692,12 @@ function render(isNewSearch = false, isTrackComplete = false) {
         if (query.length < 2) return;
         
         list.innerHTML = `
-        <div style="text-align: center; padding: 40px 20px; background: #fff; border-radius: 12px; margin-top: 15px; border: 1px dashed #ccc;">
-            <div style="font-size: 14px; font-weight: 800; color: #333; margin-bottom: 10px;">В каталоге не найдено: «${rawQuery}»</div>
-            <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат может называться иначе в Европе или требует индивидуального запроса. Мы произведем расширенный ручной поиск.</div>
-            <button onclick="openContact('search')" style="background: var(--p); color: #fff; border: none; padding: 16px 20px; border-radius: 10px; font-weight: 800; width: 100%; cursor: pointer;">ЗАПРОСИТЬ РАСШИРЕННЫЙ ПОИСК</button>
+        <div style="text-align: center; padding: 40px 20px; background: #fafafa; border-radius: 12px; margin-top: 15px; border: 1px solid #eaeaea;">
+            <div style="font-size: 15px; font-weight: 800; color: #111; margin-bottom: 8px;">В каталоге не найдено: «${rawQuery}»</div>
+            <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат может называться иначе или требует ручного поиска по аптекам Европы.</div>
+            <button onclick="openContact('search')" style="background: #fff; color: var(--p); border: 2px solid var(--p); padding: 14px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; transition: all 0.2s;">
+                ЗАПРОСИТЬ РАСШИРЕННЫЙ ПОИСК
+            </button>
         </div>`;
         return;
     }
@@ -1255,25 +1262,90 @@ function updateBar() {
         receipt.style.display = 'none'; 
     }
 
-    // 5. ФУТЕР БОЛЬШОЙ КОРЗИНЫ (Синий блок: Позиции и Упаковки)
-    const footerTotalContainer = document.querySelector('.modal-footer-sticky .footer-total-compact');
-    if (footerTotalContainer) {
-        footerTotalContainer.innerHTML = `
-        <div style="width:100%; display:flex; flex-direction:column; align-items:flex-end;">
-            <div style="font-size:11px; color:#007bff; margin-bottom:4px; font-weight:800; text-transform: uppercase;">
-                ТОВАРНЫХ ПОЗИЦИЙ: ${activeItems.length} <span style="opacity: 0.4; margin: 0 4px;">|</span> УПАКОВОК: ${totalPacks}
+    // 5. ФУТЕР БОЛЬШОЙ КОРЗИНЫ (С бесшовной кнопкой оформления)
+    // 5. ФУТЕР БОЛЬШОЙ КОРЗИНЫ (Левая и Правая колонки)
+    const footerTotalContent = document.getElementById('footerTotalContent');
+    if (footerTotalContent) {
+        footerTotalContent.innerHTML = `
+            <div id="cartActionArea" style="flex: 1; min-width: 220px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
+                <button onclick="executeIronRuleDirect()" style="background: transparent; color: #333; border: 1px solid #ccc; padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; width: 100%; max-width: 260px; justify-content: center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    Копировать заказ
+                </button>
+                <div style="font-size: 11px; color: #888; margin-top: 6px; width: 100%; max-width: 260px; text-align: center;">
+                    для передачи менеджеру
+                </div>
             </div>
-            <div style="display:flex; align-items:baseline; gap:8px;">
-                <span style="font-size: 16px; opacity: 0.6; color: #000;">${grandTotalEur.toLocaleString('ru-RU')} €</span>
-                <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
-                <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span>
+
+            <div style="flex: 1; text-align: right; min-width: 160px;">
+                <div style="font-size:11px; color:#007bff; margin-bottom:4px; font-weight:800; text-transform: uppercase;">
+                    ПОЗИЦИЙ: ${activeItems.length} <span style="opacity: 0.4; margin: 0 4px;">|</span> УПАКОВОК: ${totalPacks}
+                </div>
+                <div style="display:flex; align-items:baseline; justify-content: flex-end; gap:8px;">
+                    <span style="font-size: 16px; opacity: 0.6; color: #000;">${grandTotalEur.toLocaleString('ru-RU')} €</span>
+                    <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
+                    <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span>
+                </div>
+                <div style="font-size:11px; color:#999; margin-top:2px;">Итоговая стоимость обеспечения</div>
             </div>
-            <div style="font-size:11px; color:#999; margin-top:2px;">Итоговая стоимость обеспечения</div>
-        </div>`;
+        `;
+    }
+
+    if (cartActionArea) {
+        cartActionArea.innerHTML = `
+            <button onclick="executeIronRuleDirect()" style="width: 100%; background: #fff; color: #333; border: 1px solid #ccc; padding: 14px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.2s;">
+                <span style="font-size: 18px; opacity: 0.7;">📄</span> СКОПИРОВАТЬ МОЙ ЗАКАЗ МЕНЕДЖЕРУ
+            </button>
+        `;
     }
     
     if(document.getElementById('cartRate')) {
         document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
+    }
+}
+
+// БЕСШОВНОЕ КОПИРОВАНИЕ ПРЯМО ИЗ КОРЗИНЫ
+// БЕСШОВНОЕ КОПИРОВАНИЕ ПРЯМО ИЗ КОРЗИНЫ
+function executeIronRuleDirect() {
+    const baseUrl = window.location.origin + window.location.pathname;
+    const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
+    const urlDate = new Date().toLocaleDateString('ru-RU');
+    const shortLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
+    const textToCopy = `Здравствуйте, RxDE! Мой заказ:\n\n${shortLink}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            if (navigator.vibrate) navigator.vibrate(15); 
+            
+            const actionArea = document.getElementById('cartActionArea');
+            if (actionArea) {
+                actionArea.innerHTML = `
+                    <div style="width: 100%; max-width: 260px; animation: fadeIn 0.3s; text-align: center;">
+                        <div style="font-size: 13px; font-weight: 800; color: #2e7d32; margin-bottom: 6px;">
+                            ✓ Скопировано! Вставьте в чат:
+                        </div>
+                        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 8px;">
+                            <button onclick="window.open('https://wa.me/${WA_PHONE}', '_blank')" style="flex: 1; height: 36px; background: #fff; color: #25D366; border: 1px solid #25D366; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s;">
+                                WhatsApp
+                            </button>
+                            <button onclick="window.open('https://t.me/${TG_USER}', '_blank')" style="flex: 1; height: 36px; background: #fff; color: #0088cc; border: 1px solid #0088cc; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s;">
+                                Telegram
+                            </button>
+                        </div>
+                        <button onclick="switchToContactForm()" style="background: none; border: none; color: #888; font-size: 11px; text-decoration: underline; cursor: pointer;">
+                            Мессенджеры недоступны?
+                        </button>
+                    </div>
+                `;
+            }
+        }).catch(err => {
+            alert("Не удалось скопировать. Пожалуйста, выделите и скопируйте текст вручную.");
+        });
+    } else {
+        alert("Ваш браузер не поддерживает автокопирование. Пожалуйста, скопируйте текст вручную.");
     }
 }
     /* =========================================
@@ -1660,8 +1732,10 @@ function openContact(type, index = null) {
     manualInput.style.display = 'none';
 
     if (type === 'order') {
-    title.innerText = "СОГЛАСОВАТЬ ДОСТАВКУ";
-    let visualPreview = "ЛИСТ ДОСТАВКИ:\n\n"; // Вместо "Состав заявки"
+        title.innerText = "СОГЛАСОВАТЬ ЛОГИСТИКУ";
+        
+        // 1. Показываем короткий и понятный состав для сверки
+        let visualPreview = "ЛИСТ ОТПРАВЛЕНИЯ:\n\n"; 
         cart.forEach((item, idx) => {
             const r = db.find(x => String(x.PZN) === String(item.pzn));
             if (r) visualPreview += `${idx + 1}. ${r.Name_DE} — ${item.qty} шт.\n`;
@@ -1670,10 +1744,54 @@ function openContact(type, index = null) {
         previewBox.innerText = visualPreview;
         previewBox.style.display = 'block';
 
-        const orderData = getOrderTextAndLink();
-        currentPreparedText = orderData ? orderData.text : "";
+        // 2. Генерируем "ШИФР" (короткую ссылку без текстовой простыни)
+        const baseUrl = window.location.origin + window.location.pathname;
+        const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
+        const urlDate = new Date().toLocaleDateString('ru-RU');
+        const shortLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
+        
+        // Именно это улетит в буфер обмена:
+        currentPreparedText = `Здравствуйте, RxDE! Мой заказ:\n\n${shortLink}`;
+
+        // 3. ПОШАГОВЫЙ ИНТЕРФЕЙС (Железное правило)
+// 3. ПОШАГОВЫЙ ИНТЕРФЕЙС (Железное правило с правильной психологией)
+        buttons.innerHTML = `
+            <div id="step1_copy">
+                <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 12px; line-height: 1.4;">
+                    Мы не запрашиваем ваши контакты на сайте.<br>Чтобы узнать сроки и наличие в Германии, передайте этот лист менеджеру:
+                </div>
+                <button onclick="executeIronRuleCopy()" style="width: 100%; height: 55px; background: var(--p); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.1s; line-height: 1.2;">
+                    ПЕРЕДАТЬ ЗАКАЗ МЕНЕДЖЕРУ
+                </button>
+            </div>
+
+            <div id="step2_messengers" style="display: none; flex-direction: column; gap: 12px; animation: fadeIn 0.4s;">
+                <div style="font-size: 14px; font-weight: 800; color: #2e7d32; text-align: center; margin-bottom: 5px;">
+                    ✅ Заказ сохранен в память телефона!
+                </div>
+                <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px; line-height: 1.3;">
+                    Выберите чат связи, перейдите в него и <b>вставьте</b> сообщение для менеджера:
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="window.open('https://wa.me/${WA_PHONE}', '_blank')" style="flex:1; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;">
+                        WhatsApp
+                    </button>
+                    <button onclick="window.open('https://t.me/${TG_USER}', '_blank')" style="flex:1; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;">
+                        Telegram
+                    </button>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 20px;">
+                <button onclick="switchToContactForm()" style="background: none; border: none; color: #999; font-size: 12px; text-decoration: underline; cursor: pointer;">
+                    Мессенджеры не работают? Оставить телефон
+                </button>
+            </div>
+        `;
 
     } else {
+        // ... (Тут остается твой старый код для 'search', 'news' и вопросов)
         // РЕЖИМЫ ТЕКСТОВЫХ ВОПРОСОВ
         manualInput.style.display = 'block';
         
@@ -1700,6 +1818,25 @@ function openContact(type, index = null) {
     buttons.style.display = 'flex';
 }
 
+// МАГИЯ ЖЕЛЕЗНОГО ПРАВИЛА
+function executeIronRuleCopy() {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(currentPreparedText).then(() => {
+            // Прячем кнопку копирования, показываем мессенджеры
+            document.getElementById('step1_copy').style.display = 'none';
+            document.getElementById('step2_messengers').style.display = 'flex';
+            
+            // Вибрация успеха
+            if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
+        }).catch(err => {
+            alert("Не удалось скопировать. Пожалуйста, попробуйте еще раз.");
+        });
+    } else {
+        // Запасной вариант для очень старых браузеров
+        alert("Ваш браузер не поддерживает автокопирование. Пожалуйста, выделите текст выше и скопируйте его вручную.");
+    }
+}
+
 // 1. Генерация номера заказа
 function generateOrderID() {
     const now = new Date();
@@ -1721,7 +1858,8 @@ function switchToContactForm() {
     }, 300);
 }
 
-// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (WA / TG / Email)
+
+// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (Для раздела "Вопросы" и старых кнопок)
 function submitFinal(app) {
     if (app === 'wa' || app === 'tg' || app === 'email') {
         lastClickedChannel = (app === 'wa') ? 'WhatsApp' : (app === 'tg' ? 'Telegram' : 'E-mail');
@@ -1739,8 +1877,8 @@ function submitFinal(app) {
     }
 
     if (app === 'wa') {
+        // Просто открываем WhatsApp. НИКАКИХ ЛОЖНЫХ ОКОН "УСПЕХА"!
         window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-        showSuccess(isQuestionMode ? 'question' : 'order', generateOrderID(), 'WhatsApp', finalMsg);
         closeContact();
     } else if (app === 'tg') {
         try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
@@ -2564,8 +2702,8 @@ function playWelcomeAnimation() {
         <p style="font-size: 14px; color: #333; margin-bottom: 20px; line-height: 1.4; text-align: center;">
             Текст в буфере обмена.<br>Откройте чат и <b>вставьте</b> текст.
         </p>
-        <button onclick="goToTelegram()" class="cp-submit-full" style="background: #0088cc;">ПЕРЕЙТИ В ТЕЛЕГРАМ</button>
-        <button onclick="closeTgOverlay()" class="s-close-btn" style="background:none; color:#888; margin-top:10px; width: 100%;">ОТМЕНА</button>
+        <button onclick="goToTelegram()" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">ПЕРЕЙТИ В ТЕЛЕГРАМ</button>
+        <button onclick="closeTgOverlay()" style="width: 100%; background: none; border: none; color: #888; margin-top: 12px; font-size: 13px; text-decoration: underline; cursor: pointer;">ОТМЕНА</button>
     </div>
 </div>
 
@@ -2595,7 +2733,7 @@ function playWelcomeAnimation() {
             <button id="dialBtnMsg" class="dial-mode-btn active" onclick="setDialMode('msg')">💬 МЕССЕНДЖЕР</button>
             <button id="dialBtnCall" class="dial-mode-btn" onclick="setDialMode('call')">📞 ЗВОНОК</button>
         </div>
-        <button id="dialSubmit" class="cp-submit-full" onclick="submitDialer()" style="margin-top: 15px; height: 50px; opacity: 0.3;" disabled>ОТПРАВИТЬ</button>
+        <button id="dialSubmit" onclick="submitDialer()" style="width: 100%; margin-top: 15px; height: 50px; background: #fff; color: var(--p); border: 2px solid var(--p); border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; opacity: 0.3; transition: 0.2s;" disabled>ОТПРАВИТЬ</button>
         <button onclick="closeDialer()" style="width:100%; background:none; border:none; color:#bbb; font-size:12px; margin-top:10px; cursor:pointer;">НЕТ, Я СПРАВЛЮСЬ</button>
     </div>
 </div>
