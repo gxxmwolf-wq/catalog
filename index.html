@@ -1318,44 +1318,74 @@ function tryRestoreCartFromUrl() {
     return false;
 }
 
+/* =========================================
+   BLOCK 7: ИНИЦИАЛИЗАЦИЯ (ИСПРАВЛЕНО)
+   ========================================= */
+
 async function init() {
+    // 1. Восстанавливаем корзину из локального хранилища
     try { 
         const saved = localStorage.getItem('de_cart_arr'); 
         if (saved) cart = JSON.parse(saved); 
-    } catch(e) { cart = []; }
+    } catch(e) { 
+        console.error("Ошибка парсинга корзины из localStorage", e);
+        cart = []; 
+    }
     
+    // 2. Загружаем основную базу данных
     Papa.parse(LOCAL_DB_URL, {
         download: true,
         header: true,
         skipEmptyLines: true,
         complete: function(results) {
             db = results.data;
+
+            // Только после загрузки базы подгружаем курсы и настройки
             Promise.all([fetchCbrRate(), fetchGoogleSettings()]).then(() => {
                 calculateFinalLogic(); 
 
+                // Пытаемся восстановить состояние из URL
                 tryRestoreSearchFromUrl();
                 const cartRestored = tryRestoreCartFromUrl();
                 
+                // Если в ссылке была корзина — открываем её с задержкой
                 if (cartRestored) {
                     setTimeout(openCart, 500);
                 }
 
+                // Если поиска нет, рендерим главную (новости)
                 if (!filters.search) render();
 
+                // Обработка прямых ссылок на FAQ/ОПЫТ
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams.has('faq')) setTimeout(() => showInfo('faq'), 800);
                 else if (urlParams.has('exp')) setTimeout(() => showInfo('exp'), 800);
 
             }).catch(err => {
-                calculateFinalLogic(); 
+                console.error("Ошибка загрузки внешних настроек:", err);
+                calculateFinalLogic(); // Используем fallback значения
                 render();
             });
+        },
+        error: function(err) {
+            console.error("КРИТИЧЕСКАЯ ОШИБКА: База db.csv не загружена!", err);
+            const list = document.getElementById('list');
+            if (list) {
+                list.innerHTML = '<div style="text-align:center; padding:50px; color:red;">Ошибка загрузки данных. Пожалуйста, обновите страницу.</div>';
+            }
         }
     });
+
+    // 3. Загружаем новости в фоновом режиме
     fetchNews();
-    // ДОБАВЛЯЕМ ВОТ ЭТУ СТРОКУ:
+
+    // 4. Запускаем анимацию приветствия
     setTimeout(playWelcomeAnimation, 500);
 }
+
+// УДАЛЕНО: window.onload = init; (устаревший метод, может конфликтовать)
+// Оставляем только один вызов в самом конце файла:
+init();
 
 function updateCartStatusUI() {
     const container = document.getElementById('modalStatusBadge');
