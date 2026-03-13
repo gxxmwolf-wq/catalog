@@ -1353,6 +1353,8 @@ async function init() {
         }
     });
     fetchNews();
+    // ДОБАВЛЯЕМ ВОТ ЭТУ СТРОКУ:
+    setTimeout(playWelcomeAnimation, 500);
 }
 
 function updateCartStatusUI() {
@@ -2446,6 +2448,83 @@ function playClickSound() {
         osc.stop(context.currentTime + 0.1);
     } catch(e) { console.log("Audio blocked"); }
 }
+
+
+/* =========================================
+   BLOCK 14: ВАУ-ЭФФЕКТ ПРИВЕТСТВИЯ (ФАВИКОН В КОРЗИНУ)
+   ========================================= */
+
+function playWelcomeAnimation() {
+    // Проверяем, показывали ли мы анимацию в этой сессии
+    if (sessionStorage.getItem('rxde_welcome_done')) return;
+    
+    // Запоминаем, что показали, чтобы не бесить при каждом F5
+    sessionStorage.setItem('rxde_welcome_done', 'true');
+
+    const miniCart = document.getElementById('miniCart');
+    if (!miniCart) return;
+
+    // 1. Создаем наш летящий фавикон
+    const flyIcon = document.createElement('img');
+    flyIcon.src = 'favicon.png'; // Берем твой фавикон (сделай его с прозрачным фоном!)
+    
+    // Базовые стили: УВЕЛИЧИЛИ РАЗМЕР В 3 РАЗА (с 80px до 240px)
+    // И поправили отступы (margin), чтобы он был ровно по центру
+    flyIcon.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: 240px;   /* Был 80px, стал 240px */
+        height: 240px;  /* Был 80px, стал 240px */
+        margin-top: -120px;  /* Половина высоты, чтобы центрировать */
+        margin-left: -120px; /* Половина ширины, чтобы центрировать */
+        z-index: 999999;
+        pointer-events: none;
+        opacity: 0;
+        transform: scale(0.2); /* Стартует совсем крошечным */
+        transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Чуть медленнее появление */
+        border-radius: 40px; /* Закругление больше под большой размер */
+        box-shadow: 0 25px 50px rgba(0,0,0,0.15); /* Тень мягче и глубже */
+    `;
+    document.body.appendChild(flyIcon);
+
+    // 2. Шаг первый: Появление в центре (Масштабное приветствие)
+    setTimeout(() => {
+        flyIcon.style.opacity = '1';
+        // Увеличиваем до полного размера (1.0) и слегка наклоняем
+        flyIcon.style.transform = 'scale(1.0) rotate(-5deg)'; 
+    }, 100);
+
+    // 3. Шаг второй: Резкий полет в корзину
+    setTimeout(() => {
+        const targetRect = miniCart.getBoundingClientRect();
+        
+        // Вычисляем расстояние от центра до машинки
+        const moveX = (targetRect.left + targetRect.width / 2) - window.innerWidth / 2;
+        const moveY = (targetRect.top + targetRect.height / 2) - window.innerHeight / 2;
+
+        // Полет: сжимается, улетает и крутится
+        flyIcon.style.transition = 'all 0.9s cubic-bezier(0.5, -0.5, 0.2, 1.3)'; // Тягучий полет
+        flyIcon.style.transform = `translate(${moveX}px, ${moveY}px) scale(0.05) rotate(360deg)`;
+        flyIcon.style.opacity = '0.2'; // Почти исчезает в полете
+
+        // 4. Шаг третий: Удар по корзине
+        setTimeout(() => {
+            flyIcon.remove(); // Удаляем картинку
+            
+            // Заставляем машинку подпрыгнуть от удара!
+            if (typeof triggerTruckEffect === 'function') {
+                triggerTruckEffect(); 
+            }
+            
+            // Если на телефоне — даем легкий тактильный удар
+            if (navigator.vibrate) navigator.vibrate(30);
+            
+        }, 900); // Время полета чуть увеличили
+
+    }, 1800); // Висит в центре дольше (1.8 сек), чтобы можно было рассмотреть
+}
+
 </script>
 
 <div id="tgOverlay" class="info-overlay" onclick="closeTgOverlay()">
