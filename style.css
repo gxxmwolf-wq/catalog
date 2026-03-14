@@ -312,24 +312,31 @@ body {
    ========================================= */
 
 /* Кнопка "ДОБАВИТЬ" (синяя капсула) */
-.btn-add, .btn-capsule-add {
-    background: var(--p) !important;
-    color: #fff !important;
-    border: none !important;
-    padding: 0 14px !important;
-    height: 30px !important;
-    border-radius: 15px !important;
-    font-weight: 700 !important;
-    font-size: 12px !important;
-    cursor: pointer !important;
-    transition: transform 0.1s, background 0.2s !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+/* Современная кнопка добавления */
+.btn-add {
+    background: transparent;
+    color: var(--p);
+    border: 1.5px solid var(--p);
+    border-radius: 20px; /* Скругленные края для мягкости */
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
-.btn-add:active, .btn-capsule-add:active {
-    background: #004475 !important;
-    transform: scale(0.95) !important;
+
+.btn-add:hover {
+    background: rgba(0, 123, 255, 0.05);
+}
+
+/* Состояние, когда товар уже в корзине (в списке) */
+.card.selected .btn-add {
+    background: var(--p);
+    color: #fff;
+    border-color: var(--p);
 }
 
 /* Блок счетчика (вместе с кнопками + и -) */
@@ -1137,4 +1144,150 @@ body {
     -webkit-user-select: none;
     -moz-user-select: none;
     user-select: none;
+}
+
+/* ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ КНОПОК ДЛЯ СВЯЗИ */
+.contact-method-btn, .s-close-btn, #dialSubmit, #requestManualSearchBtn {
+    background-color: #fff; /* Белый фон */
+    border-radius: 8px; /* Чуть больше скругления для мягкости */
+    font-size: 14px; /* Немного уменьшим шрифт для аккуратности */
+    font-weight: 600; /* Полужирный, но не слишком тяжелый */
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease; /* Плавная анимация для всех эффектов */
+    box-shadow: none; /* Убираем тень, если она была */
+}
+
+/* КНОПКА WHATSAPP */
+.whatsapp-btn {
+    color: #25D366; /* Зеленый текст */
+    border: 1px solid #25D366; /* Зеленая рамка */
+}
+
+/* Эффект при наведении/нажатии для WhatsApp (легкая заливка) */
+.whatsapp-btn:hover, .whatsapp-btn:active {
+    background-color: rgba(37, 211, 102, 0.05); /* Очень светлый зеленый фон (5% непрозрачности) */
+}
+
+/* КНОПКА TELEGRAM */
+.telegram-btn {
+    color: #0088cc; /* Синий текст */
+    border: 1px solid #0088cc; /* Синяя рамка */
+}
+
+/* Эффект при наведении/нажатии для Telegram */
+.telegram-btn:hover, .telegram-btn:active {
+    background-color: rgba(0, 136, 204, 0.05); /* Очень светлый синий фон (5% непрозрачности) */
+}
+
+/* КНОПКА E-MAIL */
+.email-btn {
+    color: #333; /* Темно-серый текст */
+    border: 1px solid #ccc; /* Светло-серая рамка */
+}
+
+/* Эффект при наведении/нажатии для E-mail */
+.email-btn:hover, .email-btn:active {
+    background-color: rgba(0, 0, 0, 0.03); /* Очень светлый серый фон (3% непрозрачности) */
+}
+
+/* КНОПКА "ОСТАВИТЬ НОМЕР ТЕЛЕФОНА" */
+.phone-btn {
+    color: #000; /* Черный текст */
+    border: 1px solid #ccc; /* Светло-серая рамка */
+    background-color: #f9f9f9; /* Оставим легкий серый фон, чтобы выделить */
+}
+
+.phone-btn:hover, .phone-btn:active {
+    background-color: #f0f0f0; /* Чуть более темный серый при наведении */
+}
+
+/* --- СТИЛИ ДЛЯ ДАЙЛЕРА (Цифровые кнопки) --- */
+
+.dial-grid .d-num {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #ddd; /* Тонкая серая рамка */
+    border-radius: 50%; /* Круглые кнопки */
+    font-size: 20px;
+    font-weight: 400; /* Более тонкий шрифт */
+    width: 60px;
+    height: 60px;
+    transition: all 0.2s ease;
+    box-shadow: none;
+}
+
+/* Эффект при нажатии на цифру (легкая серая заливка) */
+.dial-grid .d-num:active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Кнопки "МЕССЕНДЖЕР", "ЗВОНОК", "ОТПРАВИТЬ" */
+#dialBtnMsg, #dialBtnCall, #dialSubmit, #requestManualSearchBtn {
+    background-color: #fff;
+    color: #0056b3; /* Наш основной синий */
+    border: 1px solid #0056b3;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+}
+
+/* Специфические иконки (💬, 📞) */
+.dial-mode-btn i {
+    margin-right: 5px;
+}
+
+/* Эффект для активной кнопки режима */
+.dial-mode-btn.active {
+    background-color: #0056b3; /* Заливка только для активной */
+    color: #fff;
+    border: none;
+}
+
+/* Эффект при нажатии */
+#dialBtnMsg:active, #dialBtnCall:active, #dialSubmit:active, #requestManualSearchBtn:active {
+    background-color: rgba(0, 86, 179, 0.05); /* Легкая синяя заливка */
+}
+
+/* --- СТИЛИ ДЛЯ КНОПОК В КОРЗИНЕ И ПОИСКЕ --- */
+
+/* Кнопки WhatsApp и Telegram в корзине */
+.cart-checkout-btn-group .contact-method-btn {
+    flex: 1; /* Кнопки делят место пополам */
+    margin: 0 5px; /* Небольшой отступ между ними */
+}
+
+/* Кнопка "ЗАПРОСИТЬ РАСШИРЕННЫЙ ПОИСК" */
+#requestManualSearchBtn {
+    border-width: 2px; /* Чуть толще рамку, чтобы выделить */
+}
+
+/* КНОПКА "ПОНЯТНО" (в окне "Наш опыт") */
+.s-close-btn {
+    border: 1px solid #ccc;
+    color: #333;
+}
+/* Эффект "живой" кнопки при нажатии */
+button:active {
+    transform: scale(0.96); /* Кнопка визуально чуть вдавливается */
+    background-color: rgba(0, 0, 0, 0.05) !important; /* Слегка темнеет */
+    transition: transform 0.1s ease;
+}
+/* Стиль для квадратика галочки */
+    .dial-checkbox {
+        width: 22px; height: 22px; border-radius: 6px; 
+        border: 1.5px solid #ddd; display: flex; 
+        align-items: center; justify-content: center; 
+        font-size: 14px; font-weight: bold; transition: 0.2s;
+    }
+    /* Тонкие и элегантные грани для карточек и окон */
+.card {
+    border: 1px solid #f0f0f0 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+}
+
+.info-box, .contact-box, .notepad-item {
+    border: 1px solid #ebebeb !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04) !important;
 }

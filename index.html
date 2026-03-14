@@ -49,7 +49,7 @@
                 <span class="tm-sep">|</span>
                 <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
                 <span class="tm-sep">|</span>
-                <div class="tm-item live-glow" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>  
+                <div class="tm-item" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>
             </div>      
 
             <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
@@ -106,7 +106,6 @@
             <div id="modalHeaderLinks" class="m-head-add-more"></div>
 
             <div class="m-head-info">
-                <div id="modalOrderId" style="font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px;">ЗАКАЗ: ...</div>
                 <div style="font-size: 13px; color: #000; font-weight: 700;">Курс: <span id="cartRate">0</span> ₽</div>
             </div>
 
@@ -123,7 +122,7 @@
     </div>
 </div>
 
-<div id="infoOverlay" class="info-overlay" onclick="closeInfo()">
+<div id="infoOverlay" class="info-overlay" onclick="closeInfo()" style="z-index: 2147483647 !important;">
     <div class="info-box" onclick="event.stopPropagation()" style="position: relative; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
         
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 15px; flex-shrink: 0;">
@@ -133,57 +132,31 @@
         
         <div id="infoContent" class="info-content" style="overflow-y: auto; flex: 1; padding-right: 5px;"></div>
         
-        <button onclick="closeInfo()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; flex-shrink: 0;">ПОНЯТНО</button>
+        <<button onclick="closeInfo()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; flex-shrink: 0;">ПОНЯТНО</button>
     </div>
 </div>
 
 <div id="contactOverlay" class="info-overlay" onclick="closeContact()">
-    <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; position: relative;">
+    <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; position: relative; padding: 20px 15px;">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <div id="contactTitle" class="info-title" style="margin: 0; padding: 0; border: none; font-size: 18px; text-align: left;">ВАШ ВОПРОС</div>
             <div onclick="closeContact()" style="font-size: 22px; color: #999; cursor: pointer; padding: 0 5px; line-height: 1;">✕</div>
         </div>
         
-        <div id="orderPreviewBox" style="display: none;"></div>
+        <textarea id="manualMsgInput" class="universal-textarea" style="display:none; width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 14px; margin-bottom: 20px; resize: none; outline: none;" placeholder="Напишите ваш вопрос..."></textarea>
         
-        <textarea id="manualMsgInput" class="universal-textarea" style="display:none; width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 14px; margin-bottom: 20px; resize: none; outline: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);" placeholder="Напишите ваш вопрос..."></textarea>
-        
-        <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 10px;">
-            <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px;">Выберите удобный чат для отправки:</div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button onclick="submitFinal('wa')" style="flex: 1; height: 46px; background: #fff; color: #25D366; border: 1px solid #25D366; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">
-                    WhatsApp
-                </button>
-                <button onclick="submitFinal('tg')" style="flex: 1; height: 46px; background: #fff; color: #0088cc; border: 1px solid #0088cc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">
-                    Telegram
-                </button>
+        <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 8px;">
             </div>
-
-            <button onclick="submitFinal('email')" style="width: 100%; height: 46px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s;">
-                ✉️ Написать на E-mail
-            </button>
-            
-            <button onclick="switchToContactForm()" style="width: 100%; height: 46px; background: #f8f9fa; color: #555; border: 1px dashed #bbb; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 5px;">
-                📞 Мессенджеры недоступны?
-            </button>
-        </div>
-
-        <button id="contactBackBtn" onclick="closeContact()" style="background: none; border: none; color: #888; margin-top: 15px; width: 100%; font-size: 13px; text-decoration: underline; cursor: pointer;">
-            ОТМЕНА
-        </button>
     </div>
 </div>
 
 <div id="successPopup" class="success-popup">
     <div class="s-head-icon">✅</div>
     <div id="succTitle" class="s-title">Успешно!</div>
-    
     <div id="succSubTitle" style="font-size: 14px; color: #555; margin-bottom: 15px; line-height: 1.4;"></div>
-    
     <div id="succID" class="s-order-id" style="display: none;">#0000</div>
-    <button onclick="closeSuccess()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">ПОНЯТНО</button>
+    <button onclick="closeSuccess()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;">ПОНЯТНО</button>
 </div>
 
 <script>
@@ -207,6 +180,7 @@ let db = [], cart = [], rateCalc = 100, shipEur = 50, filters = { search: '' };
 let cbrRateData = 0, googleSettings = null; 
 
 // Важные технические флаги (НЕ УДАЛЯТЬ)
+let scrollPos = 0;            // <--- ДОБАВЬ ЭТУ СТРОКУ!
 let isQuestionMode = false;   // true — когда нажат "Написать вопрос", false — когда идет заказ
 let isManagerOrder = false;   // true — если корзина пришла по ссылке от менеджера
 let currentPreparedText = ""; // Буфер для текста сообщения
@@ -427,6 +401,19 @@ function showInfo(type) {
                     Мы работаем открыто: заявленная стоимость обеспечения <b style="color: #000;">уже включает все сервисные расходы</b>. Вы сразу видите финальную сумму и понятный расчетный курс без скрытых платежей.
                 </div>
             </div>` 
+     
+    },
+        // --- ДОБАВИТЬ ЭТОТ БЛОК: ---
+        privacy: {
+            t: 'ОБРАБОТКА ДАННЫХ',
+            c: `<div style="font-size: 14px; line-height: 1.5; color: #333; text-align: left; padding: 5px;">
+                    <p style="margin-bottom: 10px;">Мы уважаем вашу частную жизнь. Сбор данных на сайте <b>RXDE.online</b> ограничен исключительно технической необходимостью:</p>
+                    <ul style="padding-left: 20px; margin: 10px 0; color: #555;">
+                        <li style="margin-bottom: 8px;"><b>Номер телефона:</b> используется строго для разовой связи с вами по вашему запросу. Мы не передаем его третьим лицам.</li>
+                        <li style="margin-bottom: 8px;"><b>Состав корзины:</b> передается в зашифрованном виде (код) для оценки стоимости логистических услуг.</li>
+                    </ul>
+                    <p style="margin-top: 10px; color: #888; font-size: 12px;">Вы в любой момент можете очистить данные о корзине (кнопка "Очистить"). Обработка номера телефона прекращается сразу после выполнения вашего поручения.</p>
+                </div>`
         }
     };
     
@@ -648,11 +635,10 @@ function render(isNewSearch = false, isTrackComplete = false) {
 
     if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
     
-    // Берем данные из глобального фильтра, который мы сохраняем в handleInput
     const rawQuery = filters.search.trim();
     const query = rawQuery.toLowerCase();
 
-    // 1. ЕСЛИ ПОИСК ПУСТОЙ — ПОКАЗЫВАЕМ ГЛАВНУЮ (Новости/Баннер)
+    // 1. ЕСЛИ ПОИСК ПУСТОЙ — ПОКАЗЫВАЕМ ГЛАВНУЮ
     if (!query) { 
         list.innerHTML = '';
         intro.style.display = 'block'; 
@@ -664,58 +650,65 @@ function render(isNewSearch = false, isTrackComplete = false) {
     intro.style.display = 'none';
     if (banner) banner.style.display = 'none'; 
 
-    // 2. ФИЛЬТРАЦИЯ БАЗЫ ДАННЫХ
-    const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
-    const wordVars = queryWords.map(w => getSearchVariations(w));
+    let results = [];
 
-    let results = db.filter(r => {
-        if (!r || !r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Substance_RU||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
-        return wordVars.every(vars => vars.some(v => pool.includes(v)));
-    });
+    // --- МАГИЯ: УНИВЕРСАЛЬНАЯ КОМАНДА big(N) ---
+    // Регулярка ищет слово "big", за которым идут любые цифры
+    const bigMatch = query.match(/^big(\d+)$/);
 
-    // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ (ОБНОВЛЕНО: АККУРАТНЫЙ ФИЛЬТР)
+    if (bigMatch) {
+        const count = parseInt(bigMatch[1]); // Извлекаем то самое N
+        results = [...db]
+            .filter(r => {
+                const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
+                return p > 0; // Только товары с ценой
+            })
+            .sort((a, b) => {
+                const priceA = parseFloat(String(a.Price).replace(',', '.')) || 0;
+                const priceB = parseFloat(String(b.Price).replace(',', '.')) || 0;
+                return priceB - priceA; // Сортировка по убыванию
+            })
+            .slice(0, count); // Берем ровно N товаров
+    } else {
+        // --- ОБЫЧНЫЙ ПОИСК ---
+        const queryWords = query.replace(/[:.,\-№#]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+        const wordVars = queryWords.map(w => getSearchVariations(w));
+
+        results = db.filter(r => {
+            if (!r || !r.Name_DE) return false;
+            const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Substance_RU||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN||''}`.toLowerCase();
+            return wordVars.every(vars => vars.some(v => pool.includes(v)));
+        });
+    }
+
+    // 3. ЛОГИКА ОТОБРАЖЕНИЯ ОШИБОК И ТРЕКОВ
     if (results.length === 0) {
-        // Если handleInput сказал нам, что это трек DHL — ничего не пишем
         if (isTrackComplete) { list.innerHTML = ''; return; }
-        
         const cleanForCheck = rawQuery.replace(/\s+/g, '');
-        
-        // Прячем плашку ТОЛЬКО если это длинный трек-номер РФ (9-14 цифр) или готовый международный трек
-        const isRussianTrack = /^\d{9,14}$/.test(cleanForCheck);
-        const isIntlTrack = /^[A-Za-z]{2}\d{9}[A-Za-z]{2}$/i.test(cleanForCheck);
-
-        if (isRussianTrack || isIntlTrack) {
+        if (/^\d{9,14}$/.test(cleanForCheck) || /^[A-Z]{2}\d{9}[A-Z]{2}$/i.test(cleanForCheck)) {
             list.innerHTML = ''; return;
         }
-
         if (query.length < 2) return;
         
         list.innerHTML = `
         <div style="text-align: center; padding: 40px 20px; background: #fafafa; border-radius: 12px; margin-top: 15px; border: 1px solid #eaeaea;">
             <div style="font-size: 15px; font-weight: 800; color: #111; margin-bottom: 8px;">В каталоге не найдено: «${rawQuery}»</div>
-            <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат может называться иначе или требует ручного поиска по аптекам Европы.</div>
-            <button onclick="openContact('search')" style="background: #fff; color: var(--p); border: 2px solid var(--p); padding: 14px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer; transition: all 0.2s;">
+            <div style="font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.4;">Препарат требует ручного поиска по аптекам Европы.</div>
+            <button onclick="openContact('search')" style="background: #fff; color: var(--p); border: 2px solid var(--p); padding: 14px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; width: 100%; cursor: pointer;">
                 ЗАПРОСИТЬ РАСШИРЕННЫЙ ПОИСК
             </button>
         </div>`;
         return;
     }
 
-    /// 4. ОТРИСОВКА КАРТОЧЕК С СУММОЙ СТРОКИ, RX И PDF
+    // 4. ОТРИСОВКА КАРТОЧЕК
     let htmlBuffer = '';
     results.forEach(r => {
-        // --- 1. ВОТ НАША ЗАЩИТА ОТ ПРОБЕЛОВ ---
         const cleanPZN = String(r.PZN).trim();
-
         const p = parseFloat(String(r.Price).replace(',', '.')) || 0;
-        const q = getQty(cleanPZN); // Считаем корзину по чистому PZN
-        
-        // Считаем сумму сразу (Цена х Кол-во)
+        const q = getQty(cleanPZN); 
         const rowSumEur = Math.round(p * q);
         const rowSumRub = getRubPrice(rowSumEur);
-
-        // --- НОВАЯ ЛОГИКА БЕЙДЖЕЙ ---
         const isRx = r.R && r.R !== "0" && !r.R.toLowerCase().includes("no");
         const hasPdf = String(r.PDF).trim() === "1";
 
@@ -724,8 +717,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
             <img src="img/${cleanPZN}.jpg" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
             <div class="card-body">
                 <div class="c-title">
-                    ${r.Name_DE} 
-                    ${isRx ? '<span class="b-rx">RX</span>' : ''}
+                    ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
                     ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
                 </div>
                 <div class="card-bottom">
@@ -735,29 +727,26 @@ function render(isNewSearch = false, isTrackComplete = false) {
                         <div>PZN: ${cleanPZN}</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="u-price" style="display: flex; flex-direction: column; justify-content: center; line-height: 1.1;">
+                        <div class="u-price" style="display: flex; flex-direction: column; line-height: 1.1;">
                             <span style="font-size: 16px; font-weight: 800; color: #000;">${Math.round(p)} €</span>
                             <span style="font-size: 12px; font-weight: 500; color: #888; margin-top: 2px;">${getRubPrice(p).toLocaleString('ru-RU')} ₽</span>
                         </div>
                         <div class="qty-capsule-wrap">
-                                ${p === 0 ? `
-                                    <button class="btn-add" style="background: #f0f0f0; color: #aaa; border: 1px solid #e0e0e0; cursor: not-allowed;" disabled>Нет в аптеках</button>
-                                ` : (q > 0 ? `
-                                    <div class="qty-capsule">
-                                        <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
-                                        <span class="q-val">${q}</span>
-                                        <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
-                                    </div>
-                                ` : `
-                                    <button class="btn-add" onclick="modQty('${cleanPZN}',1, event)">Добавить</button>
-                                `)}
+                            ${p === 0 ? `
+                                <button class="btn-add" style="opacity: 0.5; cursor: not-allowed;" disabled>Нет в наличии</button>
+                            ` : (q > 0 ? `
+                                <div class="qty-capsule">
+                                    <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
+                                    <span class="q-val">${q}</span>
+                                    <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
+                                </div>
+                            ` : `
+                                <button class="btn-add" onclick="modQty('${cleanPZN}',1, event)">
+                                    <span style="font-size: 18px; line-height: 1;">+</span> Добавить
+                                </button>
+                            `)}
                         </div>
-                        ${q > 0 ? `
-                            <div class="sum-box">
-                                <div class="s-eur">${rowSumEur} €</div>
-                                <div class="s-rub">${rowSumRub.toLocaleString()} ₽</div>
-                            </div>
-                        ` : ''}
+                        ${q > 0 ? `<div class="sum-box"><div class="s-eur">${rowSumEur} €</div><div class="s-rub">${rowSumRub.toLocaleString()} ₽</div></div>` : ''}
                     </div>
                 </div>
             </div>
@@ -1175,29 +1164,19 @@ function updateBar() {
     if (!bar || !receipt) return;
 
     let totalEur = 0;
-    let totalPacks = 0; // Считаем упаковки
+    let totalPacks = 0; 
     let activeItems = [];
     let printIdx = 1;
 
-    // 1. Собираем данные безопасно
     cart.forEach((item) => {
         const dbItem = db.find(r => String(r.PZN).trim().padStart(8,'0') === String(item.pzn).trim().padStart(8,'0'));
         if (dbItem) {
-            // Бронебойная очистка цены прямо здесь (без внешних функций)
             let cleanStr = String(dbItem.Price).replace(/[^0-9,.]/g, '').replace(',', '.');
             const p = parseFloat(cleanStr) || 0;
-            
             if (p > 0) {
                 totalEur += p * item.qty;
                 totalPacks += item.qty; 
-                // Сохраняем математику для отрисовки
-                activeItems.push({ 
-                    num: printIdx++, 
-                    name: dbItem.Name_DE, 
-                    p: Math.round(p), 
-                    q: item.qty, 
-                    sum: Math.round(p) * item.qty 
-                });
+                activeItems.push({ num: printIdx++, name: dbItem.Name_DE, p: Math.round(p), q: item.qty, sum: Math.round(p) * item.qty });
             }
         }
     });
@@ -1205,10 +1184,8 @@ function updateBar() {
     const grandTotalEur = totalEur + (totalPacks > 0 ? shipEur : 0);
     const grandTotalRub = getRubPrice(grandTotalEur);
 
-    // 2. Обновляем бейдж (красный круг - упаковки)
     if (countEl) { countEl.innerText = totalPacks; countEl.style.display = 'flex'; }
 
-    // 3. Обновляем плашку с итогом
     if (totalPacks > 0) {
         bar.classList.add('active');
         priceEl.innerHTML = `<span style="font-size:12px; color:#000; opacity:0.7; margin-right:6px;">${grandTotalEur.toLocaleString('ru-RU')}€</span><b style="font-size:15px; color:#000;">${grandTotalRub.toLocaleString('ru-RU')} ₽</b>`;
@@ -1216,128 +1193,91 @@ function updateBar() {
         bar.classList.remove('active'); priceEl.innerText = ""; 
     }
 
-    // 4. МИНИ-ЧЕК (ТОЛЬКО ПК + ПРАВИЛО "3 и 2")
     if (totalPacks > 0 && window.innerWidth > 767) { 
         let rowsHtml = '';
         let n = activeItems.length;
-        let displayItems = [];
-
-        if (n <= 5) {
-            displayItems = activeItems; // Показывать все (1,2,3,4,5)
-        } else {
-            // Строго: первые 3, точки, последние 2
-            displayItems = [
-                activeItems[0], 
-                activeItems[1], 
-                activeItems[2], 
-                { isSeparator: true }, 
-                activeItems[n - 2], 
-                activeItems[n - 1]
-            ];
-        }
+        let displayItems = n <= 5 ? activeItems : [activeItems[0], activeItems[1], activeItems[2], { isSeparator: true }, activeItems[n - 2], activeItems[n - 1]];
         
         displayItems.forEach(item => {
             if (item.isSeparator) {
                 rowsHtml += `<div class="receipt-row" style="justify-content:center; opacity:0.3; font-size:10px; margin: 2px 0;">• • •</div>`;
             } else {
-                rowsHtml += `
-                <div class="receipt-row">
-                    <span class="num">${item.num}.</span>
-                    <span class="name">${item.name}</span>
-                    <span class="dots"></span>
-                    <span class="calc">${item.q > 1 ? item.p + '€×' + item.q + '=' : ''} <b>${item.sum}€</b></span>
-                </div>`;
+                rowsHtml += `<div class="receipt-row"><span class="num">${item.num}.</span><span class="name">${item.name}</span><span class="dots"></span><span class="calc">${item.q > 1 ? item.p + '€×' + item.q + '=' : ''} <b>${item.sum}€</b></span></div>`;
             }
         });
 
-        receipt.innerHTML = `
-            ${rowsHtml}
-            <div class="receipt-divider" style="height:1px; border-bottom:1px dashed #eee; margin:6px 0;"></div>
-            <div class="receipt-row color-ship" style="color:#666;"><span class="name">Логистический сбор</span><span class="dots"></span><span class="calc">${shipEur} €</span></div>
-            <div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center; justify-content:space-between; width:100%;">
-                <span>ЛИСТ ДОСТАВКИ:</span><div style="text-align:right;"><span style="font-size:13px; font-weight:400; color:#555; margin-right:4px;">${grandTotalEur.toLocaleString('ru-RU')} €</span><span style="color:#ccc; font-weight:300;">|</span><span style="font-size:15px; margin-left:4px;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span></div>
-            </div>`;
+        receipt.innerHTML = `${rowsHtml}<div class="receipt-divider" style="height:1px; border-bottom:1px dashed #eee; margin:6px 0;"></div><div class="receipt-row color-ship" style="color:#666;"><span class="name">Логистический сбор</span><span class="dots"></span><span class="calc">${shipEur} €</span></div><div class="receipt-row total-rub-line" style="font-weight:900; color:#000; font-size:15px; border-top:1px solid #eee; margin-top:5px; padding-top:5px; align-items:center; justify-content:space-between; width:100%;"><span>ЛИСТ ДОСТАВКИ:</span><div style="text-align:right;"><span style="font-size:13px; font-weight:400; color:#555; margin-right:4px;">${grandTotalEur.toLocaleString('ru-RU')} €</span><span style="color:#ccc; font-weight:300;">|</span><span style="font-size:15px; margin-left:4px;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span></div></div>`;
         receipt.style.display = 'flex';
     } else {
         receipt.style.display = 'none'; 
     }
 
-    // 5. ФУТЕР БОЛЬШОЙ КОРЗИНЫ (С бесшовной кнопкой оформления)
-    // 5. ФУТЕР БОЛЬШОЙ КОРЗИНЫ (Левая и Правая колонки)
     const footerTotalContent = document.getElementById('footerTotalContent');
     if (footerTotalContent) {
         footerTotalContent.innerHTML = `
-            <div id="cartActionArea" style="flex: 1; min-width: 220px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center;">
-                <button onclick="executeIronRuleDirect()" style="background: transparent; color: #333; border: 1px solid #ccc; padding: 12px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s; width: 100%; max-width: 260px; justify-content: center;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    Копировать заказ
-                </button>
-                <div style="font-size: 11px; color: #888; margin-top: 6px; width: 100%; max-width: 260px; text-align: center;">
-                    для передачи менеджеру
+            <div style="width: 100%; display: flex; justify-content: flex-end; align-items: center; gap: 15px; padding: 10px 0;">
+                <div id="copyActionBlock" onclick="handleOrderCopyAndOpen(this)" style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #007bff; transition: 0.2s;">
+                    <div id="copyActionText" style="font-size: 13px; text-align: right; line-height: 1.2;">
+                        Скопировать заказ<br><b style="color: #000;">в чат менеджеру</b>
+                    </div>
+                    <div id="copyActionIcon" style="display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </div>
                 </div>
-            </div>
-
-            <div style="flex: 1; text-align: right; min-width: 160px;">
-                <div style="font-size:11px; color:#007bff; margin-bottom:4px; font-weight:800; text-transform: uppercase;">
-                    ПОЗИЦИЙ: ${activeItems.length} <span style="opacity: 0.4; margin: 0 4px;">|</span> УПАКОВОК: ${totalPacks}
+                <div style="width: 1px; height: 38px; background: #e0e0e0;"></div>
+                <div style="text-align: right; min-width: 140px;">
+                    <div style="font-size: 10px; color: #007bff; font-weight: 800; text-transform: uppercase; margin-bottom: 2px;">
+                        Товарных позиций: ${activeItems.length} <span style="opacity: 0.4; margin: 0 3px;">|</span> Упаковок: ${totalPacks}
+                    </div>
+                    <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px;">
+                        <span style="font-size: 14px; color: #999;">${grandTotalEur.toLocaleString('ru-RU')} €</span>
+                        <span id="footerTotalSum" style="font-size: 26px; font-weight: 900; color: #000; letter-spacing: -0.5px;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span>
+                    </div>
                 </div>
-                <div style="display:flex; align-items:baseline; justify-content: flex-end; gap:8px;">
-                    <span style="font-size: 16px; opacity: 0.6; color: #000;">${grandTotalEur.toLocaleString('ru-RU')} €</span>
-                    <span style="font-size: 18px; font-weight: 300; color: #ccc;">|</span>
-                    <span id="footerTotalSum" style="font-size: 24px; font-weight: 700; color: #000;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span>
-                </div>
-                <div style="font-size:11px; color:#999; margin-top:2px;">Итоговая стоимость обеспечения</div>
             </div>
         `;
     }
-
-    if (cartActionArea) {
-        cartActionArea.innerHTML = `
-            <button onclick="executeIronRuleDirect()" style="width: 100%; background: #fff; color: #333; border: 1px solid #ccc; padding: 14px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: all 0.2s;">
-                <span style="font-size: 18px; opacity: 0.7;">📄</span> СКОПИРОВАТЬ МОЙ ЗАКАЗ МЕНЕДЖЕРУ
-            </button>
-        `;
-    }
-    
-    if(document.getElementById('cartRate')) {
-        document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
-    }
+    if(document.getElementById('cartRate')) document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
 }
 
 // БЕСШОВНОЕ КОПИРОВАНИЕ ПРЯМО ИЗ КОРЗИНЫ
 // БЕСШОВНОЕ КОПИРОВАНИЕ ПРЯМО ИЗ КОРЗИНЫ
 function executeIronRuleDirect() {
+    // 1. Формируем текст
     const baseUrl = window.location.origin + window.location.pathname;
     const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
     const urlDate = new Date().toLocaleDateString('ru-RU');
     const shortLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
     const textToCopy = `Здравствуйте, RxDE! Мой заказ:\n\n${shortLink}`;
 
+    // 2. Копируем в буфер (success)
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(textToCopy).then(() => {
             if (navigator.vibrate) navigator.vibrate(15); 
             
+            // 3. Плавно меняем иконку слева на выбор чата (кружочки вертикальной стопкой)
             const actionArea = document.getElementById('cartActionArea');
             if (actionArea) {
+                // Вставляем ровно в тот же зарезервированный объем
                 actionArea.innerHTML = `
-                    <div style="width: 100%; max-width: 260px; animation: fadeIn 0.3s; text-align: center;">
-                        <div style="font-size: 13px; font-weight: 800; color: #2e7d32; margin-bottom: 6px;">
-                            ✓ Скопировано! Вставьте в чат:
-                        </div>
-                        <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 8px;">
-                            <button onclick="window.open('https://wa.me/${WA_PHONE}', '_blank')" style="flex: 1; height: 36px; background: #fff; color: #25D366; border: 1px solid #25D366; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s;">
-                                WhatsApp
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; animation: fadeIn 0.3s; text-align: center;">
+                        
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <button onclick="window.open('https://wa.me/${WA_PHONE}', '_blank')" style="width: 32px; height: 32px; background: #fff; border: 1px solid #25D366; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s;">
+                                <span style="font-size: 16px;">💬</span>
                             </button>
-                            <button onclick="window.open('https://t.me/${TG_USER}', '_blank')" style="flex: 1; height: 36px; background: #fff; color: #0088cc; border: 1px solid #0088cc; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; transition: 0.2s;">
-                                Telegram
+                            <button onclick="window.open('https://t.me/${TG_USER}', '_blank')" style="width: 32px; height: 32px; background: #fff; border: 1px solid #0088cc; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s;">
+                                <span style="font-size: 16px;">✈️</span>
+                            </button>
+                            <button onclick="window.location.href = window.currentMailHref" style="width: 32px; height: 32px; background: #fff; border: 1px solid #ccc; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s;">
+                                <span style="font-size: 16px;">✉️</span>
                             </button>
                         </div>
-                        <button onclick="switchToContactForm()" style="background: none; border: none; color: #888; font-size: 11px; text-decoration: underline; cursor: pointer;">
-                            Мессенджеры недоступны?
-                        </button>
+                        
+                        <span style="font-size: 9px; color: #2e7d32; font-weight: 800; text-transform: uppercase; line-height: 1;">Вставьте<br>текст</span>
                     </div>
                 `;
             }
@@ -1348,6 +1288,25 @@ function executeIronRuleDirect() {
         alert("Ваш браузер не поддерживает автокопирование. Пожалуйста, скопируйте текст вручную.");
     }
 }
+
+function handleEmailClick(btn) {
+    // 1. Визуально показываем, что процесс пошел
+    const originalText = btn.innerText;
+    btn.innerText = "ОТКРЫВАЮ...";
+    btn.style.opacity = "0.6";
+    btn.disabled = true; // Блокируем от повторных нажатий
+
+    // 2. Вызываем почту
+    window.location.href = window.currentMailHref;
+
+    // 3. Через 3 секунды возвращаем кнопку в исходное состояние
+    setTimeout(() => {
+        btn.innerText = originalText;
+        btn.style.opacity = "1";
+        btn.disabled = false;
+    }, 3000);
+}
+
     /* =========================================
    BLOCK 7: ИНИЦИАЛИЗАЦИЯ И ЛОГИКА БОЛЬШОЙ КОРЗИНЫ
    ========================================= */
@@ -1455,9 +1414,101 @@ async function init() {
     setTimeout(playWelcomeAnimation, 500);
 }
 
-// УДАЛЕНО: window.onload = init; (устаревший метод, может конфликтовать)
-// Оставляем только один вызов в самом конце файла:
-init();
+
+
+// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + СИНЯЯ ИКОНКА С ТЕКСТОМ + ТАЙМЕР ---
+// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + ТАЙМЕР + ВИБРО ---
+// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + ТАЙМЕР-САМОУБИЙЦА + ВИБРО ---
+// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + ТАЙМЕР-САМОУБИЙЦА + ВИБРО ---
+function handleOrderCopyAndOpen(btnElement) {
+    const textEl = document.getElementById('copyActionText');
+    const iconEl = document.getElementById('copyActionIcon');
+    if (!textEl || !iconEl) return;
+
+    if (btnElement.dataset.processing === "timer") {
+        if (btnElement.forceOpenContact) btnElement.forceOpenContact();
+        return;
+    }
+    
+    if (btnElement.dataset.processing === "true") return;
+    btnElement.dataset.processing = "true";
+
+    const data = getOrderTextAndLink();
+    if (!data) { btnElement.dataset.processing = "false"; return; }
+
+    currentPreparedText = data.link; 
+
+    const sumElement = document.getElementById('footerTotalSum');
+    const displaySum = sumElement ? sumElement.innerText : '0 ₽';
+
+    const triggerSuccessAndTimer = () => {
+        if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
+
+        const rect = iconEl.getBoundingClientRect();
+        const snapshot = document.createElement('div');
+        
+        snapshot.innerHTML = `<div style="font-size: 10px; font-weight: 700; color: #aaa; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 6px; letter-spacing: 0.5px;">ЧЕК RxDE</div><div style="font-size: 14px; font-weight: 800; color: #007bff; text-align: center;">${displaySum}</div>`;
+        snapshot.style.cssText = `position: fixed; top: 40%; left: 50%; width: 100px; transform: translate(-50%, -50%) scale(0.5); background: #fff; border: 1px solid #eee; padding: 12px; border-radius: 8px; z-index: 999999; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: all 0.6s cubic-bezier(0.5, -0.5, 0.2, 1.2); opacity: 0; pointer-events: none;`;
+        
+        document.body.appendChild(snapshot);
+
+        setTimeout(() => { snapshot.style.opacity = '1'; snapshot.style.transform = 'translate(-50%, -50%) scale(1.1)'; }, 10);
+        setTimeout(() => { snapshot.style.top = (rect.top + rect.height / 2) + 'px'; snapshot.style.left = (rect.left + rect.width / 2) + 'px'; snapshot.style.transform = 'translate(-50%, -50%) scale(0.05)'; snapshot.style.opacity = '0.3'; }, 600); 
+        setTimeout(() => snapshot.remove(), 1200);
+
+        setTimeout(() => {
+            btnElement.dataset.processing = "timer";
+            
+            // ПОЛНАЯ ИКОНКА: 3 аккуратные линии (текст скопирован)
+            iconEl.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                <line x1="12" y1="12.5" x2="19" y2="12.5"></line>
+                <line x1="12" y1="15.5" x2="19" y2="15.5"></line>
+                <line x1="12" y1="18.5" x2="16" y2="18.5"></line>
+            </svg>`;
+
+            let timeLeft = 5;
+            
+            if (window.orderCopyTimer) clearInterval(window.orderCopyTimer);
+
+            btnElement.forceOpenContact = () => {
+                if (window.orderCopyTimer) clearInterval(window.orderCopyTimer);
+                window.orderCopyTimer = null;
+                openContact('order');
+                setTimeout(() => { btnElement.dataset.processing = "false"; updateBar(); }, 500);
+            };
+
+            const updateTimerText = () => {
+                if (!document.body.contains(textEl)) {
+                    if (window.orderCopyTimer) clearInterval(window.orderCopyTimer);
+                    window.orderCopyTimer = null;
+                    return;
+                }
+                textEl.innerHTML = `<span style="font-size: 11px; color: #2e7d32; font-weight: 800;">✓ КОД В БУФЕРЕ</span><br><b style="color: #555; font-size: 12px;">Чат через <span style="font-size: 16px; color: #007bff;">${timeLeft}</span> (или жми)</b>`;
+            };
+            
+            updateTimerText();
+
+            window.orderCopyTimer = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    updateTimerText();
+                } else {
+                    if (document.body.contains(textEl)) {
+                        btnElement.forceOpenContact();
+                    } else {
+                        clearInterval(window.orderCopyTimer);
+                    }
+                }
+            }, 1000);
+        }, 1100); 
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(currentPreparedText).then(triggerSuccessAndTimer).catch(() => triggerSuccessAndTimer());
+    } else { triggerSuccessAndTimer(); }
+}
 
 function updateCartStatusUI() {
     const container = document.getElementById('modalStatusBadge');
@@ -1475,12 +1526,16 @@ function renderCartItems() {
     const clearLabel = cartBackup ? "ВЕРНУТЬ" : "ОЧИСТИТЬ";
     const clearColor = cartBackup ? "#00e676" : "#bbb"; 
 
+    // ОБНОВЛЕННАЯ ШАПКА КОРЗИНЫ (С воздушной кнопкой)
+    headerLinks.style.display = 'flex';
+    headerLinks.style.width = '100%';
+    headerLinks.style.justifyContent = 'space-between';
+    headerLinks.style.alignItems = 'center';
+
     headerLinks.innerHTML = `
-        <div onclick="addMoreItems()" style="display: flex; align-items: center; cursor: pointer;">
-            <span style="font-size: 24px; color: var(--p); line-height: 1; margin-right: 4px;">‹</span>
-            <span style="color: var(--p); font-weight: 800; font-size: 12px;">ДОБАВИТЬ В ЛИСТ</span>
-         </div>
-        <span style="color: #eee; margin: 0 10px;">|</span>
+        <button onclick="addMoreItems()" class="btn-add" style="border: none; background: #f0f7ff; color: #007bff; padding: 6px 12px; height: 32px;">
+            <span style="font-size: 18px; line-height: 1;">+</span> Добавить еще
+        </button>
         <div onclick="event.stopPropagation(); handleCartToggle();" 
              style="font-size: 11px; font-weight: 800; color: ${clearColor}; text-transform: uppercase; cursor: pointer;">
              ${clearLabel}
@@ -1489,7 +1544,6 @@ function renderCartItems() {
 
     div.innerHTML = '';
 
-    // 1. ШАПКА ДЛЯ ВОССТАНОВЛЕННЫХ ЗАКАЗОВ
     if (restoredDate && cart.length > 0) {
         const title = isManagerOrder ? '👨‍⚕️ Заказ от менеджера' : '🛒 Сохраненная корзина';
         const dateNow = new Date().toLocaleDateString('ru-RU'); 
@@ -1508,18 +1562,15 @@ function renderCartItems() {
         return;
     }
 
-    // --- 2. ПЕРЕМЕННЫЕ ДЛЯ ПОДСЧЕТА ---
     let printIdx = 1;      
     let realItemsCount = 0; 
     let itemsSumEur = 0;
 
-    // --- 3. ЦИКЛ ОТРИСОВКИ ТОВАРОВ ---
     cart.forEach((item) => {
         const cleanPZN = String(item.pzn).trim();
         const r = db.find(x => String(x.PZN).trim() === cleanPZN);
         
         if (r) {
-            // [ИСПРАВЛЕНО]: Бронебойная очистка цены
             const cleanPrice = String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.');
             const p = parseFloat(cleanPrice) || 0;
             const isZero = (p === 0);
@@ -1580,25 +1631,31 @@ function renderCartItems() {
             </div>`;
         }
     });
-// --- 4. ФИНАЛЬНЫЙ БЛОК (ТОЛЬКО ПОЧТА) ---
+
+    // ОБНОВЛЕННЫЙ ПОДВАЛ КОРЗИНЫ (Идентичная кнопка)
     div.innerHTML += `
-    <div onclick="addMoreItems()" style="margin-top: 15px; background: #fdfdfd; border: 1px dashed #ccc; border-radius: 12px; padding: 14px 15px; cursor: pointer;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <div style="font-size: 14px; font-weight: 600; color: #333;">Тариф почты из Европы</div>
-                <div style="font-size: 11px; color: #888;">12–25 дней (до 5кг)</div>
-            </div>
-            <div style="text-align: right;">
-                <div style="font-size: 16px; font-weight: 800; color: #000;">${shipEur} €</div>
-                <div style="font-size: 12px; color: #666;">${getRubPrice(shipEur).toLocaleString('ru-RU')} ₽</div>
-            </div>
+    <div style="margin-top: 15px; border: 1px dashed #ccc; border-radius: 12px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; background: #fdfdfd;">
+        <button onclick="addMoreItems()" class="btn-add" style="border: none; background: #f0f7ff; color: #007bff; padding: 6px 12px; height: 32px;">
+            <span style="font-size: 18px; line-height: 1;">+</span> Добавить еще
+        </button>
+        <div style="text-align: right; border-left: 1px solid #eee; padding-left: 15px;">
+            <div style="font-size: 11px; color: #666; margin-bottom: 2px;">Логистика (до 5 кг)</div>
+            <div style="font-size: 15px; font-weight: 800; color: #000;">${shipEur} € <span style="font-size: 12px; color: #888; font-weight: 500;">/ ${getRubPrice(shipEur).toLocaleString('ru-RU')} ₽</span></div>
         </div>
     </div>
-    <div style="height: 20px;"></div>`;
-}
+    <div style="height: 15px;"></div>`;
+} // <-- Конец функции renderCartItems
 
-// --- ОТКРЫТИЕ И ЗАКРЫТИЕ ---
-let scrollPos = 0;
+// 1. Генерация номера заказа (БЕЗ НЕЁ КОРЗИНА НЕ ОТКРОЕТСЯ)
+function generateOrderID() {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const y = now.getFullYear();
+    const h = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    return `${d}${m}${y}-${h}${min}`;
+}
 
 function openCart() { 
     // 1. Добавляем виброотклик (20 мс - плотный, но короткий щелчок)
@@ -1699,228 +1756,262 @@ function addMoreItems() {
    BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ
    ========================================= */
 
-/**
- * УНИВЕРСАЛЬНЫЙ ЦЕНТР СВЯЗИ
- * type: 'question', 'search', 'order', 'news'
- * index: нужен только для типа 'news'
- */
-function openContact(type, index = null) {
-    // Уверенный тактильный отклик для главных действий
-    if (navigator.vibrate) {
-        if (type === 'order') {
-            navigator.vibrate(30); // Плотный клик для оформления заказа
-        } else {
-            navigator.vibrate(15); // Легкий клик для "Задать вопрос"
-        }
-    }
 
+
+
+
+
+
+
+/* =========================================
+   БЛОК СВЯЗИ: ТРИ КНОПКИ И УМНЫЙ ВВОД ТЕЛЕФОНА
+   ========================================= */
+
+function openContact(type, index = null) {
+    if (navigator.vibrate) navigator.vibrate(15);
     closeModal();
     
     const overlay = document.getElementById('contactOverlay');
     const title = document.getElementById('contactTitle');
-    const previewBox = document.getElementById('orderPreviewBox');
     const manualInput = document.getElementById('manualMsgInput');
     const buttons = document.getElementById('contactButtonsGrid');
     const mini = document.getElementById('miniCart');
+    const oldCancelBtn = document.getElementById('contactBackBtn');
 
-    if (!overlay || !manualInput) return;
+    if (!overlay || !buttons) return;
     if (mini) mini.style.display = 'none';
+    if (oldCancelBtn) oldCancelBtn.style.display = 'none';
 
-    // Сброс состояний
     isQuestionMode = (type !== 'order'); 
-    previewBox.style.display = 'none';
-    manualInput.style.display = 'none';
+    if (manualInput) manualInput.style.display = 'none';
+
+    // КНОПКИ БЕЗ КАРТИНОК И СИМВОЛОВ
+    const baseButtonsHtml = `
+        <button onclick="submitFinal('wa')" style="width: 100%; height: 46px; background: #fff; color: #25D366; border: 2px solid #25D366; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">
+            WhatsApp
+        </button>
+        <button onclick="submitFinal('tg')" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">
+            Telegram
+        </button>
+        <button onclick="showPhoneForm()" style="width: 100%; height: 46px; background: #f8f9fa; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 5px;">
+            Свяжитесь со мной
+        </button>
+    `;
 
     if (type === 'order') {
-        title.innerText = "СОГЛАСОВАТЬ ЛОГИСТИКУ";
-        
-        // 1. Показываем короткий и понятный состав для сверки
-        let visualPreview = "ЛИСТ ОТПРАВЛЕНИЯ:\n\n"; 
-        cart.forEach((item, idx) => {
-            const r = db.find(x => String(x.PZN) === String(item.pzn));
-            if (r) visualPreview += `${idx + 1}. ${r.Name_DE} — ${item.qty} шт.\n`;
-        });
-        visualPreview += "\n+ Тариф почты из Германии";
-        previewBox.innerText = visualPreview;
-        previewBox.style.display = 'block';
+        title.innerText = "ОФОРМЛЕНИЕ ЗАКАЗА";
+        const data = getOrderTextAndLink();
+        if(data) currentPreparedText = data.link;
 
-        // 2. Генерируем "ШИФР" (короткую ссылку без текстовой простыни)
-        const baseUrl = window.location.origin + window.location.pathname;
-        const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
-        const urlDate = new Date().toLocaleDateString('ru-RU');
-        const shortLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
-        
-        // Именно это улетит в буфер обмена:
-        currentPreparedText = `Здравствуйте, RxDE! Мой заказ:\n\n${shortLink}`;
-
-        // 3. ПОШАГОВЫЙ ИНТЕРФЕЙС (Железное правило)
-// 3. ПОШАГОВЫЙ ИНТЕРФЕЙС (Железное правило с правильной психологией)
         buttons.innerHTML = `
-            <div id="step1_copy">
-                <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 12px; line-height: 1.4;">
-                    Мы не запрашиваем ваши контакты на сайте.<br>Чтобы узнать сроки и наличие в Германии, передайте этот лист менеджеру:
-                </div>
-                <button onclick="executeIronRuleCopy()" style="width: 100%; height: 55px; background: var(--p); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: transform 0.1s; line-height: 1.2;">
-                    ПЕРЕДАТЬ ЗАКАЗ МЕНЕДЖЕРУ
-                </button>
+            <div style="font-size: 13px; color: #333; text-align: center; margin-bottom: 15px;">
+                Код заказа скопирован.<br><b>Выберите чат и вставьте код в сообщение.</b>
             </div>
-
-            <div id="step2_messengers" style="display: none; flex-direction: column; gap: 12px; animation: fadeIn 0.4s;">
-                <div style="font-size: 14px; font-weight: 800; color: #2e7d32; text-align: center; margin-bottom: 5px;">
-                    ✅ Заказ сохранен в память телефона!
-                </div>
-                <div style="font-size: 13px; color: #555; text-align: center; margin-bottom: 5px; line-height: 1.3;">
-                    Выберите чат связи, перейдите в него и <b>вставьте</b> сообщение для менеджера:
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="window.open('https://wa.me/${WA_PHONE}', '_blank')" style="flex:1; height: 50px; background: #25D366; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;">
-                        WhatsApp
-                    </button>
-                    <button onclick="window.open('https://t.me/${TG_USER}', '_blank')" style="flex:1; height: 50px; background: #0088cc; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;">
-                        Telegram
-                    </button>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-                <button onclick="switchToContactForm()" style="background: none; border: none; color: #999; font-size: 12px; text-decoration: underline; cursor: pointer;">
-                    Мессенджеры не работают? Оставить телефон
-                </button>
-            </div>
+            ${baseButtonsHtml}
         `;
-
     } else {
-        // ... (Тут остается твой старый код для 'search', 'news' и вопросов)
-        // РЕЖИМЫ ТЕКСТОВЫХ ВОПРОСОВ
-        manualInput.style.display = 'block';
-        
-        if (type === 'search') {
-            title.innerText = "ПОИСК ПРЕПАРАТА";
-            const q = document.getElementById('search').value.trim();
-            manualInput.value = `Здравствуйте! Не нашли в поиске: "${q.toUpperCase()}".\nПомогите найти этот препарат или аналог: `;
-        } 
-        else if (type === 'news' && index !== null && newsDB[index]) {
-            title.innerText = "ЗАДАТЬ ВОПРОС";
-            const n = newsDB[index];
-            const cleanText = n.Text.replace(/\[vopros\]/gi, '').trim();
-            manualInput.value = `Здравствуйте! Вопрос по новости от ${n.Date}:\n«${cleanText}»\n\nМой вопрос: `;
-        } 
-        else {
-            title.innerText = "ВАШ ВОПРОС";
-            manualInput.value = "Здравствуйте RxDE, у меня вопрос:\n";
+        if (manualInput) manualInput.style.display = 'block';
+        title.innerText = "ВАШ ВОПРОС";
+        buttons.innerHTML = baseButtonsHtml;
+
+        if (manualInput) {
+            if (type === 'search') {
+                const q = document.getElementById('search').value.trim();
+                manualInput.value = `Здравствуйте! Помогите найти: "${q.toUpperCase()}"`;
+            } else if (type === 'news' && index !== null && newsDB[index]) {
+                const n = newsDB[index];
+                manualInput.value = `Вопрос по новости от ${n.Date}: `;
+            } else {
+                manualInput.value = "Здравствуйте! У меня вопрос:\n";
+            }
+            setTimeout(() => manualInput.focus(), 200);
         }
-        
-        setTimeout(() => manualInput.focus(), 200);
     }
 
     overlay.style.display = 'flex';
-    buttons.style.display = 'flex';
 }
 
-// МАГИЯ ЖЕЛЕЗНОГО ПРАВИЛА
-function executeIronRuleCopy() {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(currentPreparedText).then(() => {
-            // Прячем кнопку копирования, показываем мессенджеры
-            document.getElementById('step1_copy').style.display = 'none';
-            document.getElementById('step2_messengers').style.display = 'flex';
-            
-            // Вибрация успеха
-            if (navigator.vibrate) navigator.vibrate([10, 50, 10]);
-        }).catch(err => {
-            alert("Не удалось скопировать. Пожалуйста, попробуйте еще раз.");
-        });
-    } else {
-        // Запасной вариант для очень старых браузеров
-        alert("Ваш браузер не поддерживает автокопирование. Пожалуйста, выделите текст выше и скопируйте его вручную.");
-    }
-}
-
-// 1. Генерация номера заказа
-function generateOrderID() {
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, '0');
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const y = now.getFullYear();
-    const h = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    return `${d}${m}${y}-${h}${min}`;
-}
-
-// 2. ПЕРЕХОД В ДАЙЛЕР
-function switchToContactForm() {
-    closeContact();
-    setTimeout(() => {
-        lastClickedChannel = "формы на сайте"; 
-        isWaitingForReturn = false; 
-        showDialer(); 
-    }, 300);
-}
-
-
-// 3. ГЛАВНАЯ ФУНКЦИЯ ОТПРАВКИ (Для раздела "Вопросы" и старых кнопок)
 function submitFinal(app) {
-    if (app === 'wa' || app === 'tg' || app === 'email') {
-        lastClickedChannel = (app === 'wa') ? 'WhatsApp' : (app === 'tg' ? 'Telegram' : 'E-mail');
-        isWaitingForReturn = true;
-    }
-
     const manualInput = document.getElementById('manualMsgInput');
-    let finalMsg = "";
-
-    if (isQuestionMode) {
-         finalMsg = manualInput ? manualInput.value.trim() : "Вопрос по препарату";
-    } else {
-         const orderData = getOrderTextAndLink();
-         finalMsg = orderData ? orderData.text : "Запрос заказа"; 
-    }
+    // Если режим вопроса - берем текст из поля, если заказа - берем зашифрованную ссылку
+    const finalMsg = isQuestionMode ? (manualInput ? manualInput.value.trim() : "") : currentPreparedText;
 
     if (app === 'wa') {
-        // Просто открываем WhatsApp. НИКАКИХ ЛОЖНЫХ ОКОН "УСПЕХА"!
         window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
-        closeContact();
     } else if (app === 'tg') {
+        // Копируем в буфер для надежности (чтобы юзер мог вставить, если переход не сработает)
         try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
-        closeContact(); 
-        document.getElementById('tgOverlayPreview').innerText = finalMsg; 
-        document.getElementById('tgOverlay').style.display = 'flex'; 
-    } else if (app === 'email') {
-        window.location.href = `mailto:med.zakaz.de@gmail.com?subject=RxDE&body=${encodeURIComponent(finalMsg)}`;
-        closeContact();
+        const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
+        window.open(`https://t.me/${username}`, '_blank');
+    }
+    closeContact();
+}
+
+// ----------------------------------------------------
+// ЧИСТАЯ ФОРМА ТЕЛЕФОНА С РУЧНОЙ ОТПРАВКОЙ И КНОПКОЙ
+// ----------------------------------------------------
+
+function showPhoneForm() {
+    const buttonsGrid = document.getElementById('contactButtonsGrid');
+    const title = document.getElementById('contactTitle');
+    const manualInput = document.getElementById('manualMsgInput');
+    
+    if (manualInput) manualInput.style.display = 'none';
+    title.innerText = "ОСТАВИТЬ НОМЕР";
+    
+    const descText = "Оставьте номер телефона, и наш специалист свяжется с вами в ближайшее время:";
+
+    buttonsGrid.innerHTML = `
+        <div style="text-align: center; padding: 10px 5px; animation: fadeIn 0.3s;">
+            <div style="font-size: 14px; color: #555; margin-bottom: 20px; line-height: 1.4;">${descText}</div>
+            
+            <div style="position: relative; margin-bottom: 12px;">
+                <div id="countryHint" style="position: absolute; right: 12px; top: 15px; font-size: 12px; font-weight: 700; color: #aaa; pointer-events: none; transition: 0.2s;"></div>
+                
+                <input type="tel" id="fallbackPhone" placeholder="+* *** *** ** **" oninput="checkPhoneInput()" 
+                       style="width: 100%; height: 48px; border: 1px solid #ccc; border-radius: 8px; padding: 0 15px; font-size: 17px; font-weight: 700; color: #111; text-align: left; letter-spacing: 1px; outline: none; background: #fff; transition: 0.3s;">
+            </div>
+            
+            <div id="privacyBlock" style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; opacity: 0.5; transition: 0.3s; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #eee;">
+                <input type="checkbox" id="fallbackPrivacy" onchange="checkPhoneInput()" disabled 
+                       style="width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; cursor: pointer; accent-color: var(--p);">
+                <label id="privacyLabel" for="fallbackPrivacy" style="font-size: 12px; color: #666; line-height: 1.4; text-align: left; cursor: pointer; transition: 0.3s;">
+                    Я даю согласие на обработку номера и принимаю <span onclick="showInfo('privacy'); event.preventDefault(); event.stopPropagation();" style="color: var(--p); text-decoration: underline;">Политику</span>
+                </label>
+            </div>
+            
+            <button id="fallbackSubmitBtn" onclick="processFallbackSubmit()" disabled 
+                    style="width: 100%; height: 50px; background: #ddd; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: not-allowed; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;">
+                ОТПРАВИТЬ
+            </button>
+            
+            <div id="fallbackLoader" style="display: none; font-size: 14px; font-weight: 700; color: #2e7d32; margin-top: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9;">
+                ОТПРАВЛЯЕМ...
+            </div>
+            
+            <button onclick="openContact(isQuestionMode ? 'question' : 'order')" style="background:none; border:none; color:#666; margin-top:20px; width:100%; font-size:13px; font-weight:700; text-transform:uppercase; cursor: pointer; letter-spacing: 1px;">
+                НАЗАД
+            </button>
+        </div>
+    `;
+    
+    setTimeout(() => {
+        const inp = document.getElementById('fallbackPhone');
+        if (inp) { inp.value = '+'; inp.focus(); }
+    }, 100);
+}
+
+function checkPhoneInput() {
+    const inp = document.getElementById('fallbackPhone');
+    const cb = document.getElementById('fallbackPrivacy');
+    const pBlock = document.getElementById('privacyBlock');
+    const pLabel = document.getElementById('privacyLabel');
+    const btn = document.getElementById('fallbackSubmitBtn');
+    const hint = document.getElementById('countryHint');
+    
+    let val = inp.value.replace(/[^\d+\s-]/g, '');
+    if (val.length > 0 && !val.includes('+')) val = '+' + val.replace(/\D/g, '');
+    if (val.startsWith('+8')) val = '+7' + val.substring(2);
+
+    const currentDigitsCount = val.replace(/\D/g, '').length;
+    if (currentDigitsCount > 15) val = val.slice(0, -1);
+
+    inp.value = val;
+    const digitsOnly = val.replace(/\D/g, '');
+    
+    let detectedName = '';
+    let detectedMask = '+* *** *** ** **';
+
+    if (digitsOnly.startsWith('7')) { detectedName = '🇷🇺/🇰🇿 РФ/КЗ'; detectedMask = '+7 *** *** ** **'; }
+    else if (digitsOnly.startsWith('49')) { detectedName = '🇩🇪 Германия'; detectedMask = '+49 **** *******'; }
+    else if (digitsOnly.startsWith('374')) { detectedName = '🇦🇲 Армения'; detectedMask = '+374 ** *** ***'; }
+    else if (digitsOnly.startsWith('375')) { detectedName = '🇧🇾 Беларусь'; detectedMask = '+375 ** *** ** **'; }
+    else if (digitsOnly.startsWith('996')) { detectedName = '🇰🇬 Кыргызстан'; detectedMask = '+996 *** *** ***'; }
+    else if (digitsOnly.startsWith('998')) { detectedName = '🇺🇿 Узбекистан'; detectedMask = '+998 ** *** ** **'; }
+    else if (digitsOnly.length > 0) { detectedName = '🌍 Другая'; detectedMask = '+' + digitsOnly + ' *** ***'; }
+
+    hint.innerText = detectedName;
+    inp.placeholder = detectedMask;
+
+    const isFull = digitsOnly.length >= 10 && digitsOnly.length <= 15;
+    
+    if (isFull) {
+        inp.style.borderColor = 'var(--p)'; // Тонкая фирменная рамка
+        
+        cb.disabled = false;
+        pBlock.style.opacity = '1';
+        pBlock.style.background = '#fff';
+        pBlock.style.border = '1px solid var(--p)'; // Тонкая фирменная рамка
+        pLabel.style.color = '#333';
+
+        if (cb.checked) {
+            btn.disabled = false;
+            btn.style.background = 'var(--p)'; // Фирменный цвет сайта
+            btn.style.cursor = 'pointer';
+        } else {
+            btn.disabled = true;
+            btn.style.background = '#ddd';
+            btn.style.cursor = 'not-allowed';
+        }
+    } else {
+        inp.style.borderColor = '#ccc';
+        
+        cb.disabled = true;
+        cb.checked = false; 
+        
+        pBlock.style.opacity = '0.5';
+        pBlock.style.background = '#fafafa';
+        pBlock.style.border = '1px solid #eee';
+        pLabel.style.color = '#888';
+
+        btn.disabled = true;
+        btn.style.background = '#ddd';
+        btn.style.cursor = 'not-allowed';
     }
 }
 
-// 4. ПЕРЕХОД В ТЕЛЕГРАМ ИЗ ОКНА-ПОДСКАЗКИ
-function goToTelegram() {
-    closeTgOverlay(); 
-    const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
-    window.open(`https://t.me/${username}`, '_blank'); 
+function processFallbackSubmit() {
+    const inp = document.getElementById('fallbackPhone');
+    const cb = document.getElementById('fallbackPrivacy');
+    const pBlock = document.getElementById('privacyBlock');
+    const btn = document.getElementById('fallbackSubmitBtn');
+    const loader = document.getElementById('fallbackLoader');
+
+    cb.disabled = true; 
+    inp.disabled = true;
+    pBlock.style.display = 'none'; 
+    btn.style.display = 'none';
+    
+    loader.style.display = 'block'; 
+    if (navigator.vibrate) navigator.vibrate(15);
+    
+    setTimeout(() => { 
+        const cleanVal = '+' + inp.value.replace(/\D/g, '');
+        submitFallbackPhone(cleanVal); 
+    }, 800);
+}
+function submitFallbackPhone(cleanNumber) {
+    const manualInput = document.getElementById('manualMsgInput');
+    const userText = isQuestionMode ? (manualInput ? manualInput.value.trim() : "Вопрос") : (currentPreparedText || "Запрос связи");
+    const finalMsg = `[РЕЗЕРВ: ЗВОНОК]\nТелефон: ${cleanNumber}\n\n${userText}`;
+    
+    if (typeof GOOGLE_SCRIPT_URL !== 'undefined') {
+        fetch(GOOGLE_SCRIPT_URL, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: new URLSearchParams({ "text": finalMsg, "phone": cleanNumber }) 
+        });
+    }
+    closeContact();
+    showSuccess('order', 'РЕЗЕРВ', cleanNumber);
 }
 
-// 5. ЗАКРЫТИЕ ОКНА ТЕЛЕГРАМ
-function closeTgOverlay() {
-    const overlay = document.getElementById('tgOverlay');
-    if (overlay) overlay.style.display = 'none';
-    restoreMiniCart();
-}
-
-// 6. ЗАКРЫТИЕ ОБЩЕГО ОКНА КОНТАКТОВ
 function closeContact() {
     const overlay = document.getElementById('contactOverlay');
     if (overlay) overlay.style.display = 'none';
-    restoreMiniCart();
-}
-
-// 7. ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ ВОЗВРАТА КОРЗИНЫ
-function restoreMiniCart() {
     const mini = document.getElementById('miniCart');
-    if (mini) {
-        mini.style.display = 'flex'; 
-        updateBar(); 
-    }
+    if (mini) mini.style.display = 'flex';
 }
-
 /* =========================================
    BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
    ========================================= */
@@ -2478,265 +2569,35 @@ function showOldNews() {
 window.onload = init;
 
 
-    // ЗАПУСК ПРИЛОЖЕНИЯ
-init();
 
 /* =========================================
-   BLOCK 13: УЛУЧШЕННЫЙ ДАЙЛЕР (PC + TRACKING)
+   BLOCK 14: ВАУ-ЭФФЕКТ ПРИВЕТСТВИЯ
    ========================================= */
-
-let dialerNumber = "";
-let dialerModes = { msg: true, call: false }; 
-let lastClickedChannel = "мессенджере";
-let isWaitingForReturn = false;
-
-// 1. ОТСЛЕЖИВАНИЕ ВОЗВРАТА
-window.onfocus = function() {
-    if (isWaitingForReturn) {
-        setTimeout(() => {
-            if (isWaitingForReturn) showDialer();
-        }, 1000);
-    }
-};
-
-// 2. ПОДДЕРЖКА КЛАВИАТУРЫ
-window.addEventListener('keydown', function(e) {
-    const dialer = document.getElementById('dialerOverlay');
-    if (dialer && dialer.style.display === 'flex') {
-        if (e.key >= '0' && e.key <= '9') dial(e.key);
-        if (e.key === 'Backspace') dialErase();
-        if (e.key === 'Enter' && dialerNumber.length === 10) submitDialer();
-    }
-});
-
-function showDialer() {
-    isWaitingForReturn = false;
-    const overlay = document.getElementById('dialerOverlay');
-    if (!overlay) return;
-    
-    overlay.style.display = 'flex';
-    document.getElementById('dialBtnMsg').classList.toggle('active', dialerModes.msg);
-    document.getElementById('dialBtnCall').classList.toggle('active', dialerModes.call);
-    renderDialerDisplay();
-}
-
-function closeDialer() {
-    document.getElementById('dialerOverlay').style.display = 'none';
-    dialerNumber = "";
-    isWaitingForReturn = false;
-    restoreMiniCart();
-}
-
-function dial(num) {
-    if (dialerNumber.length < 10) {
-        playClickSound();
-        dialerNumber += num;
-        if (navigator.vibrate) navigator.vibrate(25);
-        renderDialerDisplay();
-    }
-}
-
-function dialErase() {
-    if (dialerNumber.length > 0) {
-        playClickSound();
-        dialerNumber = dialerNumber.slice(0, -1);
-        renderDialerDisplay();
-    }
-}
-
-function renderDialerDisplay() {
-    const container = document.getElementById('dialerDisplay');
-    if (!container) return;
-    
-    let html = '<div class="dial-cell filled">+7</div><div style="width:8px"></div>';
-    for (let i = 0; i < 10; i++) {
-        const digit = dialerNumber[i] || "";
-        html += `<div class="dial-cell ${digit ? 'filled' : ''}">${digit}</div>`;
-        if (i === 2 || i === 5) html += '<div style="width:6px"></div>';
-    }
-    container.innerHTML = html;
-
-    const btn = document.getElementById('dialSubmit');
-    if (dialerNumber.length === 10) {
-        btn.style.opacity = "1";
-        btn.disabled = false;
-    } else {
-        btn.style.opacity = "0.3";
-        btn.disabled = true;
-    }
-}
-
-function setDialMode(mode) {
-    const activeCount = Object.values(dialerModes).filter(v => v).length;
-    if (dialerModes[mode] && activeCount === 1) {
-        const btnId = mode === 'msg' ? 'dialBtnMsg' : 'dialBtnCall';
-        const btn = document.getElementById(btnId);
-        btn.classList.add('attention-please');
-        setTimeout(() => btn.classList.remove('attention-please'), 400);
-        return;
-    }
-    dialerModes[mode] = !dialerModes[mode]; 
-    document.getElementById('dialBtnMsg').classList.toggle('active', dialerModes.msg);
-    document.getElementById('dialBtnCall').classList.toggle('active', dialerModes.call);
-}
-
-function submitDialer() {
-    const fullNumber = "+7" + dialerNumber;
-    let modes = [];
-    if (dialerModes.msg) modes.push("МЕССЕНДЖЕР");
-    if (dialerModes.call) modes.push("ЗВОНОК");
-    
-    const tag = `[РЕЗЕРВ: ${modes.join('+')}]`;
-    const finalMsg = `${tag} ${currentPreparedText || "Запрос связи"}`;
-
-    if (typeof GOOGLE_SCRIPT_URL !== 'undefined') {
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            body: new URLSearchParams({ "text": finalMsg, "phone": fullNumber })
-        });
-    }
-    closeDialer();
-    showSuccess('order', 'РЕЗЕРВ', fullNumber);
-}
-
-function playClickSound() {
-    try {
-        const context = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = context.createOscillator();
-        const gain = context.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1100, context.currentTime);
-        gain.gain.setValueAtTime(0, context.currentTime);
-        gain.gain.linearRampToValueAtTime(0.08, context.currentTime + 0.01);
-        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.08);
-        osc.connect(gain);
-        gain.connect(context.destination);
-        osc.start();
-        osc.stop(context.currentTime + 0.1);
-    } catch(e) { console.log("Audio blocked"); }
-}
-
-
-/* =========================================
-   BLOCK 14: ВАУ-ЭФФЕКТ ПРИВЕТСТВИЯ (ФАВИКОН В КОРЗИНУ)
-   ========================================= */
-
 function playWelcomeAnimation() {
-    // Проверяем, показывали ли мы анимацию в этой сессии
     if (sessionStorage.getItem('rxde_welcome_done')) return;
-    
-    // Запоминаем, что показали, чтобы не бесить при каждом F5
     sessionStorage.setItem('rxde_welcome_done', 'true');
-
     const miniCart = document.getElementById('miniCart');
     if (!miniCart) return;
-
-    // 1. Создаем наш летящий фавикон
     const flyIcon = document.createElement('img');
-    flyIcon.src = 'logo_bid_not_fon.png'; // Берем твой фавикон (сделай его с прозрачным фоном!)
-    
-    // Базовые стили: УВЕЛИЧИЛИ РАЗМЕР В 3 РАЗА (с 80px до 240px)
-    // И поправили отступы (margin), чтобы он был ровно по центру
-    flyIcon.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        width: 240px;   /* Был 80px, стал 240px */
-        height: 240px;  /* Был 80px, стал 240px */
-        margin-top: -120px;  /* Половина высоты, чтобы центрировать */
-        margin-left: -120px; /* Половина ширины, чтобы центрировать */
-        z-index: 999999;
-        pointer-events: none;
-        opacity: 0;
-        transform: scale(0.2); /* Стартует совсем крошечным */
-        transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Чуть медленнее появление */
-        border-radius: 40px; /* Закругление больше под большой размер */
-        box-shadow: 0 25px 50px rgba(0,0,0,0.15); /* Тень мягче и глубже */
-    `;
+    flyIcon.src = 'logo_bid_not_fon.png';
+    flyIcon.style.cssText = `position: fixed; top: 50%; left: 50%; width: 240px; height: 240px; margin-top: -120px; margin-left: -120px; z-index: 999999; pointer-events: none; opacity: 0; transform: scale(0.2); transition: all 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275); border-radius: 40px; box-shadow: 0 25px 50px rgba(0,0,0,0.15);`;
     document.body.appendChild(flyIcon);
-
-    // 2. Шаг первый: Появление в центре (Масштабное приветствие)
-    setTimeout(() => {
-        flyIcon.style.opacity = '1';
-        // Увеличиваем до полного размера (1.0) и слегка наклоняем
-        flyIcon.style.transform = 'scale(1.0) rotate(-5deg)'; 
-    }, 100);
-
-    // 3. Шаг второй: Резкий полет в корзину
+    setTimeout(() => { flyIcon.style.opacity = '1'; flyIcon.style.transform = 'scale(1.0) rotate(-5deg)'; }, 100);
     setTimeout(() => {
         const targetRect = miniCart.getBoundingClientRect();
-        
-        // Вычисляем расстояние от центра до машинки
         const moveX = (targetRect.left + targetRect.width / 2) - window.innerWidth / 2;
         const moveY = (targetRect.top + targetRect.height / 2) - window.innerHeight / 2;
-
-        // Полет: сжимается, улетает и крутится
-        flyIcon.style.transition = 'all 0.9s cubic-bezier(0.5, -0.5, 0.2, 1.3)'; // Тягучий полет
+        flyIcon.style.transition = 'all 0.9s cubic-bezier(0.5, -0.5, 0.2, 1.3)';
         flyIcon.style.transform = `translate(${moveX}px, ${moveY}px) scale(0.05) rotate(360deg)`;
-        flyIcon.style.opacity = '0.2'; // Почти исчезает в полете
-
-        // 4. Шаг третий: Удар по корзине
-        setTimeout(() => {
-            flyIcon.remove(); // Удаляем картинку
-            
-            // Заставляем машинку подпрыгнуть от удара!
-            if (typeof triggerTruckEffect === 'function') {
-                triggerTruckEffect(); 
-            }
-            
-            // Если на телефоне — даем легкий тактильный удар
-            if (navigator.vibrate) navigator.vibrate(30);
-            
-        }, 900); // Время полета чуть увеличили
-
-    }, 1800); // Висит в центре дольше (1.8 сек), чтобы можно было рассмотреть
+        flyIcon.style.opacity = '0.2';
+        setTimeout(() => { flyIcon.remove(); triggerTruckEffect(); if (navigator.vibrate) navigator.vibrate(30); }, 900);
+    }, 1800);
 }
 
+// ЕДИНСТВЕННЫЙ ЗАПУСК
+document.addEventListener('DOMContentLoaded', init);
 </script>
 
-<div id="tgOverlay" class="info-overlay" onclick="closeTgOverlay()">
-    <div class="info-box" onclick="event.stopPropagation()">
-        <div id="tgOverlayTitle" class="info-title" style="color: #0088cc;">СКОПИРОВАНО</div>
-        <div id="tgOverlayPreview" style="background: #f0f4f8; padding: 12px; border-radius: 8px; font-size: 12px; color: #555; margin-bottom: 15px; border-left: 3px solid #0088cc; text-align: left; max-height: 80px; overflow-y: auto; word-break: break-word; line-height: 1.4;"></div>
-        <p style="font-size: 14px; color: #333; margin-bottom: 20px; line-height: 1.4; text-align: center;">
-            Текст в буфере обмена.<br>Откройте чат и <b>вставьте</b> текст.
-        </p>
-        <button onclick="goToTelegram()" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">ПЕРЕЙТИ В ТЕЛЕГРАМ</button>
-        <button onclick="closeTgOverlay()" style="width: 100%; background: none; border: none; color: #888; margin-top: 12px; font-size: 13px; text-decoration: underline; cursor: pointer;">ОТМЕНА</button>
-    </div>
-</div>
-
-<div id="dialerOverlay" class="info-overlay" style="z-index: 9999999; display:none; align-items: flex-end;">
-    <div class="info-box dialer-box" onclick="event.stopPropagation()">
-        <div style="text-align: center; margin-bottom: 15px;">
-            <div style="font-size: 15px; color: #000; font-weight: 700; line-height: 1.2;">
-                Связь — штука капризная.<br>Найдем удобный канал?
-            </div>
-        </div>
-        <div id="dialerDisplay" style="display: flex; justify-content: center; gap: 4px; margin-bottom: 20px;"></div>
-        <div class="dial-grid">
-            <button class="d-num" onclick="dial(1)">1</button>
-            <button class="d-num" onclick="dial(2)">2</button>
-            <button class="d-num" onclick="dial(3)">3</button>
-            <button class="d-num" onclick="dial(4)">4</button>
-            <button class="d-num" onclick="dial(5)">5</button>
-            <button class="d-num" onclick="dial(6)">6</button>
-            <button class="d-num" onclick="dial(7)">7</button>
-            <button class="d-num" onclick="dial(8)">8</button>
-            <button class="d-num" onclick="dial(9)">9</button>
-            <div style="width: 60px;"></div>
-            <button class="d-num" onclick="dial(0)">0</button>
-            <button class="d-num d-back" onclick="dialErase()">⌫</button>
-        </div>
-        <div style="display: flex; gap: 8px; margin-top: 20px;">
-            <button id="dialBtnMsg" class="dial-mode-btn active" onclick="setDialMode('msg')">💬 МЕССЕНДЖЕР</button>
-            <button id="dialBtnCall" class="dial-mode-btn" onclick="setDialMode('call')">📞 ЗВОНОК</button>
-        </div>
-        <button id="dialSubmit" onclick="submitDialer()" style="width: 100%; margin-top: 15px; height: 50px; background: #fff; color: var(--p); border: 2px solid var(--p); border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; opacity: 0.3; transition: 0.2s;" disabled>ОТПРАВИТЬ</button>
-        <button onclick="closeDialer()" style="width:100%; background:none; border:none; color:#bbb; font-size:12px; margin-top:10px; cursor:pointer;">НЕТ, Я СПРАВЛЮСЬ</button>
-    </div>
-</div>
 
 
 <footer class="site-footer">
@@ -2744,16 +2605,18 @@ function playWelcomeAnimation() {
         <p class="disclaimer-text">
             <strong>RXDE.online</strong> — информационно-логистический сервис. Мы не являемся аптечной организацией, не осуществляем торговлю, дистанционную продажу или доставку лекарственных препаратов. Сервис обеспечивает логистическое сопровождение (курьерская и почтовая служба) Вашего частного заказа из лицензированных аптек Германии. Вся информация на сайте носит ознакомительный характер.
         </p>
+        <div style="margin-top: 10px; text-align: center;">
+            <span onclick="showInfo('privacy')" style="font-size: 11px; color: #999; text-decoration: underline; cursor: pointer;">
+                Политика конфиденциальности и работа с ПД
+            </span>
+        </div>
         <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
     </div>
 </footer>
 
 <div id="photoOverlay" class="photo-overlay" onclick="closePhoto()">
     <div class="photo-close">✕</div>
-    <div class="photo-pan-container">
-        <img id="photoZoomed" src="" alt="Фото препарата">
-    </div>
+    <div class="photo-pan-container"><img id="photoZoomed" src="" alt="Фото"></div>
 </div>
-
 </body>
 </html>
