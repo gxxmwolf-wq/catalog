@@ -1330,22 +1330,24 @@ function secretAdminCopy(e) {
     if (!data || !sumEl) return;
 
     if (secretClickTimer) {
-        // ДВОЙНОЙ КЛИК: ТОЛЬКО ССЫЛКА
+        // ДВОЙНОЙ КЛИК: ТОЛЬКО ССЫЛКА (Мигает синим + Двойное вибро)
         clearTimeout(secretClickTimer);
         secretClickTimer = null;
         
         navigator.clipboard.writeText(data.link).then(() => {
+            if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
             sumEl.style.color = '#007bff'; 
             setTimeout(() => sumEl.style.color = '#000', 400);
         });
     } else {
-        // ОДИНОЧНЫЙ КЛИК: ТЕКСТ + ССЫЛКА
+        // ОДИНОЧНЫЙ КЛИК: ТЕКСТ + ССЫЛКА (Мигает зеленым + Одинарное вибро)
         secretClickTimer = setTimeout(() => {
             secretClickTimer = null;
             
             const fullCopy = data.text.includes(data.link) ? data.text : data.text + '\n' + data.link;
             
             navigator.clipboard.writeText(fullCopy).then(() => {
+                if (navigator.vibrate) navigator.vibrate(15);
                 sumEl.style.color = '#25D366'; 
                 setTimeout(() => sumEl.style.color = '#000', 400);
             });
