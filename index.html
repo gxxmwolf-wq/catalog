@@ -52,7 +52,7 @@
                 <div class="tm-item" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>
             </div>      
 
-            <div class="rates-compact" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px;">
+        <div class="rates-compact" onclick="openAdminSecretly()" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;">
                 <div style="white-space: nowrap;">ЦБ: <span id="cbrRate" style="color:#333; font-weight:600">0</span></div>
                 <div style="white-space: nowrap;">Расчетный: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
             </div>
@@ -1028,6 +1028,19 @@ function checkEnter(event) {
 // ==========================================
 // 🚨 СЕКРЕТНЫЙ БЛОК МЕНЕДЖЕРА (УМНАЯ СКЛЕЙКА + ЧЕКБОКС) 🚨
 // ==========================================
+// ==========================================
+// 🥷 БЫСТРЫЙ ВХОД В АДМИНКУ ПО КЛИКУ НА КУРСЫ
+// ==========================================
+function openAdminSecretly() {
+    // Если прав нет — игнорируем клик (работает как обычный текст)
+    if (!localStorage.getItem('rxde_super_admin')) return;
+    
+    // Если права есть — легкий вибро-отклик и открываем панель
+    if (navigator.vibrate) navigator.vibrate(15);
+    runAdminImport();
+}
+
+
 function runAdminImport() {
     const overlay = document.getElementById('adminOverlay');
     if (overlay) {
