@@ -85,7 +85,7 @@
     
     <div id="list"></div>
 
-<div id="nanoBanner" class="nano-banner-wrap" onclick="showInfo('faq')" style="cursor: pointer; -webkit-tap-highlight-color: transparent;">
+<div id="nanoBanner" class="nano-banner-wrap">
     <img src="Banner.png" alt="Доставка из аптек Германии" class="nano-banner-img">
 </div>
 
@@ -132,8 +132,7 @@
         
         <div id="infoContent" class="info-content" style="overflow-y: auto; flex: 1; padding-right: 5px;"></div>
         
-        <<button onclick="closeInfo()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; flex-shrink: 0;">ПОНЯТНО</button>
-    </div>
+        <button onclick="closeInfo()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; flex-shrink: 0;">ПОНЯТНО</button></div>
 </div>
 
 <div id="contactOverlay" class="info-overlay" onclick="closeContact()">
@@ -148,6 +147,34 @@
         
         <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 8px;">
             </div>
+
+    </div>
+</div>
+
+<div id="adminOverlay" class="info-overlay" onclick="closeAdminModal()">
+    <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; position: relative; padding: 20px 15px; background: #fffdf0; border: 2px solid #ffe082;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div class="info-title" style="margin: 0; padding: 0; border: none; font-size: 18px; text-align: left; color: #b08d00;">👨‍⚕️ АДМИН-РЕЖИМ</div>
+            <div onclick="closeAdminModal()" style="font-size: 22px; color: #b08d00; cursor: pointer; padding: 0 5px; line-height: 1;">✕</div>
+        </div>
+        
+        <div style="font-size: 12px; color: #888; margin-bottom: 5px; font-weight: 700;">1. ИМПОРТ ТОВАРОВ (Вставь весь заказ)</div>
+        <textarea id="adminOrderInput" class="universal-textarea" style="width: 100%; height: 120px; border: 1px solid #ffe082; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 13px; margin-bottom: 10px; resize: none; outline: none; background: #fff;" placeholder="Вставьте архивный заказ целиком..."></textarea>
+        
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; background: #fff9e6; padding: 8px; border-radius: 6px;">
+            <input type="checkbox" id="autoAddressCheck" checked onchange="toggleAdminAddressField()" style="width: 18px; height: 18px; cursor: pointer; accent-color: #b08d00; flex-shrink: 0;">
+            <label for="autoAddressCheck" style="font-size: 13px; color: #555; cursor: pointer; font-weight: 600; line-height: 1.2;">Вырезать адрес из текста автоматически</label>
+        </div>
+        
+        <div id="manualAddressBlock" style="display: none;">
+            <div style="font-size: 12px; color: #888; margin-bottom: 5px; font-weight: 700;">2. АДРЕС ДОСТАВКИ (Ручной ввод)</div>
+            <textarea id="adminAddressInput" class="universal-textarea" style="width: 100%; height: 80px; border: 1px solid #ccc; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 13px; margin-bottom: 15px; resize: none; outline: none; background: #fff;" placeholder="Если адрес отдельно, вставьте его сюда..."></textarea>
+        </div>
+        
+        <button onclick="processAdminImport()" style="width: 100%; height: 48px; background: #b08d00; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;">
+            ОБРАБОТАТЬ ДАННЫЕ
+        </button>
     </div>
 </div>
 
@@ -156,7 +183,7 @@
     <div id="succTitle" class="s-title">Успешно!</div>
     <div id="succSubTitle" style="font-size: 14px; color: #555; margin-bottom: 15px; line-height: 1.4;"></div>
     <div id="succID" class="s-order-id" style="display: none;">#0000</div>
-    <button onclick="closeSuccess()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;">ПОНЯТНО</button>
+    <button onclick="closeSuccess()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s;">ПОНЯТНО</button>
 </div>
 
 <script>
@@ -185,7 +212,9 @@ let isQuestionMode = false;   // true — когда нажат "Написат�
 let isManagerOrder = false;   // true — если корзина пришла по ссылке от менеджера
 let currentPreparedText = ""; // Буфер для текста сообщения
 let restoredDate = "";        // Хранит дату восстановления заказа
-let cartBackup = null; // Сюда будем сохранять корзину перед очисткой
+let cartBackup = null;        // Сюда будем сохранять корзину перед очисткой
+let deliveryAddress = "";     // <--- НОВАЯ ПЕРЕМЕННАЯ ДЛЯ АДРЕСА АДМИНА
+let addressBackup = "";
 
 // Звуковой движок
 const audioAdd = new Audio("sounds/add.mp3");
@@ -220,19 +249,35 @@ function playSound(isRemoving) {
    ========================================= */
 function handleCartToggle() {
     if (cartBackup) {
-        // РЕЖИМ: ВЕРНУТЬ
+        // РЕЖИМ: ВЕРНУТЬ (Восстанавливаем и товары, и адрес)
         cart = [...cartBackup];
+        deliveryAddress = addressBackup; 
+        
         cartBackup = null;
+        addressBackup = "";
+        
         if (navigator.vibrate) navigator.vibrate(15); 
     } else {
-        // РЕЖИМ: ОЧИСТИТЬ
+        // РЕЖИМ: ОЧИСТИТЬ (Удаляем товары и адрес, но запоминаем на случай ошибки)
         if (cart.length === 0) return;
+        
         cartBackup = [...cart];
+        addressBackup = deliveryAddress; 
+        
         cart = [];
+        deliveryAddress = ""; // Жестко сбрасываем адрес для нового клиента
+        
         if (navigator.vibrate) navigator.vibrate([20, 50, 20]); 
     }
     
+    // Сохраняем актуальное состояние в память телефона
     localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+    if (deliveryAddress) {
+        localStorage.setItem('de_cart_address', deliveryAddress);
+    } else {
+        localStorage.removeItem('de_cart_address');
+    }
+    
     updateBar();
     render();
     renderCartItems(); 
@@ -242,8 +287,11 @@ function clearFullCart() {
     if (!confirm("Удалить все товары из корзины?")) return;
 
     cart = [];
-    cartBackup = null; // [ФИКС]: Сбрасываем бэкап, чтобы не было фантомных восстановлений
+    cartBackup = null; 
+    deliveryAddress = ""; // ОЧИЩАЕМ ПЕРЕМЕННУЮ АДРЕСА
+    
     localStorage.removeItem('de_cart_arr');
+    localStorage.removeItem('de_cart_address'); // ОЧИЩАЕМ АДРЕС ИЗ ПАМЯТИ ТЕЛЕФОНА
 
     if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
 
@@ -356,6 +404,7 @@ function calculateFinalLogic() {
 function getRubPrice(eur) { return Math.floor((parseFloat(eur) * rateCalc) / 100) * 100; }
 
 // --- 3. ИНФО-ОКНА (FAQ / ОПЫТ) ---
+// --- 3. ИНФО-ОКНА (FAQ / ОПЫТ / PRIVACY) ---
 function showInfo(type) {
     const overlay = document.getElementById('infoOverlay');
     if (!overlay || type === 'none' || !type) { 
@@ -367,54 +416,37 @@ function showInfo(type) {
         faq: { 
             t: 'ПОЧЕМУ МЫ?', 
             c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
-                <div>
-                    <b style="color: #000; font-size: 16px;">Оригинальные препараты</b><br>
-                    Берем на себя все заботы по организации индивидуального заказа в лицензированных аптеках Германии. Вы получаете отправление с максимальным сроком годности, минуя сомнительные схемы передачи «из рук в руки» и промежуточные склады хранения (где хранили? как хранили? как долго хранили?).
-                </div>
-                <div>
-                    <b style="color: #000; font-size: 16px;">Индивидуальная логистика</b><br>
-                    Обеспечиваем почтовую доставку вашей личной посылки. Груз комплектуется исключительно для вашего лечения (не коммерческая партия), что гарантирует полную прозрачность и соответствие всем таможенным правилам.
-                </div>
-                <div>
-                    <b style="color: #000; font-size: 16px;">Прозрачные расчеты</b><br>
-                    Оплата услуг сервиса и почтового тарифа производится безналичным переводом в рублях (на карту РФ или по СБП). У вас остается официальная банковская выписка, а расчетный курс фиксируется заранее — никаких скрытых комиссий и оплат «в конверте».
-                </div>
-                <div>
-                    <b style="color: #000; font-size: 16px;">Всегда на связи</b><br>
-                    Наш специалист сопровождает вас на каждом этапе: от проверки наличия необходимого наименования в немецких аптеках, возможной альтернативы по согласованию, до момента вручения Вами посылки.
-                </div>
-            </div>
-
-` 
+                <div><b style="color: #000; font-size: 16px;">Оригинальные препараты</b><br>Берем на себя все заботы по организации индивидуального заказа в лицензированных аптеках Германии.</div>
+                <div><b style="color: #000; font-size: 16px;">Индивидуальная логистика</b><br>Обеспечиваем почтовую доставку вашей личной посылки.</div>
+                <div><b style="color: #000; font-size: 16px;">Прозрачные расчеты</b><br>Оплата в рублях (на карту РФ или по СБП) по фиксированному курсу.</div>
+                <div><b style="color: #000; font-size: 16px;">Всегда на связи</b><br>Специалист сопровождает вас на каждом этапе.</div>
+            </div>` 
         },
         exp: { 
             t: 'НАШ ОПЫТ', 
             c: `<div style="font-size: 15px; line-height: 1.6; color: #333; display: flex; flex-direction: column; gap: 16px;">
                 <div style="text-align: center; margin-bottom: 5px;"><span style="font-size: 36px;">🇩🇪</span></div>
-                <div>
-                    <b style="color: var(--p); font-size: 16px;">RxDE.online</b> — это сервис логистического сопровождения заказов из Германии с <b style="color: #000;">опытом работы более 10 лет</b>. Мы досконально знаем специфику международной пересылки сложных (RX) наименований и обеспечиваем их надежную транспортировку.
-                </div>
-                <div>
-                    Наша главная задача — долгосрочное сотрудничество и ваши искренние рекомендации. Мы дорожим своей репутацией, поэтому работаем стабильно и прозрачно, не используя сомнительные схемы-однодневки со сменой контактов или платежных реквизитов.
-                </div>
-                <div>
-                    Мы работаем открыто: заявленная стоимость обеспечения <b style="color: #000;">уже включает все сервисные расходы</b>. Вы сразу видите финальную сумму и понятный расчетный курс без скрытых платежей.
-                </div>
+                <div><b style="color: var(--p); font-size: 16px;">RxDE.online</b> — сервис с опытом работы более 10 лет. Мы знаем специфику международной пересылки сложных RX наименований.</div>
+                <div>Наша задача — долгосрочное сотрудничество. Мы дорожим репутацией, поэтому работаем стабильно и прозрачно.</div>
             </div>` 
-     
-    },
-        // --- ДОБАВИТЬ ЭТОТ БЛОК: ---
+        },
         privacy: {
-            t: 'ОБРАБОТКА ДАННЫХ',
-            c: `<div style="font-size: 14px; line-height: 1.5; color: #333; text-align: left; padding: 5px;">
-                    <p style="margin-bottom: 10px;">Мы уважаем вашу частную жизнь. Сбор данных на сайте <b>RXDE.online</b> ограничен исключительно технической необходимостью:</p>
-                    <ul style="padding-left: 20px; margin: 10px 0; color: #555;">
-                        <li style="margin-bottom: 8px;"><b>Номер телефона:</b> используется строго для разовой связи с вами по вашему запросу. Мы не передаем его третьим лицам.</li>
-                        <li style="margin-bottom: 8px;"><b>Состав корзины:</b> передается в зашифрованном виде (код) для оценки стоимости логистических услуг.</li>
-                    </ul>
-                    <p style="margin-top: 10px; color: #888; font-size: 12px;">Вы в любой момент можете очистить данные о корзине (кнопка "Очистить"). Обработка номера телефона прекращается сразу после выполнения вашего поручения.</p>
-                </div>`
-        }
+    t: 'ОБРАБОТКА ДАННЫХ',
+    c: `<div style="font-size: 13px; line-height: 1.5; color: #333; text-align: left;">
+            <p style="margin-bottom: 10px;">Нажимая «Отправить», вы даете Согласие на обработку персональных данных в соответствии с ФЗ-152:</p>
+            <ul style="padding-left: 18px; margin: 10px 0; color: #555;">
+                <li style="margin-bottom: 5px;"><b>Цель:</b> связь по вашему запросу (уточнение деталей заказа).</li>
+                <li style="margin-bottom: 5px;"><b>Данные:</b> номер телефона, состав корзины, IP-адрес.</li>
+                <li style="margin-bottom: 5px;"><b>Срок:</b> данные удаляются после завершения коммуникации.</li>
+            </ul>
+            <p>Данные не передаются третьим лицам.</p>
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; font-size: 11px; color: #999;">
+                <b>Администратор сервиса (Самозанятый):</b><br>Хачатуров Хорен Михайлович<br>
+                <b>ИНН:</b> 616611071055<br>
+                <b>Email:</b> med.zakaz.de@gmail.com
+            </div>
+        </div>`
+    }
     };
     
     if (!data[type]) return;
@@ -758,7 +790,7 @@ function render(isNewSearch = false, isTrackComplete = false) {
 function renderSuggestions(inputText) {
     const box = document.getElementById('suggestRow');
     if (!box) return; 
-    box.innerHTML = ''; // При стирании текста в ноль плашка убивается здесь
+    box.innerHTML = ''; 
     
     const rawVal = inputText.trim().toUpperCase();
     if (!rawVal) return;
@@ -767,16 +799,13 @@ function renderSuggestions(inputText) {
     const cleanTrack = rawVal.replace(/\s/g, '');
     const isCompleteTracking = /^[A-Z]{2}\d{9}[A-Z]{2}$/.test(cleanTrack) || /^\d{14}$/.test(cleanTrack);
     
-    // Умный детектор: отсекаем лекарства от треков
     const prefix = cleanTrack.substring(0, 2);
     const isDhlPrefix = ['CR', 'CY', 'CK', 'RM', 'CE'].includes(prefix);
     const thirdChar = cleanTrack[2];
     const isRussianTrack = /^\d{4,}/.test(cleanTrack) && cleanTrack.length <= 14;
 
-    // Считаем треком только если: правильные 2 буквы И (3-й символ отсутствует ИЛИ это цифра)
     const isPotentialTrack = (isDhlPrefix && (!thirdChar || /\d/.test(thirdChar))) || isRussianTrack;
     
-    // СОСТОЯНИЕ 1: СЕРЫЙ (Только если это реально трек)
     if (isPotentialTrack && !isCompleteTracking) {
         box.innerHTML = `
             <div class="s-chip" style="background: #f5f7fa; border: 1px dashed #dcdcdc; color: #888; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; cursor: default;">
@@ -790,12 +819,10 @@ function renderSuggestions(inputText) {
         return; 
     }
 
-    // ТРЕК ВВЕДЕН ПОЛНОСТЬЮ
     if (isCompleteTracking) {
         const myOrder = (typeof newsDB !== 'undefined') ? newsDB.find(n => n.Text && n.Text.includes(cleanTrack)) : null;
         
         if (!myOrder) {
-            // СОСТОЯНИЕ 2: ЖЕЛТЫЙ (Чужой)
             box.innerHTML = `
                 <div class="s-chip" style="background: #fffdf0; border: 1px solid #ffe082; color: #b08d00; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02);" 
                      onclick="navigator.clipboard.writeText('${cleanTrack}').then(() => window.open('https://www.pochta.ru/tracking#${cleanTrack}', '_blank'))">
@@ -807,9 +834,7 @@ function renderSuggestions(inputText) {
                 </div>
             `;
         } else {
-            // СОСТОЯНИЕ 3: ЗЕЛЕНЫЙ (Наш)
             const safeText = myOrder.Text.replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/\n/g, '<br>');
-            
             box.innerHTML = `
                 <div class="s-chip" style="background: #e8f5e9; border: 1px solid #81c784; color: #2e7d32; width: 100%; display: flex; flex-direction: column; padding: 12px 15px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.03);" 
                      onclick="toggleTrackStatus(this, '${safeText}')">
@@ -828,64 +853,113 @@ function renderSuggestions(inputText) {
         return; 
     }
 
-    // --- 2. ОБЫЧНЫЕ ПОДСКАЗКИ СЛОВ (Лекарства) ---
-    // (Дальше идет твой стандартный код с Set, matches и candidates. Его не трогаем!)
+    // --- 2. УМНЫЕ ПОДСКАЗКИ СЛОВ (Лекарства) ---
     const trimmedInput = inputText.trim();
     const userWords = trimmedInput.toLowerCase().split(/\s+/);
     const isTrailingSpace = inputText.endsWith(' ');
     const lastWord = userWords[userWords.length - 1];
     const lastWordVars = getSearchVariations(lastWord).map(v => v.toLowerCase());
+    
+    // ДЕТЕКТОР РУССКОГО ЯЗЫКА В ЗАПРОСЕ
+    const isRussianQuery = /[а-яА-ЯёЁ]/.test(trimmedInput);
 
     const matches = db.filter(r => {
         if (!r.Name_DE) return false;
-        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Substance_DE||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
+        const pool = `${r.Name_DE} ${r.Name_RU||''} ${r.Form_DE||''} ${r.Substance_DE||''} ${r.Substance_RU||''} ${r.Category||''} ${r.Form_RU||''} ${r.PZN}`.toLowerCase();
         return userWords.every(word => getSearchVariations(word).some(v => pool.includes(v)));
     });
 
     if (matches.length === 0) return;
 
-    let candidates = new Set();
+    let formCandidates = new Set();
+    let nextWordCandidates = new Set();
+
     matches.forEach(r => {
-        // 2. ВОТ ГЛАВНОЕ: ДОБАВЛЯЕМ ВЕЩЕСТВА В ИСТОЧНИК ДЛЯ ЧИПОВ
-    const fieldsToSearch = [r.Name_DE, r.Name_RU, r.Substance_DE, r.Substance_RU].filter(Boolean);
-    
-    // ... дальше твой код без изменений
-   
+        // ПРИОРИТЕТ 1: Вытаскиваем формы выпуска (С УЧЕТОМ ЯЗЫКА)
+        if (userWords.length > 1 || isTrailingSpace) {
+            // Если пишем по-русски, берем Form_RU (если пусто — падаем на Form_DE). Если по-английски/немецки — берем Form_DE.
+            const targetForm = isRussianQuery ? (r.Form_RU || r.Form_DE) : r.Form_DE;
+            
+            if (targetForm) {
+                // Разбиваем длинные формы на отдельные слова
+                const fWords = targetForm.split(/[\s,()/]+/).filter(w => w.length > 2);
+                fWords.forEach(fw => formCandidates.add(fw));
+            }
+        }
+
+        // ПРИОРИТЕТ 2: Стандартное "Следующее слово" (обычно это дозировки: 500, 1G)
+        const fieldsToSearch = [r.Name_DE, r.Name_RU, r.Substance_DE, r.Substance_RU].filter(Boolean);
         let anchorFound = false;
+        
         fieldsToSearch.forEach(nameText => {
-            const nameParts = nameText.split(/[\s,]+/).filter(p => p.length > 0);
+            const nameParts = nameText.split(/[\s,()]+/).filter(p => p.length > 0);
+            
             if (!isTrailingSpace) {
+                // Юзер еще печатает слово: ищем автодополнение
                 for (let part of nameParts) {
                     if (lastWordVars.some(v => part.toLowerCase().startsWith(v)) && part.toLowerCase() !== lastWord.toLowerCase()) {
-                        candidates.add(part.replace(/[()]/g, '')); anchorFound = true;
+                        nextWordCandidates.add(part); 
+                        anchorFound = true;
                     }
                 }
             } else {
+                // Юзер поставил пробел: ищем СЛЕДУЮЩЕЕ слово в строке
                 for (let i = 0; i < nameParts.length - 1; i++) {
                     if (lastWordVars.some(v => nameParts[i].toLowerCase() === v)) {
-                        if (nameParts[i + 1]) candidates.add(nameParts[i + 1].replace(/[()]/g, ''));
-                        anchorFound = true; break; 
+                        if (nameParts[i + 1]) nextWordCandidates.add(nameParts[i + 1]);
+                        anchorFound = true; 
+                        break; 
                     }
                 }
             }
         });
-        if (userWords.length === 1 && !isTrailingSpace && r.Form_RU) candidates.add(r.Form_RU);
-        if (!anchorFound) {
+
+        if (userWords.length === 1 && !isTrailingSpace && r.Form_RU) nextWordCandidates.add(r.Form_RU);
+        if (!anchorFound && userWords.length === 1 && !isTrailingSpace) {
             const brand = (r.Name_RU || r.Name_DE).split(/[\s,]+/)[0];
-            if (brand) candidates.add(brand);
+            if (brand) nextWordCandidates.add(brand);
         }
     });
 
-    Array.from(candidates).filter(c => !userWords.some(uw => uw.toLowerCase() === c.toLowerCase())).slice(0, 8).forEach(word => {
+    // --- СКЛЕЙКА И ФИЛЬТРАЦИЯ ---
+    // Сначала ставим формы выпуска, потом дозировки
+    let combined = [...Array.from(formCandidates), ...Array.from(nextWordCandidates)];
+    let finalChips = [];
+    let seen = new Set();
+    
+    for (let word of combined) {
+        const cleanWord = word.toLowerCase();
+        // Пропускаем слова, которые юзер уже ввел
+        if (userWords.some(uw => uw.toLowerCase() === cleanWord)) continue;
+        
+        // Убираем дубликаты
+        if (!seen.has(cleanWord)) {
+            seen.add(cleanWord);
+            finalChips.push(word); 
+        }
+    }
+
+    // Отрисовываем топ-8
+    finalChips.slice(0, 8).forEach(word => {
         const chip = document.createElement('div');
-        chip.className = 's-chip'; chip.innerText = word;
+        chip.className = 's-chip'; 
+        chip.innerText = word;
+        
         chip.onclick = () => {
             if (navigator.vibrate) navigator.vibrate(15); 
             const input = document.getElementById('search');
             let words = input.value.trim().split(/\s+/);
-            if (!isTrailingSpace) words[words.length - 1] = word; else words.push(word);
+            
+            // Если кликнули, заменяем последнее слово (если не было пробела) или добавляем новое
+            if (!isTrailingSpace) {
+                words[words.length - 1] = word; 
+            } else {
+                words.push(word);
+            }
+            
             input.value = words.join(' ') + ' ';
-            handleInput(); input.focus();
+            handleInput(); 
+            input.focus();
         };
         box.appendChild(chip);
     });
@@ -925,6 +999,10 @@ function checkEnter(event) {
         if (query === 'ADMIN' || query === 'АДМИН') {
             searchInput.blur();
             searchInput.value = '';
+            
+            // 🚨 ВЫДАЕМ ПРАВА СУПЕР-АДМИНА ЭТОМУ УСТРОЙСТВУ НАВСЕГДА 🚨
+            localStorage.setItem('rxde_super_admin', 'true');
+            
             runAdminImport(); // Запускаем функцию-админку
             return; 
         }
@@ -946,62 +1024,135 @@ function checkEnter(event) {
     }
 }
 
+
 // ==========================================
-// 🚨 СЕКРЕТНЫЙ БЛОК МЕНЕДЖЕРА 🚨
+// 🚨 СЕКРЕТНЫЙ БЛОК МЕНЕДЖЕРА (УМНАЯ СКЛЕЙКА + ЧЕКБОКС) 🚨
 // ==========================================
 function runAdminImport() {
-    const rawText = prompt("👨‍⚕️ АДМИН-РЕЖИМ\nВставь текст заказа (скопируй всё сообщение целиком):");
-    
-    if (rawText) {
-        cart = []; 
-        const chunks = rawText.split(/PZN/i);
-        const missingPzns = new Set(); 
-        
-        for (let i = 1; i < chunks.length; i++) {
-            const chunk = chunks[i];
-            const pznMatch = chunk.match(/^[^0-9]*(\d{6,8})/);
-            
-            if (pznMatch) {
-                const cleanPzn = pznMatch[1].padStart(8, '0');
-                let qty = 1; 
-                
-                const qtyMatch = chunk.match(/(?:\*|x|х|-)\s*(\d+)\s*(?:pack|шт|уп)|(\d+)\s*(?:pack|шт|уп)/i);
-                if (qtyMatch) {
-                    qty = parseInt(qtyMatch[1] || qtyMatch[2]);
-                }
-                
-                // КЛАДЕМ В КОРЗИНУ АБСОЛЮТНО ВСЁ
-                const existing = cart.find(i => i.pzn === cleanPzn);
-                if (existing) {
-                    existing.qty += qty;
-                } else {
-                    cart.push({ pzn: cleanPzn, qty: qty });
-                }
+    const overlay = document.getElementById('adminOverlay');
+    if (overlay) {
+        document.getElementById('adminOrderInput').value = '';
+        document.getElementById('adminAddressInput').value = '';
+        document.getElementById('autoAddressCheck').checked = true; // По умолчанию авто-вырезка включена
+        toggleAdminAddressField();
+        overlay.style.display = 'flex';
+    }
+}
 
-                // Проверяем наличие в базе
-                const existsInDB = db.some(r => String(r.PZN).trim() === cleanPzn);
-                if (!existsInDB) {
-                    missingPzns.add(cleanPzn);
+function closeAdminModal() {
+    const overlay = document.getElementById('adminOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function toggleAdminAddressField() {
+    const isAuto = document.getElementById('autoAddressCheck').checked;
+    document.getElementById('manualAddressBlock').style.display = isAuto ? 'none' : 'block';
+}
+
+function processAdminImport() {
+    const rawText = document.getElementById('adminOrderInput').value.trim();
+    const manualAddress = document.getElementById('adminAddressInput').value.trim();
+    const isAutoAddress = document.getElementById('autoAddressCheck').checked;
+
+    if (!rawText && !manualAddress) {
+        closeAdminModal();
+        return;
+    }
+
+    let workingText = rawText;
+    
+    // ЖЕСТКАЯ ОЧИСТКА СТАРЫХ ДАННЫХ ПЕРЕД НОВЫМ ИМПОРТОМ
+    deliveryAddress = ""; 
+    localStorage.removeItem('de_cart_address');
+
+    // Вспомогательная функция для очистки мусора из скопированного адреса
+    const cleanExtractedAddress = (str) => {
+        return str.replace(/АДРЕС ДОСТАВКИ:?/gi, '').replace(/📦/g, '').trim();
+    };
+
+    // 1. УМНОЕ ИЗВЛЕЧЕНИЕ АДРЕСА
+    if (isAutoAddress && workingText) {
+        const addressMatch = workingText.match(/(?:^|\n)\s*([1-9]\d{5}[\s\S]+)$/);
+        
+        if (addressMatch) {
+            deliveryAddress = cleanExtractedAddress(addressMatch[1]);
+            workingText = workingText.substring(0, addressMatch.index).trim();
+        } else {
+            const lastRub = Math.max(workingText.lastIndexOf('₽'), workingText.lastIndexOf('€'));
+            if (lastRub !== -1) {
+                let possible = workingText.substring(lastRub + 1).trim();
+                if (possible.length > 15 && !possible.includes('*') && !possible.includes('=')) {
+                    deliveryAddress = cleanExtractedAddress(possible);
+                    workingText = workingText.substring(0, lastRub + 1).trim();
                 }
             }
         }
+    } else if (!isAutoAddress && manualAddress) {
+        deliveryAddress = cleanExtractedAddress(manualAddress);
+    }
 
-        // Предупреждение о неизвестных товарах
-        if (missingPzns.size > 0) {
-            const missingText = Array.from(missingPzns).join('\n');
-            prompt("⚠️ ВНИМАНИЕ: Этих товаров нет в базе!\n\nСкопируй список ниже, вставь в Гугл-таблицу и напиши 'НЕТ В НАЛИЧИИ', если они сняты с продажи:", missingText);
-        }
+    if (deliveryAddress) {
+        localStorage.setItem('de_cart_address', deliveryAddress);
+    }
 
-        // Открываем корзину
-        if (cart.length > 0) {
-            localStorage.setItem('de_cart_arr', JSON.stringify(cart));
-            restoredDate = "Импорт от " + new Date().toLocaleDateString('ru-RU');
-            isManagerOrder = true;
-            updateBar();
-            openCart();
-        } else if (missingPzns.size === 0) {
-            alert("Не удалось найти номера PZN в тексте.");
+    // 2. ПАРСИНГ ТОВАРОВ
+    if (workingText) {
+        if (!/PZN/i.test(workingText)) {
+            if (!deliveryAddress) {
+                alert("В тексте не найдены метки PZN и не удалось распознать адрес!");
+            }
+        } else {
+            cart = []; 
+            const chunks = workingText.split(/PZN/i);
+            const missingPzns = new Set(); 
+            
+            for (let i = 1; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                const pznMatch = chunk.match(/^[^0-9]*(\d{6,8})/);
+                
+                if (pznMatch) {
+                    const cleanPzn = pznMatch[1].padStart(8, '0');
+                    let qty = 1; 
+                    
+                    const qtyMatch = chunk.match(/(?:\*|x|х|-)\s*(\d+)\s*(?:pack|шт|уп)|(\d+)\s*(?:pack|шт|уп)/i);
+                    if (qtyMatch) {
+                        qty = parseInt(qtyMatch[1] || qtyMatch[2]);
+                    }
+                    
+                    const existing = cart.find(item => item.pzn === cleanPzn);
+                    if (existing) {
+                        existing.qty += qty;
+                    } else {
+                        cart.push({ pzn: cleanPzn, qty: qty });
+                    }
+
+                    if (!db.some(r => String(r.PZN).trim() === cleanPzn)) {
+                        missingPzns.add(cleanPzn);
+                    }
+                }
+            }
+
+            // ВЕРНУЛИ УДОБНЫЙ PROMPT ДЛЯ КОПИРОВАНИЯ
+            if (missingPzns.size > 0) {
+                const missingText = Array.from(missingPzns).join('\n');
+                prompt("⚠️ ВНИМАНИЕ: Этих товаров нет в базе!\n\nСкопируй список ниже и вставь в Гугл-таблицу:", missingText);
+            }
+
+            if (cart.length > 0) {
+                localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+                restoredDate = "Импорт от " + new Date().toLocaleDateString('ru-RU');
+                isManagerOrder = true;
+            }
         }
+    }
+
+    closeAdminModal();
+    updateBar();
+    
+    if (cart.length > 0) {
+        openCart();
+    } else if (deliveryAddress) {
+        alert("✅ Адрес успешно прикреплен к текущей корзине!");
     }
 }
 
@@ -1156,6 +1307,52 @@ function modQty(pzn, d, event) {
     BLOCK 6: МИНИ-ЧЕК (ИСПРАВЛЕННЫЙ)
     ======================================//=== */
 
+
+
+// ==========================================
+// 🥷 СЕКРЕТНАЯ КНОПКА АДМИНА (С Защитой от конкурентов)
+// ==========================================
+let secretClickTimer = null;
+
+function secretAdminCopy(e) {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    // 🚨 ЗАЩИТА: Работает только если на этом устройстве вводили пароль АДМИН
+    if (!localStorage.getItem('rxde_super_admin')) return;
+    
+    if (cart.length === 0) return;
+    
+    const sumEl = document.getElementById('footerTotalSum');
+    const data = getOrderTextAndLink();
+    if (!data || !sumEl) return;
+
+    if (secretClickTimer) {
+        // ДВОЙНОЙ КЛИК: ТОЛЬКО ССЫЛКА
+        clearTimeout(secretClickTimer);
+        secretClickTimer = null;
+        
+        navigator.clipboard.writeText(data.link).then(() => {
+            sumEl.style.color = '#007bff'; 
+            setTimeout(() => sumEl.style.color = '#000', 400);
+        });
+    } else {
+        // ОДИНОЧНЫЙ КЛИК: ТЕКСТ + ССЫЛКА
+        secretClickTimer = setTimeout(() => {
+            secretClickTimer = null;
+            
+            const fullCopy = data.text.includes(data.link) ? data.text : data.text + '\n' + data.link;
+            
+            navigator.clipboard.writeText(fullCopy).then(() => {
+                sumEl.style.color = '#25D366'; 
+                setTimeout(() => sumEl.style.color = '#000', 400);
+            });
+        }, 250); 
+    }
+}
+
 function updateBar() {
     const bar = document.getElementById('miniCart');
     const receipt = document.getElementById('miniReceipt');
@@ -1224,6 +1421,9 @@ function updateBar() {
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            <line x1="12" y1="12.5" x2="19" y2="12.5"></line>
+                            <line x1="12" y1="15.5" x2="19" y2="15.5"></line>
+                            <line x1="12" y1="18.5" x2="16" y2="18.5"></line>
                         </svg>
                     </div>
                 </div>
@@ -1232,9 +1432,9 @@ function updateBar() {
                     <div style="font-size: 10px; color: #007bff; font-weight: 800; text-transform: uppercase; margin-bottom: 2px;">
                         Товарных позиций: ${activeItems.length} <span style="opacity: 0.4; margin: 0 3px;">|</span> Упаковок: ${totalPacks}
                     </div>
-                    <div style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px;">
-                        <span style="font-size: 14px; color: #999;">${grandTotalEur.toLocaleString('ru-RU')} €</span>
-                        <span id="footerTotalSum" style="font-size: 26px; font-weight: 900; color: #000; letter-spacing: -0.5px;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span>
+                   <div onmousedown="secretAdminCopy(event)" style="display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;">
+                        <span style="font-size: 14px; color: #999; pointer-events: none;">${grandTotalEur.toLocaleString('ru-RU')} €</span>
+                        <span id="footerTotalSum" style="font-size: 26px; font-weight: 900; color: #000; letter-spacing: -0.5px; transition: color 0.2s; pointer-events: none;">${grandTotalRub.toLocaleString('ru-RU')} ₽</span>
                     </div>
                 </div>
             </div>
@@ -1354,13 +1554,17 @@ function tryRestoreCartFromUrl() {
    ========================================= */
 
 async function init() {
-    // 1. Восстанавливаем корзину из локального хранилища
+    // 1. Восстанавливаем корзину и адрес из локального хранилища
     try { 
         const saved = localStorage.getItem('de_cart_arr'); 
         if (saved) cart = JSON.parse(saved); 
+        
+        // ДОСТАЕМ АДРЕС ИЗ ПАМЯТИ (если он там есть)
+        deliveryAddress = localStorage.getItem('de_cart_address') || ""; 
     } catch(e) { 
-        console.error("Ошибка парсинга корзины из localStorage", e);
+        console.error("Ошибка парсинга из localStorage", e);
         cart = []; 
+        deliveryAddress = "";
     }
     
     // 2. Загружаем основную базу данных
@@ -1415,21 +1619,9 @@ async function init() {
 }
 
 
-
-// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + СИНЯЯ ИКОНКА С ТЕКСТОМ + ТАЙМЕР ---
-// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + ТАЙМЕР + ВИБРО ---
-// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + ТАЙМЕР-САМОУБИЙЦА + ВИБРО ---
-// --- УМНОЕ КОПИРОВАНИЕ: ЛЕТАЮЩИЙ ЧЕК + ТАЙМЕР-САМОУБИЙЦА + ВИБРО ---
+// --- УМНОЕ КОПИРОВАНИЕ: ПРЕМИУМ-АНИМАЦИЯ ЧЕКА (Замедленная) ---
+// --- УМНОЕ КОПИРОВАНИЕ: ПРЕМИУМ-АНИМАЦИЯ ЧЕКА (С имитацией текста и штрихкодом) ---
 function handleOrderCopyAndOpen(btnElement) {
-    const textEl = document.getElementById('copyActionText');
-    const iconEl = document.getElementById('copyActionIcon');
-    if (!textEl || !iconEl) return;
-
-    if (btnElement.dataset.processing === "timer") {
-        if (btnElement.forceOpenContact) btnElement.forceOpenContact();
-        return;
-    }
-    
     if (btnElement.dataset.processing === "true") return;
     btnElement.dataset.processing = "true";
 
@@ -1438,76 +1630,74 @@ function handleOrderCopyAndOpen(btnElement) {
 
     currentPreparedText = data.link; 
 
+    const iconEl = document.getElementById('copyActionIcon');
     const sumElement = document.getElementById('footerTotalSum');
     const displaySum = sumElement ? sumElement.innerText : '0 ₽';
 
-    const triggerSuccessAndTimer = () => {
+    const triggerSuccess = () => {
         if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
-
-        const rect = iconEl.getBoundingClientRect();
-        const snapshot = document.createElement('div');
         
-        snapshot.innerHTML = `<div style="font-size: 10px; font-weight: 700; color: #aaa; text-align: center; border-bottom: 1px solid #eee; padding-bottom: 4px; margin-bottom: 6px; letter-spacing: 0.5px;">ЧЕК RxDE</div><div style="font-size: 14px; font-weight: 800; color: #007bff; text-align: center;">${displaySum}</div>`;
-        snapshot.style.cssText = `position: fixed; top: 40%; left: 50%; width: 100px; transform: translate(-50%, -50%) scale(0.5); background: #fff; border: 1px solid #eee; padding: 12px; border-radius: 8px; z-index: 999999; box-shadow: 0 10px 30px rgba(0,0,0,0.08); transition: all 0.6s cubic-bezier(0.5, -0.5, 0.2, 1.2); opacity: 0; pointer-events: none;`;
-        
-        document.body.appendChild(snapshot);
+        // Легкий клик самой кнопки
+        btnElement.style.transform = 'scale(0.95)';
+        setTimeout(() => btnElement.style.transform = 'scale(1)', 150);
 
-        setTimeout(() => { snapshot.style.opacity = '1'; snapshot.style.transform = 'translate(-50%, -50%) scale(1.1)'; }, 10);
-        setTimeout(() => { snapshot.style.top = (rect.top + rect.height / 2) + 'px'; snapshot.style.left = (rect.left + rect.width / 2) + 'px'; snapshot.style.transform = 'translate(-50%, -50%) scale(0.05)'; snapshot.style.opacity = '0.3'; }, 600); 
-        setTimeout(() => snapshot.remove(), 1200);
-
-        setTimeout(() => {
-            btnElement.dataset.processing = "timer";
+        if (iconEl) {
+            const rect = iconEl.getBoundingClientRect();
+            const snapshot = document.createElement('div');
             
-            // ПОЛНАЯ ИКОНКА: 3 аккуратные линии (текст скопирован)
-            iconEl.innerHTML = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                <line x1="12" y1="12.5" x2="19" y2="12.5"></line>
-                <line x1="12" y1="15.5" x2="19" y2="15.5"></line>
-                <line x1="12" y1="18.5" x2="16" y2="18.5"></line>
-            </svg>`;
-
-            let timeLeft = 5;
+            // ИНТЕРЕСНЫЙ ДИЗАЙН: Добавили полосочки (имитация текста) и штрих-код
+            snapshot.innerHTML = `
+                <div style="font-size: 10px; font-weight: 800; color: #888; text-align: center; border-bottom: 1px dashed #ccc; padding-bottom: 4px; margin-bottom: 6px; letter-spacing: 1px;">ПРЕДЗАКАЗ</div>
+                
+                <div style="display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; opacity: 0.3;">
+                    <div style="width: 100%; height: 4px; background: #333; border-radius: 2px;"></div>
+                    <div style="width: 70%; height: 4px; background: #333; border-radius: 2px;"></div>
+                    <div style="width: 85%; height: 4px; background: #333; border-radius: 2px;"></div>
+                </div>
+                
+                <div style="font-size: 18px; font-weight: 900; color: #000; text-align: center; letter-spacing: -0.5px;">${displaySum}</div>
+                
+                <div style="margin-top: 8px; display: flex; justify-content: center; gap: 2px; opacity: 0.4;">
+                    <div style="width: 2px; height: 12px; background: #000;"></div><div style="width: 4px; height: 12px; background: #000;"></div><div style="width: 2px; height: 12px; background: #000;"></div><div style="width: 6px; height: 12px; background: #000;"></div><div style="width: 2px; height: 12px; background: #000;"></div><div style="width: 3px; height: 12px; background: #000;"></div>
+                </div>
+            `;
             
-            if (window.orderCopyTimer) clearInterval(window.orderCopyTimer);
+            // Стартовые стили: сжатый и повернутый (как будто только печатается)
+            snapshot.style.cssText = `position: fixed; top: 40%; left: 50%; width: 110px; transform: translate(-50%, -10%) scale(0.1) rotate(-10deg); background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 4px; z-index: 999999; box-shadow: 0 15px 40px rgba(0,0,0,0.15), inset 0 0 10px rgba(0,0,0,0.02); opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);`;
+            
+            document.body.appendChild(snapshot);
 
-            btnElement.forceOpenContact = () => {
-                if (window.orderCopyTimer) clearInterval(window.orderCopyTimer);
-                window.orderCopyTimer = null;
+            // ШАГ 1: Раскрывается по центру с легким наклоном
+            setTimeout(() => { 
+                snapshot.style.opacity = '1'; 
+                snapshot.style.transform = 'translate(-50%, -50%) scale(1.1) rotate(2deg)'; 
+            }, 10);
+            
+            // ШАГ 2: Висит 1.4 секунды, затем улетает, вращаясь на 360 градусов
+            setTimeout(() => { 
+                snapshot.style.transition = 'all 0.9s cubic-bezier(0.5, -0.5, 0.2, 1.1)';
+                snapshot.style.top = (rect.top + rect.height / 2) + 'px'; 
+                snapshot.style.left = (rect.left + rect.width / 2) + 'px'; 
+                snapshot.style.transform = 'translate(-50%, -50%) scale(0.05) rotate(-360deg)'; 
+                snapshot.style.opacity = '0'; 
+            }, 1400); 
+            
+            // ШАГ 3: Долетел — удаляем и открываем чаты (Итого 2.3 сек)
+            setTimeout(() => { 
+                snapshot.remove(); 
                 openContact('order');
-                setTimeout(() => { btnElement.dataset.processing = "false"; updateBar(); }, 500);
-            };
-
-            const updateTimerText = () => {
-                if (!document.body.contains(textEl)) {
-                    if (window.orderCopyTimer) clearInterval(window.orderCopyTimer);
-                    window.orderCopyTimer = null;
-                    return;
-                }
-                textEl.innerHTML = `<span style="font-size: 11px; color: #2e7d32; font-weight: 800;">✓ КОД В БУФЕРЕ</span><br><b style="color: #555; font-size: 12px;">Чат через <span style="font-size: 16px; color: #007bff;">${timeLeft}</span> (или жми)</b>`;
-            };
+                btnElement.dataset.processing = "false";
+            }, 2300);
             
-            updateTimerText();
-
-            window.orderCopyTimer = setInterval(() => {
-                timeLeft--;
-                if (timeLeft > 0) {
-                    updateTimerText();
-                } else {
-                    if (document.body.contains(textEl)) {
-                        btnElement.forceOpenContact();
-                    } else {
-                        clearInterval(window.orderCopyTimer);
-                    }
-                }
-            }, 1000);
-        }, 1100); 
+        } else {
+            openContact('order');
+            btnElement.dataset.processing = "false";
+        }
     };
 
     if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(currentPreparedText).then(triggerSuccessAndTimer).catch(() => triggerSuccessAndTimer());
-    } else { triggerSuccessAndTimer(); }
+        navigator.clipboard.writeText(currentPreparedText).then(triggerSuccess).catch(() => triggerSuccess());
+    } else { triggerSuccess(); }
 }
 
 function updateCartStatusUI() {
@@ -1775,27 +1965,18 @@ function openContact(type, index = null) {
     const title = document.getElementById('contactTitle');
     const manualInput = document.getElementById('manualMsgInput');
     const buttons = document.getElementById('contactButtonsGrid');
-    const mini = document.getElementById('miniCart');
-    const oldCancelBtn = document.getElementById('contactBackBtn');
 
     if (!overlay || !buttons) return;
-    if (mini) mini.style.display = 'none';
-    if (oldCancelBtn) oldCancelBtn.style.display = 'none';
 
     isQuestionMode = (type !== 'order'); 
     if (manualInput) manualInput.style.display = 'none';
 
-    // КНОПКИ БЕЗ КАРТИНОК И СИМВОЛОВ
+    // ВЕРНУЛИ КНОПКУ E-MAIL
     const baseButtonsHtml = `
-        <button onclick="submitFinal('wa')" style="width: 100%; height: 46px; background: #fff; color: #25D366; border: 2px solid #25D366; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">
-            WhatsApp
-        </button>
-        <button onclick="submitFinal('tg')" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">
-            Telegram
-        </button>
-        <button onclick="showPhoneForm()" style="width: 100%; height: 46px; background: #f8f9fa; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 5px;">
-            Свяжитесь со мной
-        </button>
+        <button onclick="submitFinal('wa')" style="width: 100%; height: 46px; background: #fff; color: #25D366; border: 2px solid #25D366; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">WhatsApp</button>
+        <button onclick="submitFinal('tg')" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">Telegram</button>
+        <button onclick="submitFinal('email')" style="width: 100%; height: 46px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">E-mail</button>
+        <button onclick="showPhoneForm()" style="width: 100%; height: 46px; background: #f8f9fa; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 5px;">Свяжитесь со мной</button>
     `;
 
     if (type === 'order') {
@@ -1803,9 +1984,18 @@ function openContact(type, index = null) {
         const data = getOrderTextAndLink();
         if(data) currentPreparedText = data.link;
 
+        // КРАСИВЫЙ БЛОК С ИКОНКОЙ (Листки с 3 линиями внутри)
         buttons.innerHTML = `
-            <div style="font-size: 13px; color: #333; text-align: center; margin-bottom: 15px;">
-                Код заказа скопирован.<br><b>Выберите чат и вставьте код в сообщение.</b>
+            <div style="display: flex; flex-direction: column; align-items: center; background: #e8f5e9; border: 1px dashed #81c784; border-radius: 8px; padding: 15px; margin-bottom: 15px; text-align: center;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2e7d32" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    <line x1="12" y1="12.5" x2="19" y2="12.5"></line>
+                    <line x1="12" y1="15.5" x2="19" y2="15.5"></line>
+                    <line x1="12" y1="18.5" x2="16" y2="18.5"></line>
+                </svg>
+                <div style="font-size: 14px; color: #2e7d32; font-weight: 800; text-transform: uppercase;">Код заказа в буфере</div>
+                <div style="font-size: 12px; color: #555; margin-top: 4px;">Выберите удобный чат и вставьте скопированный текст.</div>
             </div>
             ${baseButtonsHtml}
         `;
@@ -1833,17 +2023,20 @@ function openContact(type, index = null) {
 
 function submitFinal(app) {
     const manualInput = document.getElementById('manualMsgInput');
-    // Если режим вопроса - берем текст из поля, если заказа - берем зашифрованную ссылку
     const finalMsg = isQuestionMode ? (manualInput ? manualInput.value.trim() : "") : currentPreparedText;
 
     if (app === 'wa') {
         window.open(`https://wa.me/${WA_PHONE}?text=${encodeURIComponent(finalMsg)}`, '_blank');
     } else if (app === 'tg') {
-        // Копируем в буфер для надежности (чтобы юзер мог вставить, если переход не сработает)
         try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
         const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
         window.open(`https://t.me/${username}`, '_blank');
+    } else if (app === 'email') {
+        // ЛОГИКА ДЛЯ ПОЧТЫ
+        const subject = isQuestionMode ? 'Вопрос в RxDE' : 'Заказ RxDE';
+        window.location.href = `mailto:med.zakaz.de@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalMsg)}`;
     }
+    
     closeContact();
 }
 
@@ -1862,34 +2055,34 @@ function showPhoneForm() {
     const descText = "Оставьте номер телефона, и наш специалист свяжется с вами в ближайшее время:";
 
     buttonsGrid.innerHTML = `
-        <div style="text-align: center; padding: 10px 5px; animation: fadeIn 0.3s;">
-            <div style="font-size: 14px; color: #555; margin-bottom: 20px; line-height: 1.4;">${descText}</div>
+        <div style="text-align: center; animation: fadeIn 0.3s; padding-bottom: 5px;">
+            <div style="font-size: 13px; color: #555; margin-bottom: 15px; line-height: 1.4;">${descText}</div>
             
             <div style="position: relative; margin-bottom: 12px;">
-                <div id="countryHint" style="position: absolute; right: 12px; top: 15px; font-size: 12px; font-weight: 700; color: #aaa; pointer-events: none; transition: 0.2s;"></div>
+                <div id="countryHint" style="position: absolute; right: 12px; top: 14px; font-size: 12px; font-weight: 700; color: #aaa; pointer-events: none; transition: 0.2s;"></div>
                 
                 <input type="tel" id="fallbackPhone" placeholder="+* *** *** ** **" oninput="checkPhoneInput()" 
-                       style="width: 100%; height: 48px; border: 1px solid #ccc; border-radius: 8px; padding: 0 15px; font-size: 17px; font-weight: 700; color: #111; text-align: left; letter-spacing: 1px; outline: none; background: #fff; transition: 0.3s;">
+                       style="box-sizing: border-box; width: 100%; height: 44px; border: 1px solid #ccc; border-radius: 8px; padding: 0 15px; font-size: 16px; font-weight: 700; color: #111; text-align: left; letter-spacing: 1px; outline: none; background: #fff; transition: 0.3s;">
             </div>
             
-            <div id="privacyBlock" style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 20px; opacity: 0.5; transition: 0.3s; padding: 12px; background: #fafafa; border-radius: 8px; border: 1px solid #eee;">
+            <div id="privacyBlock" style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 15px; opacity: 0.5; transition: 0.3s; padding: 10px; background: #fafafa; border-radius: 8px; border: 1px solid #eee; box-sizing: border-box;">
                 <input type="checkbox" id="fallbackPrivacy" onchange="checkPhoneInput()" disabled 
-                       style="width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; cursor: pointer; accent-color: var(--p);">
-                <label id="privacyLabel" for="fallbackPrivacy" style="font-size: 12px; color: #666; line-height: 1.4; text-align: left; cursor: pointer; transition: 0.3s;">
+                       style="width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; cursor: pointer; accent-color: var(--p);">
+                <label id="privacyLabel" for="fallbackPrivacy" style="font-size: 11px; color: #666; line-height: 1.4; text-align: left; cursor: pointer; transition: 0.3s;">
                     Я даю согласие на обработку номера и принимаю <span onclick="showInfo('privacy'); event.preventDefault(); event.stopPropagation();" style="color: var(--p); text-decoration: underline;">Политику</span>
                 </label>
             </div>
             
             <button id="fallbackSubmitBtn" onclick="processFallbackSubmit()" disabled 
-                    style="width: 100%; height: 50px; background: #ddd; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: not-allowed; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;">
+                    style="box-sizing: border-box; width: 100%; height: 46px; background: #ddd; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: not-allowed; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px;">
                 ОТПРАВИТЬ
             </button>
             
-            <div id="fallbackLoader" style="display: none; font-size: 14px; font-weight: 700; color: #2e7d32; margin-top: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9;">
+            <div id="fallbackLoader" style="display: none; font-size: 13px; font-weight: 700; color: #2e7d32; margin-top: 12px; padding: 10px; background: #e8f5e9; border-radius: 8px; border: 1px solid #c8e6c9; box-sizing: border-box;">
                 ОТПРАВЛЯЕМ...
             </div>
             
-            <button onclick="openContact(isQuestionMode ? 'question' : 'order')" style="background:none; border:none; color:#666; margin-top:20px; width:100%; font-size:13px; font-weight:700; text-transform:uppercase; cursor: pointer; letter-spacing: 1px;">
+            <button onclick="openContact(isQuestionMode ? 'question' : 'order')" style="background:none; border:none; color:#666; margin-top:12px; width:100%; font-size:12px; font-weight:700; text-transform:uppercase; cursor: pointer; letter-spacing: 1px;">
                 НАЗАД
             </button>
         </div>
@@ -2026,7 +2219,6 @@ function getOrderTextAndLink() {
     if (cart.length === 0) return null;
     const fmt = (n) => n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
-    // Декодер для немецких кракозябр (превращает &ouml; в ö)
     const decodeHTML = (html) => {
         const txt = document.createElement("textarea");
         txt.innerHTML = html || "";
@@ -2035,7 +2227,7 @@ function getOrderTextAndLink() {
 
     const now = new Date();
     const d = now.toLocaleDateString('ru-RU');
-    const urlDate = `${d}`; // Время убрано, как ты и просил
+    const urlDate = `${d}`; 
 
     let itemsSumEur = 0;
     let totalQty = 0; 
@@ -2043,60 +2235,47 @@ function getOrderTextAndLink() {
     let itemsText = ""; 
     let printIdx = 1;
 
-    // --- НОВОЕ: Считаем реальные платные позиции (чтобы знать, прятать ли цифру 1) ---
-    // ИСПОЛЬЗУЕМ padStart ДЛЯ ЗАЩИТЫ ОТ ПОТЕРИ НУЛЯ В PZN!
     const activeCount = cart.filter(item => {
         const cleanPZN = String(item.pzn).trim().padStart(8, '0');
         const r = db.find(x => String(x.PZN || x.pzn).trim().padStart(8, '0') === cleanPZN);
         if (!r) return false;
-        // Бронебойная очистка цены на случай пробелов в таблице
         const price = Math.round(parseFloat(String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0);
         return price > 0;
     }).length;
 
-    // 1. ПРОХОДИМ ПО КОРЗИНЕ И ФИЛЬТРУЕМ ПУСТЫШКИ
     cart.forEach((item) => {
-        // ИСПОЛЬЗУЕМ padStart ДЛЯ ЗАЩИТЫ ОТ ПОТЕРИ НУЛЯ В PZN!
         const cleanPZN = String(item.pzn).trim().padStart(8, '0');
         const r = db.find(x => String(x.PZN || x.pzn).trim().padStart(8, '0') === cleanPZN);
         
         if (r) {
-            // Бронебойная очистка цены (защита от пробелов)
             const price = Math.round(parseFloat(String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.')) || 0);
-            
-            // 🚨 ЕСЛИ ЦЕНА 0 — ПРОПУСКАЕМ ТОВАР В ТЕКСТЕ ЧЕКА ПОЛНОСТЬЮ!
             if (price === 0) return; 
 
             const sum = price * item.qty;
             itemsSumEur += sum;
-            totalQty += item.qty; // Плюсуем только реальные упаковки
+            totalQty += item.qty; 
             breakdown.push(sum);
 
             const rawDesc = `${r.Name_DE}, ${r.Form_DE}, ${r.Hersteller}, PZN ${r.PZN}`;
-            const fullDesc = decodeHTML(rawDesc); // Очищаем от HTML-кодов
+            const fullDesc = decodeHTML(rawDesc); 
             
             let math = item.qty > 1 
                 ? `${fmt(price)}€*${item.qty}pack= ${fmt(sum)}€` 
                 : `${fmt(sum)}€`;
 
-            // --- НОВОЕ: Прячем номер 1, если товар всего один ---
             const prefix = activeCount > 1 ? `${printIdx}.\n` : "";
             
-            // Ставим правильный номер (или без него)
             itemsText += `${prefix}${fullDesc}...${math}\n\n`;
             printIdx++; 
         }
     });
 
-    // 2. ФОРМИРУЕМ ИТОГОВЫЙ ТЕКСТ (ШАПКА)
     let text =  `дата:      [${d}]\n`;
     text +=     `€/₽:       [${rateCalc}]\n`;
-    text +=     `позиций:   [${activeCount}]\n`;  // Добавлена строка позиций
-    text +=     `упаковок:  [${totalQty} pack]\n\n`; // Переименовано в упаковки
+    text +=     `позиций:   [${activeCount}]\n`;  
+    text +=     `упаковок:  [${totalQty} pack]\n\n`; 
 
-    // 3. ДОБАВЛЯЕМ ТОВАРЫ И ИТОГО
     text += itemsText;
-    // --- НОВОЕ: ИЗ ЕВРОПЫ ---
     text += `Тариф почты из Европы до 5кг...${shipEur}€ (12-25 дней)\n\n`;
     
     const totalEur = itemsSumEur + shipEur;
@@ -2105,14 +2284,17 @@ function getOrderTextAndLink() {
     text += `${breakdown.join('+')}=${fmt(totalEur)}€\n`;
     text += `${fmt(totalEur)}€*${rateCalc}=${fmt(finalRub)} ₽\n\n`;
 
-    // 4. ССЫЛКА (Сохраняет ВСЮ корзину, включая нулевые, для показа на сайте)
+// --- ПРИКРЕПЛЯЕМ АДРЕС В САМЫЙ НИЗ ---
+    if (typeof deliveryAddress !== 'undefined' && deliveryAddress) {
+        text += `АДРЕС ДОСТАВКИ:\n${deliveryAddress}\n\n`;
+    }
+
     const cartStr = cart.map(i => `${i.pzn}:${i.qty}`).join(',');
     const baseUrl = window.location.origin + window.location.pathname;
     const fullLink = `${baseUrl}?c=${cartStr}&d=${urlDate}`;
 
-    text += `Актуальная цена в любой момент времени:\n${fullLink}`;
-    
-    currentPreparedText = text; 
+    // В буфер идет ссылка, а текст идет в WhatsApp/Telegram
+    currentPreparedText = fullLink; 
     return { text: text, link: fullLink };
 }
 
@@ -2242,8 +2424,12 @@ function createSinglePill(sRect, tRect, isRemoving, targetId) {
 
 let clickTimer = null;
 
+
 function handleLogoClick(e) {
     if (e) e.preventDefault(); // Это не дает курсору уйти из поиска
+
+    // 🚨 ЗАЩИТА: Работает только если на этом устройстве вводили пароль АДМИН
+    if (!localStorage.getItem('rxde_super_admin')) return;
 
     if (clickTimer) {
         // ДВОЙНОЙ КЛИК (Желтый - копируем поисковую выдачу)
