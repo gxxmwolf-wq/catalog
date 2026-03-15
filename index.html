@@ -159,7 +159,10 @@
             <div onclick="closeAdminModal()" style="font-size: 22px; color: #b08d00; cursor: pointer; padding: 0 5px; line-height: 1;">✕</div>
         </div>
         
-        <div style="font-size: 12px; color: #888; margin-bottom: 5px; font-weight: 700;">1. ИМПОРТ ТОВАРОВ (Вставь весь заказ)</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <div style="font-size: 12px; color: #888; font-weight: 700;">1. ИМПОРТ ТОВАРОВ</div>
+            <div onclick="pasteToAdmin('adminOrderInput')" style="font-size: 10px; font-weight: 800; color: #007bff; background: #e6f2ff; padding: 4px 8px; border-radius: 4px; cursor: pointer; text-transform: uppercase;">📋 Вставить</div>
+        </div>
         <textarea id="adminOrderInput" class="universal-textarea" style="width: 100%; height: 120px; border: 1px solid #ffe082; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 13px; margin-bottom: 10px; resize: none; outline: none; background: #fff;" placeholder="Вставьте архивный заказ целиком..."></textarea>
         
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; background: #fff9e6; padding: 8px; border-radius: 6px;">
@@ -168,7 +171,10 @@
         </div>
         
         <div id="manualAddressBlock" style="display: none;">
-            <div style="font-size: 12px; color: #888; margin-bottom: 5px; font-weight: 700;">2. АДРЕС ДОСТАВКИ (Ручной ввод)</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <div style="font-size: 12px; color: #888; font-weight: 700;">2. АДРЕС ДОСТАВКИ</div>
+                <div onclick="pasteToAdmin('adminAddressInput')" style="font-size: 10px; font-weight: 800; color: #007bff; background: #e6f2ff; padding: 4px 8px; border-radius: 4px; cursor: pointer; text-transform: uppercase;">📋 Вставить</div>
+            </div>
             <textarea id="adminAddressInput" class="universal-textarea" style="width: 100%; height: 80px; border: 1px solid #ccc; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 13px; margin-bottom: 15px; resize: none; outline: none; background: #fff;" placeholder="Если адрес отдельно, вставьте его сюда..."></textarea>
         </div>
         
@@ -1062,6 +1068,60 @@ function toggleAdminAddressField() {
     document.getElementById('manualAddressBlock').style.display = isAuto ? 'none' : 'block';
 }
 
+// --- НОВАЯ ФУНКЦИЯ: ЧТЕНИЕ БУФЕРА БЕЗ КЛАВИАТУРЫ ---
+async function pasteToAdmin(inputId) {
+    try {
+        const text = await navigator.clipboard.readText();
+        const input = document.getElementById(inputId);
+        if (input && text) {
+            input.value = text;
+            if (navigator.vibrate) navigator.vibrate([10, 20, 10]); // Приятный двойной вибрик успеха
+        }
+    } catch (err) {
+        alert('Браузер заблокировал доступ к буферу. Нажми "Разрешить" во всплывающем окне или вставь текст вручную.');
+    }
+}
+
+// --- НОВАЯ ФУНКЦИЯ: КРАСИВОЕ ОКНО ДЛЯ НЕДОСТАЮЩИХ PZN ---
+function showMissingPznModal(missingSet) {
+    const missingText = Array.from(missingSet).join('\n');
+    
+    // Создаем кастомное окно поверх всего
+    const modal = document.createElement('div');
+    modal.style.cssText = `position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999999; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;`;
+    
+    modal.innerHTML = `
+        <div style="background: #fff; width: 100%; max-width: 350px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: fadeIn 0.3s;">
+            <div style="font-size: 16px; font-weight: 800; color: #d32f2f; margin-bottom: 10px;">⚠️ НОВЫЕ ТОВАРЫ</div>
+            <div style="font-size: 13px; color: #555; margin-bottom: 15px; line-height: 1.4;">Этих PZN нет в базе. Нажми кнопку ниже, чтобы скопировать их списком для Гугл-таблицы:</div>
+            
+            <div style="background: #f5f5f5; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 14px; color: #333; margin-bottom: 15px; max-height: 100px; overflow-y: auto; white-space: pre-wrap;">${missingText}</div>
+            
+            <button id="copyPznBtn" style="width: 100%; height: 44px; background: #007bff; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; margin-bottom: 10px; cursor: pointer;">📋 СКОПИРОВАТЬ</button>
+            <button id="closePznBtn" style="width: 100%; height: 44px; background: #eee; color: #333; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer;">ЗАКРЫТЬ</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Обработчик копирования
+    document.getElementById('copyPznBtn').onclick = () => {
+        navigator.clipboard.writeText(missingText).then(() => {
+            const btn = document.getElementById('copyPznBtn');
+            btn.style.background = '#25D366';
+            btn.innerText = '✅ СКОПИРОВАНО';
+            if (navigator.vibrate) navigator.vibrate(15);
+            setTimeout(() => modal.remove(), 800); // Само закрывается после успеха
+        });
+    };
+    
+    // Обработчик закрытия
+    document.getElementById('closePznBtn').onclick = () => {
+        modal.remove();
+    };
+}
+
+// --- ОБНОВЛЕННЫЙ ПРОЦЕССОР (С вызовом кастомного окна вместо prompt) ---
 function processAdminImport() {
     const rawText = document.getElementById('adminOrderInput').value.trim();
     const manualAddress = document.getElementById('adminAddressInput').value.trim();
@@ -1072,21 +1132,33 @@ function processAdminImport() {
         return;
     }
 
+    // СБРАСЫВАЕМ КЛАВИАТУРУ (если она вдруг была открыта)
+    document.getElementById('adminOrderInput').blur();
+    document.getElementById('adminAddressInput').blur();
+
     let workingText = rawText;
-    
-    // ЖЕСТКАЯ ОЧИСТКА СТАРЫХ ДАННЫХ ПЕРЕД НОВЫМ ИМПОРТОМ
     deliveryAddress = ""; 
     localStorage.removeItem('de_cart_address');
 
-    // Вспомогательная функция для очистки мусора из скопированного адреса
+  
+    // Очистка только для извлеченного адреса (с сохранением всех переносов строк!)
     const cleanExtractedAddress = (str) => {
-        return str.replace(/АДРЕС ДОСТАВКИ:?/gi, '').replace(/📦/g, '').trim();
+        // Убираем заголовок и лишние пробелы/переносы сразу после него
+        let cleaned = str.replace(/АДРЕС ДОСТАВКИ:?\s*/gi, '').replace(/📦/g, '');
+        
+        // ✂️ Отрезаем только саму ссылку в конце
+        const linkMatch = cleaned.match(/(https?:\/\/|www\.|rxde\.online)/i);
+        if (linkMatch) {
+            cleaned = cleaned.substring(0, linkMatch.index);
+        }
+        
+        // trim() убирает пустые строки только в самом начале и в конце. 
+        // Внутри адреса всё форматирование останется нетронутым!
+        return cleaned.trim(); 
     };
 
-    // 1. УМНОЕ ИЗВЛЕЧЕНИЕ АДРЕСА
     if (isAutoAddress && workingText) {
         const addressMatch = workingText.match(/(?:^|\n)\s*([1-9]\d{5}[\s\S]+)$/);
-        
         if (addressMatch) {
             deliveryAddress = cleanExtractedAddress(addressMatch[1]);
             workingText = workingText.substring(0, addressMatch.index).trim();
@@ -1108,47 +1180,46 @@ function processAdminImport() {
         localStorage.setItem('de_cart_address', deliveryAddress);
     }
 
-    // 2. ПАРСИНГ ТОВАРОВ
+    // 2. УМНЫЙ ПАРСИНГ ТОВАРОВ (Ищет метки PZN или просто 7-8 значные числа)
     if (workingText) {
-        if (!/PZN/i.test(workingText)) {
+        const pznRegex = /(?:PZN[^0-9]*(\d{6,8}))|\b(\d{7,8})\b/gi;
+        const pznMatches = [...workingText.matchAll(pznRegex)];
+
+        if (pznMatches.length === 0) {
             if (!deliveryAddress) {
-                alert("В тексте не найдены метки PZN и не удалось распознать адрес!");
+                alert("В тексте не найдены ни метки PZN, ни 8-значные номера товаров!");
             }
         } else {
             cart = []; 
-            const chunks = workingText.split(/PZN/i);
             const missingPzns = new Set(); 
             
-            for (let i = 1; i < chunks.length; i++) {
-                const chunk = chunks[i];
-                const pznMatch = chunk.match(/^[^0-9]*(\d{6,8})/);
+            for (let i = 0; i < pznMatches.length; i++) {
+                const match = pznMatches[i];
+                const rawDigits = match[1] || match[2];
+                const cleanPzn = rawDigits.padStart(8, '0');
                 
-                if (pznMatch) {
-                    const cleanPzn = pznMatch[1].padStart(8, '0');
-                    let qty = 1; 
-                    
-                    const qtyMatch = chunk.match(/(?:\*|x|х|-)\s*(\d+)\s*(?:pack|шт|уп)|(\d+)\s*(?:pack|шт|уп)/i);
-                    if (qtyMatch) {
-                        qty = parseInt(qtyMatch[1] || qtyMatch[2]);
-                    }
-                    
-                    const existing = cart.find(item => item.pzn === cleanPzn);
-                    if (existing) {
-                        existing.qty += qty;
-                    } else {
-                        cart.push({ pzn: cleanPzn, qty: qty });
-                    }
+                const startIndex = match.index + match[0].length;
+                const endIndex = pznMatches[i + 1] ? pznMatches[i + 1].index : workingText.length;
+                const chunk = workingText.substring(startIndex, endIndex);
+                
+                let qty = 1; 
+                const qtyMatch = chunk.match(/(?:\*|x|х|-|:)\s*(\d+)\s*(?:pack|шт|уп)?|(\d+)\s*(?:pack|шт|уп)/i);
+                if (qtyMatch) {
+                    qty = parseInt(qtyMatch[1] || qtyMatch[2]);
+                }
+                
+                const existing = cart.find(item => item.pzn === cleanPzn);
+                if (existing) existing.qty += qty;
+                else cart.push({ pzn: cleanPzn, qty: qty });
 
-                    if (!db.some(r => String(r.PZN).trim() === cleanPzn)) {
-                        missingPzns.add(cleanPzn);
-                    }
+                if (!db.some(r => String(r.PZN).trim() === cleanPzn)) {
+                    missingPzns.add(cleanPzn);
                 }
             }
 
-            // ВЕРНУЛИ УДОБНЫЙ PROMPT ДЛЯ КОПИРОВАНИЯ
+            // ВЫЗЫВАЕМ НАШЕ КРАСИВОЕ ОКНО ВМЕСТО PROMPT
             if (missingPzns.size > 0) {
-                const missingText = Array.from(missingPzns).join('\n');
-                prompt("⚠️ ВНИМАНИЕ: Этих товаров нет в базе!\n\nСкопируй список ниже и вставь в Гугл-таблицу:", missingText);
+                showMissingPznModal(missingPzns);
             }
 
             if (cart.length > 0) {
@@ -1164,7 +1235,7 @@ function processAdminImport() {
     
     if (cart.length > 0) {
         openCart();
-    } else if (deliveryAddress) {
+    } else if (deliveryAddress && workingText === "") {
         alert("✅ Адрес успешно прикреплен к текущей корзине!");
     }
 }
