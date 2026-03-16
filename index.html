@@ -2901,10 +2901,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
 // 📄 ГЕНЕРАЦИЯ PDF СЧЕТА (Бронебойная версия)
 // ==========================================
-// ==========================================
-// 📄 ГЕНЕРАЦИЯ PDF СЧЕТА (ИНВОЙСА)
-// ==========================================
-
 function generatePDFInvoice() {
     if (cart.length === 0) {
         alert("Корзина пуста. Нечего генерировать.");
@@ -2919,6 +2915,12 @@ function generatePDFInvoice() {
         btnPdf.disabled = true;
     }
 
+    // 1. Создаем и показываем шторку загрузки (чтобы скрыть перестроение)
+    const curtain = document.createElement('div');
+    curtain.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #ffffff; z-index: 99999999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif;';
+    curtain.innerHTML = '<span style="font-size: 40px; margin-bottom: 15px;">📄</span><span style="font-size: 16px; font-weight: 800; color: #2e7d32; letter-spacing: 1px;">ГЕНЕРАЦИЯ СЧЕТА...</span>';
+    document.body.appendChild(curtain);
+
     const now = new Date();
     const d = String(now.getDate()).padStart(2, '0');
     const m = String(now.getMonth() + 1).padStart(2, '0');
@@ -2928,7 +2930,6 @@ function generatePDFInvoice() {
     
     document.getElementById('pdfOrderNum').innerText = `№ ${d}${m}${y}-${h}${min} от ${d}.${m}.${y}`;
     
-    // Вставляем адрес
     const addrEl = document.getElementById('pdfAddressFull');
     let freshAddress = localStorage.getItem('de_cart_address') || deliveryAddress || "";
     
@@ -2938,7 +2939,6 @@ function generatePDFInvoice() {
         addrEl.innerHTML = "<span style='color: #d32f2f; font-weight: bold;'>⚠️ Адрес доставки не указан</span>";
     }
 
-    // Собираем таблицу
     const tbody = document.getElementById('pdfTableBody');
     tbody.innerHTML = '';
     
@@ -2981,51 +2981,77 @@ function generatePDFInvoice() {
     document.getElementById('pdfRate').innerText = `${currentRate} ₽`;
     document.getElementById('pdfSumRub').innerText = `${fmt(finalRub)} ₽`;
 
-    // 🟢 СТАБИЛЬНЫЙ ВЫВОД ЭЛЕМЕНТА (без отрицательных координат)
+    // 2. Включаем счет ПОВЕРХ всего сайта (под шторкой)
     const element = document.getElementById('pdfInvoiceWrap');
+    
+    // ВАЖНО: Размораживаем body, чтобы камера могла корректно отснять блок
+    document.body.style.position = '';
+    document.body.style.overflow = '';
+    document.body.style.top = '';
+    window.scrollTo(0, 0);
+
     element.style.display = 'block';
     element.style.position = 'absolute';
-    element.style.top = '0';
-    element.style.left = '0';
-    element.style.zIndex = '999999'; // Показываем поверх всего
+    element.style.top = '0px';
+    element.style.left = '0px';
+    element.style.width = '800px';
+    element.style.background = '#ffffff';
+    element.style.zIndex = '999998'; // Прямо под шторкой (99999999)
 
     const opt = {
-        margin:       0,
+        margin:       [0.2, 0.2],
         filename:     `RXDE_Заказ_${d}${m}${y}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
+        image:        { type: 'jpeg', quality: 1 },
         html2canvas:  { 
             scale: 2, 
             useCORS: true, 
-            windowWidth: 800,
             width: 800,
+            windowWidth: 800,
             scrollX: 0,
             scrollY: 0
         },
-        pagebreak:    { mode: 'css' },
         jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opt).from(element).save().then(() => {
-        // Убираем элемент обратно
-        element.style.display = 'none';
-        element.style.position = 'static';
-        if (btnPdf) {
-            btnPdf.innerText = originalText;
-            btnPdf.style.opacity = "1";
-            btnPdf.disabled = false;
-        }
-        if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
-    }).catch(err => {
-        console.error("Ошибка при создании PDF:", err);
-        alert("Произошла ошибка при создании PDF.");
-        element.style.display = 'none';
-        element.style.position = 'static';
-        if (btnPdf) {
-            btnPdf.innerText = originalText;
-            btnPdf.style.opacity = "1";
-            btnPdf.disabled = false;
-        }
-    });
+    // Даем браузеру 100мс на отрисовку дом-дерева, затем делаем фото
+    setTimeout(() => {
+        html2pdf().set(opt).from(element).save().then(() => {
+            // Возвращаем всё как было
+            element.style.display = 'none';
+            curtain.remove(); 
+            
+            // Возвращаем заморозку Корзины
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPos}px`;
+            document.body.style.width = '100%';
+            
+            if (btnPdf) {
+                btnPdf.innerText = originalText;
+                btnPdf.style.opacity = "1";
+                btnPdf.disabled = false;
+            }
+            if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
+            
+        }).catch(err => {
+            console.error("Ошибка PDF:", err);
+            alert("Ошибка при создании PDF.");
+            element.style.display = 'none';
+            curtain.remove();
+            
+            // Возвращаем заморозку
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPos}px`;
+            document.body.style.width = '100%';
+
+            if (btnPdf) {
+                btnPdf.innerText = originalText;
+                btnPdf.style.opacity = "1";
+                btnPdf.disabled = false;
+            }
+        });
+    }, 100);
 }
 
     // ФИНАЛЬНЫЙ ЗАПУСК ВСЕГО САЙТА
