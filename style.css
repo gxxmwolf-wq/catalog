@@ -1343,3 +1343,12 @@ button:active {
 .pdf-table tr { page-break-inside: avoid; }
 .pdf-totals { page-break-inside: avoid; }
 .pdf-payment-box { page-break-inside: avoid; }
+
+.pdf-card-num {
+    font-family: monospace;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 10px;
+    border-bottom: 1px dashed #999; /* Визуально показывает, что можно кликнуть */
+}
