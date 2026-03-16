@@ -161,9 +161,12 @@
                 <div onclick="closeAdminModal()" style="font-size: 22px; color: #b08d00; cursor: pointer; padding: 0 5px;">✕</div>
             </div>
             
-            <div style="font-size: 12px; color: #888; font-weight: 700; margin-bottom: 5px; display: flex; justify-content: space-between;">
-                ИМПОРТ ЗАКАЗА
-                <div onclick="pasteToAdmin('adminOrderInput')" style="color: #007bff; cursor: pointer;">📋 ВСТАВИТЬ</div>
+            <div style="font-size: 12px; color: #888; font-weight: 700; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
+                <span>ИМПОРТ ЗАКАЗА</span>
+                <div style="display: flex; gap: 15px;">
+                    <div onclick="clearAdminPanel()" style="color: #d32f2f; cursor: pointer;">🗑 ОЧИСТИТЬ</div>
+                    <div onclick="pasteToAdmin('adminOrderInput')" style="color: #007bff; cursor: pointer;">📋 ВСТАВИТЬ</div>
+                </div>
             </div>
             
             <textarea id="adminOrderInput" class="universal-textarea" style="width: 100%; height: 120px; border: 1px solid #ffe082; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 13px; margin-bottom: 15px; outline: none;" placeholder="Вставьте текст заказа..."></textarea>
@@ -1035,7 +1038,7 @@
     }
 
 
-    // ==========================================
+ // ==========================================
     // 🥷 БЫСТРЫЙ ВХОД В АДМИНКУ ПО КЛИКУ НА КУРСЫ
     // ==========================================
     function openAdminSecretly() {
@@ -1046,188 +1049,217 @@
         runAdminImport();
     }
 
-
-    // --- ОТКРЫТИЕ АДМИНКИ ---
-// --- ОТКРЫТИЕ АДМИНКИ (БЕЗ ОЧИСТКИ ТЕКСТА) ---
-function runAdminImport() {
-    const overlay = document.getElementById('adminOverlay');
-    if (overlay) {
-        // ТЕКСТ В ПОЛЕ БОЛЬШЕ НЕ СТИРАЕМ!
-        
-        // Но если корзина пуста, прячем старую зеленую плашку и кнопку PDF
-        if (cart.length === 0) {
-            const infoBox = document.getElementById('adminSuccessInfo');
-            if (infoBox) infoBox.style.display = 'none';
-            const btnPdf = document.getElementById('btnGeneratePDF');
-            if (btnPdf) btnPdf.style.display = 'none';
-        }
-
-        overlay.style.display = 'flex';
-    }
-}
-
-function closeAdminModal() {
-    const overlay = document.getElementById('adminOverlay');
-    if (overlay) overlay.style.display = 'none';
-}
-
-// 🟢 УМНЫЙ ФИЛЬТР: Расставляет абзацы (чинит "Москваул", телефоны и индексы)
-function formatPastedText(str) {
-    let cleaned = str.replace(/АДРЕС ДОСТАВКИ:?\s*/gi, '');
-    cleaned = cleaned.replace(/Для\s*Вашего\s*удобства[\s\S]*/gi, '');
-    cleaned = cleaned.replace(/Для\s*$/i, ''); 
-    
-    // Базовые отбивки
-    cleaned = cleaned.replace(/дата:/gi, '\nдата:');
-    cleaned = cleaned.replace(/€\/₽:/gi, '\n€/₽:');
-    cleaned = cleaned.replace(/позиций:/gi, '\nпозиций:');
-    cleaned = cleaned.replace(/упаковок:/gi, '\nупаковок:');
-    cleaned = cleaned.replace(/(Тариф почты)/gi, '\n\n$1');
-    
-    // МАГИЯ РАССКЛЕИВАНИЯ
-    cleaned = cleaned.replace(/([а-яёА-ЯЁ])(ул\.|г\.|пр\.|пер\.|д\.|корп\.|кв\.)/gi, '$1\n$2'); // Москваул -> Москва \n ул
-    cleaned = cleaned.replace(/([а-яё0-9])([А-ЯЁ])/g, '$1\n$2'); // 33к1Нестеренко -> 33к1 \n Нестеренко
-    cleaned = cleaned.replace(/([а-яёА-ЯЁ])(\+?7\s?\(?9|8\s?\(?9)/g, '$1\n$2'); // Телефон
-    cleaned = cleaned.replace(/(\d{6})\s*([А-ЯЁа-яё])/i, '\n\n$1\n$2'); // Индекс
-    
-    // Отбиваем ссылку вниз
-    cleaned = cleaned.replace(/(https?:\/\/)/gi, '\n\n$1'); 
-    
-    return cleaned.replace(/\n{3,}/g, '\n\n').trim();
-}
-
-// --- КНОПКА "ВСТАВИТЬ" (Сразу причесывает текст) ---
-async function pasteToAdmin(inputId) {
-    try {
-        const text = await navigator.clipboard.readText();
-        const input = document.getElementById(inputId);
-        if (input && text) {
-            input.value = formatPastedText(text); // Вставляем красиво
-            if (navigator.vibrate) navigator.vibrate([10, 20, 10]); 
-        }
-    } catch (err) {
-        alert('Браузер заблокировал доступ к буферу. Вставьте текст вручную.');
-    }
-}
-
-// --- ЛОВИМ РУЧНУЮ ВСТАВКУ (Ctrl+V) И ТОЖЕ ПРИЧЕСЫВАЕМ ---
-document.addEventListener('DOMContentLoaded', () => {
-    const adminInput = document.getElementById('adminOrderInput');
-    if (adminInput) {
-        adminInput.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const text = (e.clipboardData || window.clipboardData).getData('text');
-            adminInput.value = formatPastedText(text);
-        });
-    }
-});
-
-// --- ПРОЦЕССОР (Кнопка ОБРАБОТАТЬ) ---
-function processAdminImport() {
-    const rawText = document.getElementById('adminOrderInput').value.trim();
-    if (!rawText) return;
-
-    document.getElementById('adminOrderInput').blur(); // Убираем клавиатуру
-    let workingText = rawText;
-    deliveryAddress = ""; 
-
-    // Ищем адрес (по 6 цифрам индекса)
-    const addressMatch = workingText.match(/(?:^|\n|\s)([1-9]\d{5}\s*[\s\S]+)$/);
-    if (addressMatch) {
-        let addr = addressMatch[1];
-        addr = addr.replace(/(https?:\/\/[^\s]+)/gi, ''); // Вырезаем ссылки из адреса
-        addr = addr.replace(/Для\s*Вашего\s*удобства[\s\S]*/gi, '');
-        addr = addr.replace(/Для\s*$/i, '');
-        deliveryAddress = addr.trim();
-        
-        // Отрезаем адрес от товаров
-        workingText = workingText.substring(0, addressMatch.index).trim(); 
-    }
-
-    if (deliveryAddress) {
-        localStorage.setItem('de_cart_address', deliveryAddress);
-    }
-
-    // Убиваем все ссылки в тексте ПЕРЕД поиском PZN (защита от дублей из URL)
-    workingText = workingText.replace(/https?:\/\/[^\s]+/gi, ''); 
-
-    // Ищем товары PZN
-    const pznRegex = /(?:PZN[^0-9]*(\d{6,8}))|\b(\d{7,8})\b/gi;
-    const pznMatches = [...workingText.matchAll(pznRegex)];
-
-    if (pznMatches.length > 0) {
-        cart = [];
-        for (let i = 0; i < pznMatches.length; i++) {
-            const match = pznMatches[i];
-            const cleanPzn = (match[1] || match[2]).padStart(8, '0');
+    // --- ОТКРЫТИЕ АДМИНКИ (БЕЗ ОЧИСТКИ ТЕКСТА) ---
+    function runAdminImport() {
+        const overlay = document.getElementById('adminOverlay');
+        if (overlay) {
+            // ТЕКСТ В ПОЛЕ БОЛЬШЕ НЕ СТИРАЕМ!
             
-            const startIndex = match.index + match[0].length;
-            const endIndex = pznMatches[i + 1] ? pznMatches[i + 1].index : workingText.length;
-            let chunk = workingText.substring(startIndex, endIndex);
-            if (chunk.length > 40) chunk = chunk.substring(0, 40);
-            
-            let qty = 1; 
-            const qtyMatch = chunk.match(/(?:\*|x|х|-|:)?\s*(\d+)\s*(?:pack|paсk|шт|уп)/i);
-            if (qtyMatch) qty = parseInt(qtyMatch[1]);
-            
-            const existing = cart.find(item => item.pzn === cleanPzn);
-            if (existing) {
-                existing.qty += qty;
-            } else {
-                cart.push({ pzn: cleanPzn, qty: qty });
+            // Но если корзина пуста, прячем старую зеленую плашку и кнопку PDF
+            if (cart.length === 0) {
+                const infoBox = document.getElementById('adminSuccessInfo');
+                if (infoBox) infoBox.style.display = 'none';
+                const btnPdf = document.getElementById('btnGeneratePDF');
+                if (btnPdf) btnPdf.style.display = 'none';
             }
+
+            overlay.style.display = 'flex';
         }
-        localStorage.setItem('de_cart_arr', JSON.stringify(cart));
-        restoredDate = "Импорт от " + new Date().toLocaleDateString('ru-RU');
-        isManagerOrder = true;
     }
 
-    updateBar();
+    function closeAdminModal() {
+        const overlay = document.getElementById('adminOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    // ==========================================
+    // 🛠 ИНСТРУМЕНТЫ АДМИН-ПАНЕЛИ (Умная работа с буфером и Очистка)
+    // ==========================================
+
+    // 1. КНОПКА "ОЧИСТИТЬ" (Полностью сбрасывает текущего клиента)
+    // 1. КНОПКА "ОЧИСТИТЬ" (Сбрасывает панель и адрес, корзину НЕ трогает)
+function clearAdminPanel() {
+    const adminInput = document.getElementById('adminOrderInput');
+    if (adminInput) adminInput.value = '';
     
-    // ВЫВОД ПЛАШКИ УСПЕХА И КНОПКИ PDF
-    if (cart.length > 0) {
-        let itemsSumEur = 0;
-        cart.forEach(item => {
-            const r = db.find(x => String(x.PZN).padStart(8, '0') === String(item.pzn).padStart(8, '0'));
-            if (r) itemsSumEur += (parseFloat(String(r.Price).replace(',', '.')) || 0) * item.qty;
-        });
-        
-        const currentShipEur = typeof shipEur !== 'undefined' ? shipEur : 50; 
-        const currentRate = typeof rateCalc !== 'undefined' ? rateCalc : 100;
-        const totalEur = itemsSumEur + currentShipEur;
-        const finalRub = Math.floor((totalEur * parseFloat(currentRate)) / 100) * 100;
-        
-        const addrLines = deliveryAddress.split('\n');
-
-        const infoBox = document.getElementById('adminSuccessInfo');
-        if (infoBox) {
-            infoBox.innerHTML = `
-                <div style="font-size: 11px; color: #2e7d32; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">✅ Заказ загружен</div>
-                <div style="font-size: 20px; font-weight: 900; color: #111; margin-bottom: 4px;">${finalRub.toLocaleString('ru-RU')} ₽</div>
-                <div style="font-size: 13px; color: #666; line-height: 1.3;">${addrLines[0] || ''} <br> ${addrLines[1] || ''}</div>
-            `;
-            infoBox.style.display = 'block';
-        }
-        
-        const btnPdf = document.getElementById('btnGeneratePDF');
-        if (btnPdf) btnPdf.style.display = 'block';
-
-        if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
-    }
+    const adminInfo = document.getElementById('adminSuccessInfo');
+    if (adminInfo) adminInfo.style.display = 'none';
+    const adminPdfBtn = document.getElementById('btnGeneratePDF');
+    if (adminPdfBtn) adminPdfBtn.style.display = 'none';
+    
+    // Очищаем ТОЛЬКО адрес, товары остаются в корзине
+    deliveryAddress = "";
+    localStorage.removeItem('de_cart_address');
+    
+    updateBar();
+    render();
+    if (navigator.vibrate) navigator.vibrate([15, 30, 15]); 
 }
 
-// --- ЛОВИМ РУЧНУЮ ВСТАВКУ (Ctrl+V или Долгое нажатие) ---
-document.addEventListener('DOMContentLoaded', () => {
-    const adminInput = document.getElementById('adminOrderInput');
-    if (adminInput) {
-        adminInput.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const text = (e.clipboardData || window.clipboardData).getData('text');
-            // Вставляем сразу красиво
-            adminInput.value = formatPastedText(text);
-        });
+    // 2. ЧИТАЕМ БУФЕР КАК WORD: достаем скрытую разметку
+    function decodeRichText(html, plain) {
+        if (!html) return plain; // Если разметки нет, отдаем как есть
+
+        // Превращаем HTML-теги переносов в настоящие абзацы
+        let text = html.replace(/<br\s*[\/]?>/gi, '\n')
+                       .replace(/<\/div>/gi, '\n')
+                       .replace(/<\/p>/gi, '\n\n')
+                       .replace(/<li[^>]*>/gi, '• ')
+                       .replace(/<\/li>/gi, '\n');
+
+        // Вырезаем все остальные теги (жирность, курсив и тд)
+        text = text.replace(/<[^>]+>/g, '');
+
+        // Раскодируем спецсимволы (например &nbsp;)
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = text;
+        
+        // Убираем лишние пустые строки (больше двух подряд)
+        return textarea.value.replace(/\n{3,}/g, '\n\n').trim();
     }
-});
+
+    // 3. КНОПКА "ВСТАВИТЬ" (Читает HTML из буфера)
+    async function pasteToAdmin(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        try {
+            // Современные браузеры могут отдавать HTML по запросу
+            if (navigator.clipboard && navigator.clipboard.read) {
+                const clipboardItems = await navigator.clipboard.read();
+                for (const item of clipboardItems) {
+                    if (item.types.includes('text/html')) {
+                        const blob = await item.getType('text/html');
+                        const html = await blob.text();
+                        
+                        let plain = '';
+                        if (item.types.includes('text/plain')) {
+                            const plainBlob = await item.getType('text/plain');
+                            plain = await plainBlob.text();
+                        }
+                        
+                        input.value = decodeRichText(html, plain); // Вставляем расшифрованный текст
+                        if (navigator.vibrate) navigator.vibrate([10, 20, 10]);
+                        return;
+                    }
+                }
+            }
+            
+            // Если HTML нет, берем обычный текст
+            const plainText = await navigator.clipboard.readText();
+            input.value = plainText;
+            if (navigator.vibrate) navigator.vibrate([10, 20, 10]);
+
+        } catch (err) {
+            alert('Браузер заблокировал доступ к буферу. Нажмите и удерживайте поле, затем выберите "Вставить".');
+        }
+    }
+
+    // 4. ПЕРЕХВАТ РУЧНОЙ ВСТАВКИ (Если зажал пальцем и нажал "Вставить")
+    document.addEventListener('DOMContentLoaded', () => {
+        const adminInput = document.getElementById('adminOrderInput');
+        if (adminInput) {
+            adminInput.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const plain = (e.clipboardData || window.clipboardData).getData('text/plain');
+                const html = (e.clipboardData || window.clipboardData).getData('text/html');
+                adminInput.value = decodeRichText(html, plain);
+            });
+        }
+    });
+
+    // --- ПРОЦЕССОР (Кнопка ОБРАБОТАТЬ) ---
+    function processAdminImport() {
+        const rawText = document.getElementById('adminOrderInput').value.trim();
+        if (!rawText) return;
+
+        document.getElementById('adminOrderInput').blur(); // Убираем клавиатуру
+        let workingText = rawText;
+        deliveryAddress = ""; 
+
+        // Ищем адрес (Так как абзацы теперь честные, ищем просто начало с 6 цифр)
+        const addressMatch = workingText.match(/(?:^|\n)([1-9]\d{5}[\s\S]+)$/);
+        if (addressMatch) {
+            let addr = addressMatch[1];
+            addr = addr.replace(/(https?:\/\/[^\s]+)/gi, ''); // Вырезаем ссылки из адреса
+            deliveryAddress = addr.trim();
+            
+            // Отрезаем адрес от товаров
+            workingText = workingText.substring(0, addressMatch.index).trim(); 
+        }
+
+        if (deliveryAddress) {
+            localStorage.setItem('de_cart_address', deliveryAddress);
+        }
+
+        // Убиваем все ссылки в тексте (защита от дублей PZN из URL)
+        workingText = workingText.replace(/https?:\/\/[^\s]+/gi, ''); 
+
+        // Ищем товары PZN
+        const pznRegex = /(?:PZN[^0-9]*(\d{6,8}))|\b(\d{7,8})\b/gi;
+        const pznMatches = [...workingText.matchAll(pznRegex)];
+
+        if (pznMatches.length > 0) {
+            cart = [];
+            for (let i = 0; i < pznMatches.length; i++) {
+                const match = pznMatches[i];
+                const cleanPzn = (match[1] || match[2]).padStart(8, '0');
+                
+                const startIndex = match.index + match[0].length;
+                const endIndex = pznMatches[i + 1] ? pznMatches[i + 1].index : workingText.length;
+                let chunk = workingText.substring(startIndex, endIndex);
+                if (chunk.length > 40) chunk = chunk.substring(0, 40);
+                
+                let qty = 1; 
+                // Защита от опечатки paсk (с русской "с")
+                const qtyMatch = chunk.match(/(?:\*|x|х|-|:)?\s*(\d+)\s*(?:pack|paсk|шт|уп)/i);
+                if (qtyMatch) qty = parseInt(qtyMatch[1]);
+                
+                const existing = cart.find(item => item.pzn === cleanPzn);
+                if (existing) {
+                    existing.qty += qty;
+                } else {
+                    cart.push({ pzn: cleanPzn, qty: qty });
+                }
+            }
+            localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+            restoredDate = "Импорт от " + new Date().toLocaleDateString('ru-RU');
+            isManagerOrder = true;
+        }
+
+        updateBar();
+        
+        // ВЫВОД ПЛАШКИ УСПЕХА И КНОПКИ PDF
+        if (cart.length > 0) {
+            let itemsSumEur = 0;
+            cart.forEach(item => {
+                const r = db.find(x => String(x.PZN).padStart(8, '0') === String(item.pzn).padStart(8, '0'));
+                if (r) itemsSumEur += (parseFloat(String(r.Price).replace(',', '.')) || 0) * item.qty;
+            });
+            
+            const currentShipEur = typeof shipEur !== 'undefined' ? shipEur : 50; 
+            const currentRate = typeof rateCalc !== 'undefined' ? rateCalc : 100;
+            const totalEur = itemsSumEur + currentShipEur;
+            const finalRub = Math.floor((totalEur * parseFloat(currentRate)) / 100) * 100;
+            
+            const addrLines = deliveryAddress.split('\n');
+
+            const infoBox = document.getElementById('adminSuccessInfo');
+            if (infoBox) {
+                infoBox.innerHTML = `
+                    <div style="font-size: 11px; color: #2e7d32; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;">✅ Заказ загружен</div>
+                    <div style="font-size: 20px; font-weight: 900; color: #111; margin-bottom: 4px;">${finalRub.toLocaleString('ru-RU')} ₽</div>
+                    <div style="font-size: 13px; color: #666; line-height: 1.3;">${addrLines[0] || ''} <br> ${addrLines[1] || ''}</div>
+                `;
+                infoBox.style.display = 'block';
+            }
+            
+            const btnPdf = document.getElementById('btnGeneratePDF');
+            if (btnPdf) btnPdf.style.display = 'block';
+
+            if (navigator.vibrate) navigator.vibrate([10, 30, 10]);
+        }
+    }
 
     // --- НОВАЯ ФУНКЦИЯ: КРАСИВОЕ ОКНО ДЛЯ НЕДОСТАЮЩИХ PZN ---
     function showMissingPznModal(missingSet) {
@@ -1268,9 +1300,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    
-
-
     // ==========================================
     // 🎹 ГОРЯЧИЕ КЛАВИШИ ДЛЯ ПК (Alt + A)
     // ==========================================
@@ -1297,7 +1326,6 @@ document.addEventListener('DOMContentLoaded', () => {
             chevron.style.transform = 'rotate(0deg)';
         }
     }
-
 
 
     function showInternalStatus(trackNum) {
@@ -2901,6 +2929,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
 // 📄 ГЕНЕРАЦИЯ PDF СЧЕТА (Бронебойная версия)
 // ==========================================
+// ==========================================
+// 📄 ГЕНЕРАЦИЯ PDF СЧЕТА (Возврат к истокам + фикс пикселей)
+// ==========================================
 function generatePDFInvoice() {
     if (cart.length === 0) {
         alert("Корзина пуста. Нечего генерировать.");
@@ -2914,12 +2945,6 @@ function generatePDFInvoice() {
         btnPdf.style.opacity = "0.7";
         btnPdf.disabled = true;
     }
-
-    // 1. Создаем и показываем шторку загрузки (чтобы скрыть перестроение)
-    const curtain = document.createElement('div');
-    curtain.style.cssText = 'position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #ffffff; z-index: 99999999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif;';
-    curtain.innerHTML = '<span style="font-size: 40px; margin-bottom: 15px;">📄</span><span style="font-size: 16px; font-weight: 800; color: #2e7d32; letter-spacing: 1px;">ГЕНЕРАЦИЯ СЧЕТА...</span>';
-    document.body.appendChild(curtain);
 
     const now = new Date();
     const d = String(now.getDate()).padStart(2, '0');
@@ -2981,77 +3006,52 @@ function generatePDFInvoice() {
     document.getElementById('pdfRate').innerText = `${currentRate} ₽`;
     document.getElementById('pdfSumRub').innerText = `${fmt(finalRub)} ₽`;
 
-    // 2. Включаем счет ПОВЕРХ всего сайта (под шторкой)
+    // 🟢 БЕРЕМ ТОТ САМЫЙ ОРИГИНАЛЬНЫЙ БЛОК
     const element = document.getElementById('pdfInvoiceWrap');
     
-    // ВАЖНО: Размораживаем body, чтобы камера могла корректно отснять блок
-    document.body.style.position = '';
-    document.body.style.overflow = '';
-    document.body.style.top = '';
-    window.scrollTo(0, 0);
-
+    // Показываем его
     element.style.display = 'block';
-    element.style.position = 'absolute';
-    element.style.top = '0px';
-    element.style.left = '0px';
     element.style.width = '800px';
-    element.style.background = '#ffffff';
-    element.style.zIndex = '999998'; // Прямо под шторкой (99999999)
+    
+    // 🟢 ВМЕСТО МАРДЖИНОВ PDF, ДЕЛАЕМ ОТСТУПЫ ВНУТРИ HTML
+    element.style.padding = '40px'; 
+    element.style.boxSizing = 'border-box';
+    element.style.backgroundColor = '#ffffff';
 
+    // 🟢 ЖЕСТКО ЗАДАЕМ ФОРМАТ ЛИСТА В ПИКСЕЛЯХ (800x1131 = пропорция А4)
     const opt = {
-        margin:       [0.2, 0.2],
+        margin:       0, // Отключаем глючные отступы библиотеки
         filename:     `RXDE_Заказ_${d}${m}${y}.pdf`,
-        image:        { type: 'jpeg', quality: 1 },
-        html2canvas:  { 
-            scale: 2, 
-            useCORS: true, 
-            width: 800,
-            windowWidth: 800,
-            scrollX: 0,
-            scrollY: 0
-        },
-        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        // 👇 ДОБАВЛЕНА ТОЛЬКО ЭТА СТРОКА 👇
+        pagebreak:    { avoid: ['tr', '.pdf-totals', '.pdf-payment-box', '.pdf-footer'] },
+        jsPDF:        { unit: 'px', format: [800, 1131], orientation: 'portrait' } 
     };
 
-    // Даем браузеру 100мс на отрисовку дом-дерева, затем делаем фото
-    setTimeout(() => {
-        html2pdf().set(opt).from(element).save().then(() => {
-            // Возвращаем всё как было
-            element.style.display = 'none';
-            curtain.remove(); 
-            
-            // Возвращаем заморозку Корзины
-            document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollPos}px`;
-            document.body.style.width = '100%';
-            
-            if (btnPdf) {
-                btnPdf.innerText = originalText;
-                btnPdf.style.opacity = "1";
-                btnPdf.disabled = false;
-            }
-            if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
-            
-        }).catch(err => {
-            console.error("Ошибка PDF:", err);
-            alert("Ошибка при создании PDF.");
-            element.style.display = 'none';
-            curtain.remove();
-            
-            // Возвращаем заморозку
-            document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollPos}px`;
-            document.body.style.width = '100%';
-
-            if (btnPdf) {
-                btnPdf.innerText = originalText;
-                btnPdf.style.opacity = "1";
-                btnPdf.disabled = false;
-            }
-        });
-    }, 100);
+    html2pdf().set(opt).from(element).save().then(() => {
+        // Прячем обратно и сбрасываем паддинги
+        element.style.display = 'none';
+        element.style.padding = '0';
+        
+        if (btnPdf) {
+            btnPdf.innerText = originalText;
+            btnPdf.style.opacity = "1";
+            btnPdf.disabled = false;
+        }
+        if (navigator.vibrate) navigator.vibrate([20, 50, 20]);
+    }).catch(err => {
+        console.error("Ошибка PDF:", err);
+        alert("Ошибка при создании PDF.");
+        element.style.display = 'none';
+        element.style.padding = '0';
+        
+        if (btnPdf) {
+            btnPdf.innerText = originalText;
+            btnPdf.style.opacity = "1";
+            btnPdf.disabled = false;
+        }
+    });
 }
 
     // ФИНАЛЬНЫЙ ЗАПУСК ВСЕГО САЙТА
@@ -3159,7 +3159,7 @@ function generatePDFInvoice() {
             </div>
         </div>
 
-        <div class="pdf-payment-box">
+        <div class="pdf-payment-box" style="width: 100%; box-sizing: border-box; clear: both; margin-top: 20px;">
             <div class="pdf-pay-title">СПОСОБЫ ОПЛАТЫ</div>
             
             <a href="https://www.sberbank.ru/ru/choise_bank?requisiteNumber=79650302556&bankCode=100000000111" target="_blank" class="pdf-pay-link">
