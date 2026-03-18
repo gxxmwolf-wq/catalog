@@ -154,7 +154,7 @@
     </div>
 
     
-    <div id="adminOverlay" class="info-overlay" onclick="closeAdminModal()">
+    <div id="adminOverlay" class="info-overlay" onclick="closeAdminModal()" style="z-index: 9999999 !important;">
         <div class="info-box contact-box" onclick="event.stopPropagation()" style="background: #fffdf0; border: 2px solid #ffe082;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1217,6 +1217,8 @@ function clearAdminPanel() {
 
         if (pznMatches.length > 0) {
             cart = [];
+            let missingPzns = new Set(); // 🟢 1. Создаем пустую корзину для неизвестных номеров
+            
             for (let i = 0; i < pznMatches.length; i++) {
                 const match = pznMatches[i];
                 const cleanPzn = (match[1] || match[2]).padStart(8, '0');
@@ -1231,6 +1233,12 @@ function clearAdminPanel() {
                 const qtyMatch = chunk.match(/(?:\*|x|х|-|:)?\s*(\d+)\s*(?:pack|paсk|шт|уп)/i);
                 if (qtyMatch) qty = parseInt(qtyMatch[1]);
                 
+                // 🟢 2. ПРОВЕРЯЕМ БАЗУ: Если PZN нет в базе, записываем его в список "потеряшек"
+                const r = db.find(x => String(x.PZN).padStart(8, '0') === cleanPzn);
+                if (!r) {
+                    missingPzns.add(cleanPzn);
+                }
+                
                 const existing = cart.find(item => item.pzn === cleanPzn);
                 if (existing) {
                     existing.qty += qty;
@@ -1241,6 +1249,11 @@ function clearAdminPanel() {
             localStorage.setItem('de_cart_arr', JSON.stringify(cart));
             restoredDate = "Импорт от " + new Date().toLocaleDateString('ru-RU');
             isManagerOrder = true;
+
+            // 🟢 3. ЕСЛИ НАШЛИ НЕИЗВЕСТНЫЕ НОМЕРА — ВЫЗЫВАЕМ КРАСНОЕ ОКНО
+            if (missingPzns.size > 0) {
+                setTimeout(() => showMissingPznModal(missingPzns), 500);
+            }
         }
 
         updateBar();
