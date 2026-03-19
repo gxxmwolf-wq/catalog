@@ -1185,6 +1185,7 @@ function clearAdminPanel() {
 
     // --- ПРОЦЕССОР (Кнопка ОБРАБОТАТЬ) ---
     // --- ПРОЦЕССОР (Кнопка ОБРАБОТАТЬ) ---
+    // --- ПРОЦЕССОР (Кнопка ОБРАБОТАТЬ) ---
     function processAdminImport() {
         const rawText = document.getElementById('adminOrderInput').value.trim();
         if (!rawText) return;
@@ -1233,8 +1234,8 @@ function clearAdminPanel() {
                 const qtyMatch = chunk.match(/(?:\*|x|х|-|:)?\s*(\d+)\s*(?:pack|paсk|шт|уп)/i);
                 if (qtyMatch) qty = parseInt(qtyMatch[1]);
                 
-                // 🟢 2. ПРОВЕРЯЕМ БАЗУ: Если PZN нет в базе, записываем его в список "потеряшек"
-                const r = db.find(x => String(x.PZN).padStart(8, '0') === cleanPzn);
+                // 🟢 2. ПРОВЕРЯЕМ БАЗУ (С защитой от пробелов): Если PZN нет в базе, записываем его в список "потеряшек"
+                const r = db.find(x => String(x.PZN).trim().padStart(8, '0') === cleanPzn);
                 if (!r) {
                     missingPzns.add(cleanPzn);
                 }
@@ -1262,7 +1263,8 @@ function clearAdminPanel() {
         if (cart.length > 0) {
             let itemsSumEur = 0;
             cart.forEach(item => {
-                const r = db.find(x => String(x.PZN).padStart(8, '0') === String(item.pzn).padStart(8, '0'));
+                // 🟢 ИСПРАВЛЕНО: Добавлен .trim() для подсчета цены, чтобы не было "нулевых" сумм
+                const r = db.find(x => String(x.PZN).trim().padStart(8, '0') === String(item.pzn).padStart(8, '0'));
                 if (r) itemsSumEur += (parseFloat(String(r.Price).replace(',', '.')) || 0) * item.qty;
             });
             
