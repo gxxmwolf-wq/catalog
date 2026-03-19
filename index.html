@@ -1814,7 +1814,8 @@ function clearAdminPanel() {
         const data = getOrderTextAndLink();
         if (!data) { btnElement.dataset.processing = "false"; return; }
 
-        currentPreparedText = data.link; 
+        // 🟢 ИЗМЕНЕНИЕ: Формируем красивое письмо для клиента вместо голой ссылки
+        currentPreparedText = `Здравствуйте!\nХочу оформить заказ.\n\nСсылка на мою корзину:\n${data.link}\n\nЖду обратной связи для подтверждения деталей!`; 
 
         const iconEl = document.getElementById('copyActionIcon');
         const sumElement = document.getElementById('footerTotalSum');
@@ -2170,7 +2171,11 @@ function clearAdminPanel() {
         if (type === 'order') {
             title.innerText = "ОФОРМЛЕНИЕ ЗАКАЗА";
             const data = getOrderTextAndLink();
-            if(data) currentPreparedText = data.link;
+            
+            // 🟢 ИЗМЕНЕНИЕ: Сюда тоже вставляем красивый текст
+            if(data) {
+                currentPreparedText = `Здравствуйте!\nХочу оформить заказ.\n\nСсылка на мою корзину:\n${data.link}\n\nЖду обратной связи для подтверждения деталей!`;
+            }
 
             // КРАСИВЫЙ БЛОК С ИКОНКОЙ (Листки с 3 линиями внутри)
             buttons.innerHTML = `
@@ -3203,19 +3208,30 @@ function generatePDFInvoice() {
         <div class="pdf-payment-box" style="width: 100%; box-sizing: border-box; clear: both; margin-top: 20px;">
             <div class="pdf-pay-title">СПОСОБЫ ОПЛАТЫ</div>
             
-           <a href="https://www.sberbank.ru/ru/choise_bank?requisiteNumber=79650302556&bankCode=100000000111" target="_blank" class="pdf-pay-link">
-                🔗 ОПЛАТИТЬ ЧЕРЕЗ СБП (ЛЮБОЙ БАНК)
+            <a href="https://www.sberbank.ru/ru/choise_bank?requisiteNumber=79650302556&bankCode=100000000111" target="_blank" class="pdf-pay-link">
+                🔗 ОПЛАТИТЬ В ПРИЛОЖЕНИИ СБЕРБАНК
             </a>
             
-            <div style="font-size: 13px; color: #888; margin-bottom: 10px;">Или прямым переводом по номеру карты:</div>
+            <div style="font-size: 13px; color: #333; margin-bottom: 10px; line-height: 1.5;">
+                Для оплаты из других банков используйте СБП по номеру <b style="font-size: 14px;">+7 965 030-25-56</b><br>
+                <span style="color: #888;">Или прямой перевод по номеру карты:</span>
+            </div>
             
         <div class="pdf-cards">
             <div class="pdf-card-row">
-                <span style="color: #350ee4; font-weight: 700; width: 80px; text-align: right;">Сбербанк:</span>
+                <span style="color: #0a2896; font-weight: 700; width: 80px; text-align: right;">ВТБ:</span>
                 <a href="tel:2200240279475046" class="pdf-card-num" style="text-decoration: none; color: #000;">
                     2200 2402 7947 5046
                 </a>
             </div>
+            
+            <div class="pdf-card-row">
+                <span style="color: #21a038; font-weight: 700; width: 80px; text-align: right;">Сбербанк:</span>
+                <a href="tel:2202206760939202" class="pdf-card-num" style="text-decoration: none; color: #000;">
+                    2202 2067 6093 9202
+                </a>
+            </div>
+
             <div class="pdf-card-row">
                 <span style="color: #e5b125; font-weight: 700; width: 80px; text-align: right;">Т-Банк:</span>
                 <a href="tel:2200700621552693" class="pdf-card-num" style="text-decoration: none; color: #000;">
