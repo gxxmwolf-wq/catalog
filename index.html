@@ -1262,7 +1262,7 @@ function clearAdminPanel() {
             let itemsSumEur = 0;
             cart.forEach(item => {
                 // 🟢 ИСПРАВЛЕНО: Добавлен .trim() для подсчета цены, чтобы не было "нулевых" сумм
-                const r = db.find(x => String(x.PZN).trim().padStart(8, '0') === String(item.pzn).padStart(8, '0'));
+                const r = db.find(x => String(x.PZN).trim().padStart(8, '0') === String(item.pzn).trim().padStart(8, '0'));
                 if (r) itemsSumEur += (parseFloat(String(r.Price).replace(',', '.')) || 0) * item.qty;
             });
             
@@ -2153,10 +2153,10 @@ function handleOrderCopyAndOpen(btnElement) {
         isQuestionMode = (type !== 'order'); 
         if (manualInput) manualInput.style.display = 'none';
 
-        // Добавлена кнопка SMS
+        // 🟢 ДОБАВЛЕНА КНОПКА SMS И ПЕРЕДАЧА "this" ДЛЯ АНИМАЦИИ TELEGRAM
         const baseButtonsHtml = `
             <button onclick="submitFinal('wa')" style="width: 100%; height: 46px; background: #fff; color: #25D366; border: 2px solid #25D366; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">WhatsApp</button>
-            <button onclick="submitFinal('tg')" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">Telegram</button>
+            <button onclick="submitFinal('tg', this)" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">Telegram</button>
             <button onclick="submitFinal('sms')" style="width: 100%; height: 46px; background: #fff; color: #ff9800; border: 2px solid #ff9800; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">SMS / iMessage</button>
             <button onclick="submitFinal('email')" style="width: 100%; height: 46px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">E-mail</button>
             <button onclick="showPhoneForm()" style="width: 100%; height: 46px; background: #f8f9fa; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 5px;">Свяжитесь со мной</button>
@@ -2166,8 +2166,8 @@ function handleOrderCopyAndOpen(btnElement) {
             title.innerText = "ОФОРМЛЕНИЕ ЗАКАЗА";
             const data = getOrderTextAndLink();
             
+            // 🟢 ФОРМИРУЕМ КРАСИВОЕ ПИСЬМО ВМЕСТО ГОЛОЙ ССЫЛКИ
             if(data) {
-                // Красивое письмо вместо голой ссылки
                 currentPreparedText = `Здравствуйте!\nХочу оформить заказ.\n\nСсылка на мою корзину:\n${data.link}\n\nЖду обратной связи для подтверждения деталей!`;
             }
 
@@ -2181,7 +2181,7 @@ function handleOrderCopyAndOpen(btnElement) {
                         <line x1="12" y1="18.5" x2="16" y2="18.5"></line>
                     </svg>
                     <div style="font-size: 14px; color: #2e7d32; font-weight: 800; text-transform: uppercase;">Заказ сформирован</div>
-                    <div style="font-size: 12px; color: #555; margin-top: 4px;">Выберите удобный чат для отправки.</div>
+                    <div style="font-size: 12px; color: #555; margin-top: 4px;">Выберите удобный чат и вставьте скопированный текст.</div>
                 </div>
                 ${baseButtonsHtml}
             `;
@@ -2207,29 +2207,55 @@ function handleOrderCopyAndOpen(btnElement) {
         overlay.style.display = 'flex';
     }
 
-    function submitFinal(app) {
+    function submitFinal(app, btn = null) {
         const manualInput = document.getElementById('manualMsgInput');
         const finalMsg = isQuestionMode ? (manualInput ? manualInput.value.trim() : "") : currentPreparedText;
 
         if (app === 'wa') {
-            // Прямой вызов приложения (обходит блокировку wa.me)
+            // 🟢 ПРЯМАЯ ССЫЛКА WHATSAPP (Обход блокировки wa.me)
             window.location.href = `whatsapp://send?phone=${WA_PHONE}&text=${encodeURIComponent(finalMsg)}`;
+            closeContact();
         } else if (app === 'tg') {
-            // Прямой вызов Telegram
             try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
-            const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
-            window.location.href = `tg://resolve?domain=${username}`;
+            
+            // 🟢 УМНАЯ АНИМАЦИЯ: Кнопка подсказывает клиенту вставить текст
+            if (btn) {
+                const origText = btn.innerHTML;
+                const origBg = btn.style.background;
+                const origColor = btn.style.color;
+                
+                btn.style.background = '#e8f5e9';
+                btn.style.borderColor = '#81c784';
+                btn.style.color = '#2e7d32';
+                btn.innerHTML = '📋 Скопировано! Вставьте в чате';
+                
+                // Ждем 1.2 секунды и открываем Telegram
+                setTimeout(() => {
+                    btn.innerHTML = origText;
+                    btn.style.background = origBg;
+                    btn.style.color = origColor;
+                    btn.style.borderColor = '#0088cc';
+                    
+                    const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
+                    window.location.href = `tg://resolve?domain=${username}`;
+                    closeContact();
+                }, 1200);
+            } else {
+                const username = (typeof TG_USER !== 'undefined') ? TG_USER : 'remed01';
+                window.location.href = `tg://resolve?domain=${username}`;
+                closeContact();
+            }
         } else if (app === 'sms') {
-            // Вызов SMS / iMessage
+            // 🟢 ВЫЗОВ SMS ИЛИ IMESSAGE
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             const separator = isIOS ? '&' : '?';
             window.location.href = `sms:+${WA_PHONE}${separator}body=${encodeURIComponent(finalMsg)}`;
+            closeContact();
         } else if (app === 'email') {
             const subject = isQuestionMode ? 'Вопрос в RxDE' : 'Заказ RxDE';
             window.location.href = `mailto:med.zakaz.de@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalMsg)}`;
+            closeContact();
         }
-        
-        closeContact();
     }
 
     // ----------------------------------------------------
