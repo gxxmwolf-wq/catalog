@@ -1778,6 +1778,7 @@ function clearAdminPanel() {
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.has('faq')) setTimeout(() => showInfo('faq'), 800);
                     else if (urlParams.has('exp')) setTimeout(() => showInfo('exp'), 800);
+                    else if (urlParams.has('contact')) setTimeout(() => openContact('question'), 800); // 🟢 НОВАЯ СТРОКА
 
                 }).catch(err => {
                     console.error("Ошибка загрузки внешних настроек:", err);
