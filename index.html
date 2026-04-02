@@ -51,8 +51,7 @@
                     <div class="tm-item" onclick="showInfo('exp')">ОПЫТ</div>
                     <span class="tm-sep">|</span>
                     <div class="tm-item" onclick="showInfo('faq')">ПОЧЕМУ МЫ?</div>
-                    <span class="tm-sep">|</span>
-                    <div class="tm-item" onclick="openContact('question')">НАПИСАТЬ ВОПРОС</div>
+                    
                 </div>      
 
             <div class="rates-compact" onclick="openAdminSecretly()" style="font-size: 10px; color: #999; text-align: right; line-height: 1.1; min-width: 65px; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent;">
@@ -95,12 +94,19 @@
     <div id="introBlock" class="intro-section">
         </div>
 
+ 
     <div id="miniCart" class="mini-cart-fab" onclick="openCart()">
         <div id="miniReceipt" class="mini-receipt" onclick="event.stopPropagation(); openCart()"></div>
         <div class="mini-cart-badge" id="miniCount" style="display:none;">0</div>
         <div class="mini-cart-icon">🚚</div> 
         <div id="miniPrice" class="mini-cart-total"></div>
     </div>
+
+       <div id="chatFab" class="chat-fab" onclick="openContact('question')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+    </div>    
 
     <div id="modal" class="modal" onclick="closeModal()">
         <div class="m-box" onclick="event.stopPropagation()">
@@ -2157,11 +2163,33 @@ function handleOrderCopyAndOpen(btnElement) {
 
         // 🟢 ДОБАВЛЕНА КНОПКА SMS И ПЕРЕДАЧА "this" ДЛЯ АНИМАЦИИ TELEGRAM
         const baseButtonsHtml = `
-            <button onclick="submitFinal('wa')" style="width: 100%; height: 46px; background: #fff; color: #25D366; border: 2px solid #25D366; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">WhatsApp</button>
-            <button onclick="submitFinal('tg', this)" style="width: 100%; height: 46px; background: #fff; color: #0088cc; border: 2px solid #0088cc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">Telegram</button>
-            <button onclick="submitFinal('sms')" style="width: 100%; height: 46px; background: #fff; color: #ff9800; border: 2px solid #ff9800; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">SMS / iMessage</button>
-            <button onclick="submitFinal('email')" style="width: 100%; height: 46px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; font-weight: 800; cursor: pointer; margin-bottom: 8px;">E-mail</button>
-            <button onclick="showPhoneForm()" style="width: 100%; height: 46px; background: #f8f9fa; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 5px;">Свяжитесь со мной</button>
+            <div class="modern-contact-grid">
+                <button class="mc-btn mc-wa" onclick="submitFinal('wa')">
+                    <div class="mc-icon">💬</div>
+                    <div class="mc-txt">WhatsApp</div>
+                </button>
+                <button class="mc-btn mc-tg" onclick="submitFinal('tg', this)">
+                    
+                    <div class="mc-icon">✈️</div>
+                    <div class="mc-txt">Telegram</div>
+                </button>
+                <button class="mc-btn mc-max" onclick="submitFinal('max', this)">
+                    <div class="mc-icon">Ⓜ️</div>
+                    <div class="mc-txt">MAX</div>
+                </button>
+                <button class="mc-btn mc-sms" onclick="submitFinal('sms')">
+                    <div class="mc-icon">📱</div>
+                    <div class="mc-txt">SMS / iMessage</div>
+                </button>
+                <button class="mc-btn mc-email" onclick="submitFinal('email')">
+                    <div class="mc-icon">✉️</div>
+                    <div class="mc-txt">E-mail</div>
+                </button>
+                <button class="mc-btn mc-phone" onclick="showPhoneForm()">
+                    <div class="mc-icon">📞</div>
+                    <div class="mc-txt">Перезвонить</div>
+                </button>
+            </div>
         `;
 
         if (type === 'order') {
@@ -2257,7 +2285,38 @@ function handleOrderCopyAndOpen(btnElement) {
             const subject = isQuestionMode ? 'Вопрос в RxDE' : 'Заказ RxDE';
             window.location.href = `mailto:med.zakaz.de@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(finalMsg)}`;
             closeContact();
+        
+        } else if (app === 'max') {
+        // Копируем текст в буфер (чтобы юзеру осталось только вставить его в чате)
+        try { navigator.clipboard.writeText(finalMsg); } catch(e) {}
+        
+        if (btn) {
+            // Анимация "Скопировано" на кнопке MAX
+            const origText = btn.innerHTML;
+            const origBg = btn.style.background;
+            const origColor = btn.style.color;
+            const origBorder = btn.style.borderColor;
+            
+            btn.style.background = '#e8f5e9';
+            btn.style.borderColor = '#81c784';
+            btn.style.color = '#2e7d32';
+            btn.innerHTML = '<div class="mc-icon">📋</div><div class="mc-txt">Скопировано</div>';
+            
+            setTimeout(() => {
+                btn.innerHTML = origText;
+                btn.style.background = origBg;
+                btn.style.color = origColor;
+                btn.style.borderColor = origBorder;
+                
+                // Переход в мессенджер с твоим номером
+                window.location.href = `https://max.ru/79650302556`;
+                closeContact();
+            }, 1200);
+        } else {
+            window.location.href = `https://max.ru/79650302556`;
+            closeContact();
         }
+    }
     }
 
     // ----------------------------------------------------

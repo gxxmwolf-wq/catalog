@@ -388,7 +388,7 @@ body {
     /* Позиционирование (защита от смахивания на S24/Android) */
     position: fixed; 
     right: 25px !important; 
-    bottom: 35px !important; 
+    bottom: 90px !important; 
     z-index: 9000 !important;
     
     /* Базовая форма - идеальный круг */
@@ -496,6 +496,47 @@ body {
     /* Остаточные колебания */
     75% { transform: translate3d(0, 1px, 0) scale(1.02, 0.98); } 
     100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* --- КНОПКА ЧАТА ПОД КОРЗИНОЙ --- */
+.chat-fab {
+    position: fixed;
+    /* Центрируем кнопку чата (44px) относительно свернутой корзины (54px) */
+    /* Правый край корзины = 25. Ширина 54. Центр на 52px. Половина чата = 22px. 52 - 22 = 30px. */
+    right: 30px; 
+    bottom: 30px; /* Безопасное расстояние от нижнего края экрана */
+    z-index: 8900; 
+    width: 44px; /* Делаем ее чуть меньше корзины для правильной иерархии */
+    height: 44px;
+    border-radius: 50%;
+    background: #ffffff;
+    color: var(--p); 
+    border: 1px solid #eaeaea; 
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.chat-fab:active {
+    transform: scale(0.9);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background-color: #f8f9fa;
+}
+
+/* Адаптив для маленьких экранов */
+@media (max-width: 380px) {
+    .mini-cart-fab {
+        right: 15px !important;
+        bottom: 80px !important;
+    }
+    .chat-fab {
+        right: 20px;
+        bottom: 20px;
+    }
 }
 
 /* =========================================
@@ -1388,3 +1429,98 @@ button:active {
     border: none !important;
     cursor: zoom-out !important; /* Курсор закрытия для ПК */
 }
+/* --- СОВРЕМЕННАЯ СЕТКА КОНТАКТОВ 2x3 --- */
+.modern-contact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.mc-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 85px; /* Квадратные пропорции */
+    border-radius: 16px;
+    border: 2px solid transparent;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Эффект нажатия */
+.mc-btn:active { 
+    transform: scale(0.94); 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02); 
+}
+
+/* Анимация иконки при нажатии на кнопку */
+.mc-icon { 
+    font-size: 28px; 
+    margin-bottom: 8px; 
+    line-height: 1; 
+    transition: transform 0.2s ease; 
+}
+.mc-btn:active .mc-icon { 
+    transform: translateY(-3px) scale(1.05); 
+}
+
+.mc-txt { 
+    font-size: 12px; 
+    font-weight: 800; 
+    letter-spacing: -0.2px; 
+}
+
+/* ЦВЕТОВЫЕ СХЕМЫ С ЭФФЕКТОМ "СТЕКЛА" (Soft UI) */
+.mc-wa { color: #25D366; border-color: rgba(37, 211, 102, 0.2); background: rgba(37, 211, 102, 0.05); }
+.mc-tg { color: #0088cc; border-color: rgba(0, 136, 204, 0.2); background: rgba(0, 136, 204, 0.05); }
+.mc-max { color: var(--p); border-color: rgba(0, 86, 145, 0.2); background: rgba(0, 86, 145, 0.05); } /* Теперь рамка прозрачная, как у всех */
+.mc-sms { color: #ff9800; border-color: rgba(255, 152, 0, 0.2); background: rgba(255, 152, 0, 0.05); }
+.mc-email { color: #555; border-color: rgba(0, 0, 0, 0.1); background: #fdfdfd; }
+.mc-phone { color: #333; border-color: rgba(0, 0, 0, 0.15); background: #f4f6f8; }
+
+/* Красный бейджик "БЫСТРЕЕ" */
+.mc-badge {
+    position: absolute;
+    top: 0; right: 0;
+    background: #d32f2f;
+    color: #fff;
+    font-size: 9px;
+    padding: 3px 6px;
+    border-bottom-left-radius: 8px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+/* Анимация плавного появления снизу */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Добавляем параметры анимации к базовому классу кнопок */
+.mc-btn {
+    /* Твои старые стили остаются, добавляем только это: */
+    opacity: 0; /* Изначально кнопки скрыты */
+    animation: slideInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Каскадная задержка (staggered effect) для 6 кнопок */
+.modern-contact-grid .mc-btn:nth-child(1) { animation-delay: 0.05s; }
+.modern-contact-grid .mc-btn:nth-child(2) { animation-delay: 0.10s; }
+.modern-contact-grid .mc-btn:nth-child(3) { animation-delay: 0.15s; }
+.modern-contact-grid .mc-btn:nth-child(4) { animation-delay: 0.20s; }
+.modern-contact-grid .mc-btn:nth-child(5) { animation-delay: 0.25s; }
+.modern-contact-grid .mc-btn:nth-child(6) { animation-delay: 0.30s; }
