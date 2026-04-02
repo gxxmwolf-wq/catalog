@@ -498,41 +498,46 @@ body {
     100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
-/* --- КНОПКА ЧАТА ПОД КОРЗИНОЙ --- */
+/* --- ПЛАВАЮЩАЯ КНОПКА ЧАТА (Синяя + Пульсация) --- */
 .chat-fab {
     position: fixed;
-    /* Центрируем кнопку чата (44px) относительно свернутой корзины (54px) */
-    /* Правый край корзины = 25. Ширина 54. Центр на 52px. Половина чата = 22px. 52 - 22 = 30px. */
     right: 30px; 
-    bottom: 30px; /* Безопасное расстояние от нижнего края экрана */
+    bottom: 30px; 
     z-index: 8900; 
-    width: 44px; /* Делаем ее чуть меньше корзины для правильной иерархии */
+    width: 44px; 
     height: 44px;
     border-radius: 50%;
-    background: #ffffff;
-    color: var(--p); 
-    border: 1px solid #eaeaea; 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); 
+    
+    /* Закрашиваем и делаем контрастной */
+    background: var(--p); 
+    color: #ffffff; 
+    border: 2px solid #ffffff; 
+    box-shadow: 0 4px 15px rgba(0, 86, 145, 0.4); 
+    
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.3, 1.5, 0.5, 1);
     -webkit-tap-highlight-color: transparent;
+    
+    /* Мягкое "дыхание" для привлечения внимания */
+    animation: chat-pulse 3s infinite ease-in-out;
 }
 
 .chat-fab:active {
     transform: scale(0.9);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    background-color: #f8f9fa;
+    background-color: #004475; /* Чуть темнее при нажатии */
+}
+
+/* Анимация пульсации */
+@keyframes chat-pulse {
+    0% { transform: scale(1); box-shadow: 0 4px 15px rgba(0, 86, 145, 0.4); }
+    50% { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0, 86, 145, 0.6); }
+    100% { transform: scale(1); box-shadow: 0 4px 15px rgba(0, 86, 145, 0.4); }
 }
 
 /* Адаптив для маленьких экранов */
 @media (max-width: 380px) {
-    .mini-cart-fab {
-        right: 15px !important;
-        bottom: 80px !important;
-    }
     .chat-fab {
         right: 20px;
         bottom: 20px;
@@ -1438,38 +1443,39 @@ button:active {
     margin-bottom: 10px;
 }
 
+/* Базовый стиль кнопки (БЕЗ АНИМАЦИИ СКОЛЬЖЕНИЯ) */
 .mc-btn {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: 85px; /* Квадратные пропорции */
+    height: 85px; 
     border-radius: 16px;
-    border: 2px solid transparent;
+    border: 2px solid transparent; 
     background: #fff;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     overflow: hidden;
     -webkit-tap-highlight-color: transparent;
+    /* Кнопки просто статично появляются вместе с окном */
+    opacity: 1; 
+    transform: none;
 }
 
-/* Эффект нажатия */
 .mc-btn:active { 
     transform: scale(0.94); 
     box-shadow: 0 2px 6px rgba(0,0,0,0.02); 
+    transition: transform 0.1s ease;
 }
 
-/* Анимация иконки при нажатии на кнопку */
 .mc-icon { 
-    font-size: 28px; 
     margin-bottom: 8px; 
     line-height: 1; 
-    transition: transform 0.2s ease; 
-}
-.mc-btn:active .mc-icon { 
-    transform: translateY(-3px) scale(1.05); 
+    display: flex; /* Чтобы SVG стояло ровно */
+    align-items: center;
+    justify-content: center;
+    height: 28px; /* Фиксируем высоту для ровности */
 }
 
 .mc-txt { 
