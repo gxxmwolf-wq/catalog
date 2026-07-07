@@ -556,11 +556,13 @@
         let rawVal = input.value;
 
         // ==========================================
-        // 🚨 МАГИЯ: ПЕРЕХВАТ ССЫЛКИ НА КОРЗИНУ 🚨
+        // 🚨 МАГИЯ: УМНЫЙ ПЕРЕХВАТ (ССЫЛКИ И EXCEL) 🚨
         // ==========================================
+        let isImported = false;
+
+        // 1. ЕСЛИ ВСТАВИЛИ ССЫЛКУ С КОРЗИНОЙ
         if (rawVal.includes('?c=')) {
             try {
-                // Извлекаем параметры (создаем фейковый URL, чтобы парсер не сломался, если вставили без http)
                 const tempUrl = rawVal.startsWith('http') ? new URL(rawVal) : new URL('http://dummy.com/' + rawVal);
                 const cData = tempUrl.searchParams.get('c');
                 const dData = tempUrl.searchParams.get('d');
@@ -569,32 +571,70 @@
                     const pairs = cData.split(',');
                     cart = pairs.map(p => {
                         const [pzn, qty] = p.split(':');
-                        return { pzn: String(pzn).padStart(8, '0'), qty: parseInt(qty) }; // Всегда добиваем PZN нулями
+                        return { pzn: String(pzn).padStart(8, '0'), qty: parseInt(qty) };
                     });
                     
-                    if (dData) {
-                        restoredDate = dData.replace('_', ' ');
-                        isManagerOrder = !dData.includes('_');  
-                    } else {
-                        restoredDate = "Импорт по ссылке";
-                        isManagerOrder = false;
-                    }
-
-                    // Очищаем строку поиска, убираем клавиатуру
-                    input.value = '';
-                    input.blur();
-                    filters.search = '';
-                    if (document.getElementById('suggestRow')) document.getElementById('suggestRow').innerHTML = '';
-                    
-                    // Сохраняем, обновляем интерфейс и плавно открываем корзину
-                    localStorage.setItem('de_cart_arr', JSON.stringify(cart));
-                    updateBar();
-                    setTimeout(openCart, 200);
-                    return; // ⛔️ Прерываем обычный текстовый поиск!
+                    restoredDate = dData ? dData.replace('_', ' ') : "Импорт по ссылке";
+                    isManagerOrder = dData ? !dData.includes('_') : false;
+                    isImported = true;
                 }
-            } catch(e) {
-                console.log("Сбой перехвата ссылки");
+            } catch(e) { console.log("Сбой перехвата ссылки"); }
+        } 
+        // 2. ЕСЛИ ВСТАВИЛИ МАССИВ ТЕКСТА ИЗ EXCEL (Только PZN или PZN + Кол-во)
+       // 2. ЕСЛИ ВСТАВИЛИ МАССИВ ТЕКСТА ИЗ EXCEL (Только PZN или PZN + Кол-во)
+        else if (/[\n\r]/.test(rawVal) || rawVal.split(/[\s,;]+/).filter(w => /^\d{6,8}$/.test(w)).length >= 2) {
+            let importedCart = [];
+            
+            // Разбиваем всё на плоский массив слов (даже если браузер вырезал переносы строк)
+            const tokens = rawVal.split(/[\s\t,;]+/);
+            
+            for (let i = 0; i < tokens.length; i++) {
+                const token = tokens[i];
+                
+                // Ищем PZN (от 6 до 8 цифр)
+                if (/^\d{6,8}$/.test(token)) {
+                    const pzn = token.padStart(8, '0');
+                    let qty = 1; // По умолчанию 1 шт.
+                    
+                    // Смотрим на СЛЕДУЮЩЕЕ слово: если это число от 1 до 4 цифр — это количество!
+                    if (i + 1 < tokens.length && /^\d{1,4}$/.test(tokens[i + 1])) {
+                        qty = parseInt(tokens[i + 1], 10);
+                        i++; // Пропускаем это слово в цикле, так как мы забрали его как количество
+                    }
+                    
+                    // Добавляем в корзину только если количество больше нуля
+                    if (qty > 0) {
+                        const existing = importedCart.find(item => item.pzn === pzn);
+                        if (existing) {
+                            existing.qty += qty;
+                        } else {
+                            importedCart.push({ pzn: pzn, qty: qty });
+                        }
+                    }
+                }
             }
+
+            if (importedCart.length > 0) {
+                cart = importedCart; // Заменяем корзину на импортированную
+                restoredDate = "Массовый импорт";
+                isManagerOrder = true;
+                isImported = true;
+            }
+        }
+        
+        // 3. ЕСЛИ УСПЕШНО ПЕРЕХВАТИЛИ КОРЗИНУ (ССЫЛКУ ИЛИ EXCEL)
+        if (isImported) {
+            // Очищаем строку поиска, убираем клавиатуру
+            input.value = '';
+            input.blur();
+            filters.search = '';
+            if (document.getElementById('suggestRow')) document.getElementById('suggestRow').innerHTML = '';
+            
+            // Сохраняем, обновляем интерфейс и плавно открываем корзину
+            localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+            updateBar();
+            setTimeout(openCart, 200);
+            return; // ⛔️ Прерываем обычный текстовый поиск!
         }
         // ==========================================
 
