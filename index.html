@@ -1950,9 +1950,9 @@ function handleOrderCopyAndOpen(btnElement) {
         let itemsSumEur = 0;
 
         cart.forEach((item) => {
-            const cleanPZN = String(item.pzn).trim();
-            const r = db.find(x => String(x.PZN).trim() === cleanPZN);
-            
+            const cleanPZN = String(item.pzn).trim().padStart(8, '0');
+            const r = db.find(x => String(x.PZN).trim().padStart(8, '0') === cleanPZN);
+
             if (r) {
                 const cleanPrice = String(r.Price).replace(/[^0-9,.]/g, '').replace(',', '.');
                 const p = parseFloat(cleanPrice) || 0;
