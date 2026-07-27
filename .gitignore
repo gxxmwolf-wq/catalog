@@ -1,5 +1,2 @@
-img/
-pdf/
-*.jpg
-*.png
 .git/*.lock
+*.tmp
