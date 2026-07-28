@@ -2025,10 +2025,16 @@ function handleOrderCopyAndOpen(btnElement) {
                 </div>
                     <img src="img/${cleanPZN}.jpg" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)">
                     <div class="card-body">
-                        <div class="c-title" style="${titleStyle}">
-                            ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
-                            ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link">📄 PDF</a>` : ''}
-                        </div>
+                    <div class="c-title" style="${titleStyle}">
+                        ${r.Name_DE}
+                        <span onclick="searchVariantFromCart('${r.Name_DE}', event)" 
+                            title="Найти все дозировки" 
+                            style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; background: #f0f7ff; color: #007bff; border-radius: 50%; font-size: 11px; margin-left: 6px; cursor: pointer; vertical-align: middle; -webkit-tap-highlight-color: transparent;">
+                            🔍
+                        </span>
+                        ${isRx ? '<span class="b-rx">RX</span>' : ''}
+                        ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link">📄 PDF</a>` : ''}
+                    </div>
                         <div class="card-bottom">
                             <div class="c-meta-box">
                                 <div style="font-size:13px;">${r.Form_DE || ''}</div>
@@ -2073,6 +2079,26 @@ function handleOrderCopyAndOpen(btnElement) {
         </div>
         <div style="height: 15px;"></div>`;
     } // <-- Конец функции renderCartItems 
+
+    function searchVariantFromCart(fullName, event) {
+    // Останавливаем всплытие, чтобы Drag-and-Drop даже не пытался включиться
+    if (event) event.stopPropagation();
+    
+    // Берем первое слово бренда (например, "Ospolot" из "Ospolot 200mg...")
+    const brand = fullName.split(' ')[0]; 
+    
+    closeModal(); // Закрываем корзину
+    
+    setTimeout(() => {
+        const input = document.getElementById('search');
+        if (input) {
+            input.value = brand;
+            filters.search = brand;
+            handleInput(); // Запускаем поиск
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }, 150);
+}
 
 
     // 1. Генерация номера заказа (БЕЗ НЕЁ КОРЗИНА НЕ ОТКРОЕТСЯ)
