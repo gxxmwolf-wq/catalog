@@ -2150,50 +2150,50 @@ function handleOrderCopyAndOpen(btnElement) {
         }, 10);
             // 🛡️ БЕЗОПАСНЫЙ DRAG & DROP ЗА ВСЮ КАРТОЧКУ (С ЗАДЕРЖКОЙ ДЛЯ СКРОЛЛА)
                 // 🛡️ БЕЗОПАСНЫЙ DRAG & DROP ЗА ВСЮ КАРТОЧКУ
-            setTimeout(() => {
-                const container = document.getElementById('cartItems');
-                if (container && container.children.length > 0 && typeof Sortable !== 'undefined') {
-                    try {
-                        if (window.cartSortable) window.cartSortable.destroy();
-                        
-                        window.cartSortable = new Sortable(container, {
-                            animation: 150,
-                            draggable: '.card',          // Тянем ТОЛЬКО карточки товаров
-                            handle: '.card',             // Зацеп за любое место карточки
+                            // 🛡️ БЕЗОПАСНЫЙ DRAG & DROP ДЛЯ СМАРТФОНОВ
+                setTimeout(() => {
+                    const container = document.getElementById('cartItems');
+                    if (container && container.children.length > 0 && typeof Sortable !== 'undefined') {
+                        try {
+                            if (window.cartSortable) window.cartSortable.destroy();
                             
-                            // ⏱️ НАСТРОЙКИ ДЛЯ МОБИЛЬНОГО СКРОЛЛА:
-                            delay: 250,                  // Задержка 250 мс перед захватом
-                            delayOnTouchOnly: true,      // На ПК мышкой захватывает сразу, на телефоне — с задержкой
-                            touchStartThreshold: 5,      // Сдвиг пальца на 5px включат обычный СКРОЛЛ
-                            
-                            ghostClass: 'sortable-ghost',
-                            onEnd: function (evt) {
-                                // Используем драг-индексы (игнорируют блок даты и подвал):
-                                const oldIdx = (evt.oldDraggableIndex !== undefined) ? evt.oldDraggableIndex : evt.oldIndex;
-                                const newIdx = (evt.newDraggableIndex !== undefined) ? evt.newDraggableIndex : evt.newIndex;
+                            window.cartSortable = new Sortable(container, {
+                                animation: 150,
+                                draggable: '.card',
+                                handle: '.card',
                                 
-                                if (oldIdx === undefined || newIdx === undefined || oldIdx === newIdx) return;
+                                // 🚀 ВКЛЮЧАЕМ НАСТОЯЩИЙ ТАЧ-ЗАХВАТ ДЛЯ ТЕЛЕФОНА:
+                                forceFallback: true,        // Отключает глючный нативный HTML5 Drag&Drop на смартфонах
+                                fallbackOnBody: true,       // Вынимает карточку из скролл-контейнера, чтобы она не обрезалась
+                                fallbackTolerance: 3,       // Сдвиг на 3px активирует движение
+                                
+                                delay: 200,                 // Задержка удержания 200 мс (вибро сработает как отклик захвата)
+                                delayOnTouchOnly: true,     // На ПК захват мгновенный, на смартфоне — через легкое зажатие
+                                
+                                ghostClass: 'sortable-ghost',
+                                onEnd: function (evt) {
+                                    const oldIdx = (evt.oldDraggableIndex !== undefined) ? evt.oldDraggableIndex : evt.oldIndex;
+                                    const newIdx = (evt.newDraggableIndex !== undefined) ? evt.newDraggableIndex : evt.newIndex;
+                                    
+                                    if (oldIdx === undefined || newIdx === undefined || oldIdx === newIdx) return;
 
-                                // Меняем местами элементы в массиве корзины
-                                const movedItem = cart.splice(oldIdx, 1)[0];
-                                cart.splice(newIdx, 0, movedItem);
+                                    const movedItem = cart.splice(oldIdx, 1)[0];
+                                    cart.splice(newIdx, 0, movedItem);
 
-                                // Сохраняем обновленный порядок в память v2
-                                localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-                                if (navigator.vibrate) navigator.vibrate(15);
+                                    localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+                                    if (navigator.vibrate) navigator.vibrate(15);
 
-                                // Перерисовываем корзину и обновляем номера (1, 2, 3...)
-                                setTimeout(() => {
-                                    renderCartItems(); 
-                                    updateBar();       
-                                }, 50);
-                            }
-                        });
-                    } catch(e) {
-                        console.log("Sortable init skipped:", e);
+                                    setTimeout(() => {
+                                        renderCartItems(); 
+                                        updateBar();       
+                                    }, 50);
+                                }
+                            });
+                        } catch(e) {
+                            console.log("Sortable init skipped:", e);
+                        }
                     }
-                }
-            }, 200);
+                }, 200);;
 
     }
 

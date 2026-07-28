@@ -1530,3 +1530,28 @@ button:active {
 .modern-contact-grid .mc-btn:nth-child(4) { animation-delay: 0.20s; }
 .modern-contact-grid .mc-btn:nth-child(5) { animation-delay: 0.25s; }
 .modern-contact-grid .mc-btn:nth-child(6) { animation-delay: 0.30s; }
+
+/* Отключаем выделение текста и системное меню при зажатии карточек */
+#cartItems .card {
+    -webkit-user-select: none;         /* iOS Safari */
+    -moz-user-select: none;            /* Firefox */
+    -ms-user-select: none;             /* IE/Edge */
+    user-select: none;                 /* Chrome, Android, ПК */
+    -webkit-touch-callout: none;       /* Запрещает меню «Копировать/Поделиться» на iOS */
+    -webkit-tap-highlight-color: transparent; /* Убирает серое мигание при тапе */
+}
+/* Карточка в момент перетаскивания (парит под пальцем) */
+.sortable-drag {
+    opacity: 0.95;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18) !important;
+    transform: scale(1.02);
+    border-color: #007bff !important;
+    z-index: 99999 !important;
+}
+
+/* Пустая рамка-фантом на месте, куда встанет карточка */
+.sortable-ghost {
+    opacity: 0.35;
+    background: #f0f7ff !important;
+    border: 2px dashed #007bff !important;
+}
