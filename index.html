@@ -293,11 +293,11 @@
         }
         
         // Сохраняем актуальное состояние в память телефона
-        localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
         if (deliveryAddress) {
-            localStorage.setItem('de_cart_address', deliveryAddress);
+            localStorage.setItem('de_cart_address_v2', deliveryAddress);
         } else {
-            localStorage.removeItem('de_cart_address');
+            localStorage.removeItem('de_cart_address_v2');
         }
         
         updateBar();
@@ -312,8 +312,8 @@
     cartBackup = null; 
     deliveryAddress = ""; 
     
-    localStorage.removeItem('de_cart_arr');
-    localStorage.removeItem('de_cart_address'); 
+    localStorage.removeItem('de_cart_v2');
+    localStorage.removeItem('de_cart_address_v2'); 
 
     // 🟢 МАГИЯ: СТИРАЕМ ДОСКУ В АДМИНКЕ ВМЕСТЕ С КОРЗИНОЙ
     const adminInput = document.getElementById('adminOrderInput');
@@ -631,7 +631,7 @@
             if (document.getElementById('suggestRow')) document.getElementById('suggestRow').innerHTML = '';
             
             // Сохраняем, обновляем интерфейс и плавно открываем корзину
-            localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
             updateBar();
             setTimeout(openCart, 200);
             return; // ⛔️ Прерываем обычный текстовый поиск!
@@ -1151,7 +1151,7 @@ function clearAdminPanel() {
     
     // Очищаем ТОЛЬКО адрес, товары остаются в корзине
     deliveryAddress = "";
-    localStorage.removeItem('de_cart_address');
+    localStorage.removeItem('de_cart_address_v2');
     
     updateBar();
     render();
@@ -1251,7 +1251,7 @@ function clearAdminPanel() {
         }
 
         if (deliveryAddress) {
-            localStorage.setItem('de_cart_address', deliveryAddress);
+            localStorage.setItem('de_cart_address_v2', deliveryAddress);
         }
 
         // Убиваем все ссылки в тексте (защита от дублей PZN из URL)
@@ -1292,7 +1292,7 @@ function clearAdminPanel() {
                     cart.push({ pzn: cleanPzn, qty: qty });
                 }
             }
-            localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
             restoredDate = "Импорт от " + new Date().toLocaleDateString('ru-RU');
             isManagerOrder = true;
 
@@ -1522,7 +1522,7 @@ function clearAdminPanel() {
         }
         
         // 5. Сохранение и перерисовка
-        localStorage.setItem('de_cart_arr', JSON.stringify(cart));
+        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
         updateBar(); 
         render(false); 
         
@@ -1784,70 +1784,72 @@ function clearAdminPanel() {
     ========================================= */
 
     async function init() {
-        // 1. Восстанавливаем корзину и адрес из локального хранилища
-        try { 
-            const saved = localStorage.getItem('de_cart_arr'); 
-            if (saved) cart = JSON.parse(saved); 
-            
-            // ДОСТАЕМ АДРЕС ИЗ ПАМЯТИ (если он там есть)
-            deliveryAddress = localStorage.getItem('de_cart_address') || ""; 
-        } catch(e) { 
-            console.error("Ошибка парсинга из localStorage", e);
-            cart = []; 
-            deliveryAddress = "";
+    // 1. Безопасная загрузка корзины и адреса из localStorage (Ключ V2)
+    try { 
+        const saved = localStorage.getItem('de_cart_v2'); 
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            cart = Array.isArray(parsed) ? parsed : [];
+        } else {
+            cart = [];
         }
-        
-        // 2. Загружаем основную базу данных
+        deliveryAddress = localStorage.getItem('de_cart_address_v2_v2') || ""; 
+    } catch(e) { 
+        console.error("Сброс буфера корзины:", e);
+        cart = []; 
+        deliveryAddress = "";
+    }
+
+    // 2. Функция безопасной парсинг-загрузки с повтором (если CDN тупит)
+    function loadDB(retries = 5) {
+        if (typeof Papa === 'undefined') {
+            if (retries > 0) setTimeout(() => loadDB(retries - 1), 200);
+            return;
+        }
+
         Papa.parse(LOCAL_DB_URL, {
             download: true,
             header: true,
             skipEmptyLines: true,
             complete: function(results) {
-                db = results.data;
+                db = results.data || [];
 
-                // Только после загрузки базы подгружаем курсы и настройки
                 Promise.all([fetchCbrRate(), fetchGoogleSettings()]).then(() => {
                     calculateFinalLogic(); 
 
-                    // Пытаемся восстановить состояние из URL
                     tryRestoreSearchFromUrl();
                     const cartRestored = tryRestoreCartFromUrl();
                     
-                    // Если в ссылке была корзина — открываем её с задержкой
                     if (cartRestored) {
                         setTimeout(openCart, 500);
                     }
 
-                    // Если поиска нет, рендерим главную (новости)
                     if (!filters.search) render();
 
-                    // Обработка прямых ссылок на FAQ/ОПЫТ
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.has('faq')) setTimeout(() => showInfo('faq'), 800);
                     else if (urlParams.has('exp')) setTimeout(() => showInfo('exp'), 800);
-                    else if (urlParams.has('contact')) setTimeout(() => openContact('question'), 800); // 🟢 НОВАЯ СТРОКА
+                    else if (urlParams.has('contact')) setTimeout(() => openContact('question'), 800);
 
                 }).catch(err => {
-                    console.error("Ошибка загрузки внешних настроек:", err);
-                    calculateFinalLogic(); // Используем fallback значения
+                    console.error("Ошибка настроек:", err);
+                    calculateFinalLogic();
                     render();
                 });
             },
             error: function(err) {
-                console.error("КРИТИЧЕСКАЯ ОШИБКА: База db.csv не загружена!", err);
-                const list = document.getElementById('list');
-                if (list) {
-                    list.innerHTML = '<div style="text-align:center; padding:50px; color:red;">Ошибка загрузки данных. Пожалуйста, обновите страницу.</div>';
-                }
+                console.error("Ошибка db.csv:", err);
             }
         });
-
-        // 3. Загружаем новости в фоновом режиме
-        fetchNews();
-
-        // 4. Запускаем анимацию приветствия
-        setTimeout(playWelcomeAnimation, 500);
     }
+
+    // Запускаем загрузку базы
+    loadDB();
+
+    // 3. Новости и анимация
+    fetchNews();
+    setTimeout(playWelcomeAnimation, 500);
+}
 
 
     // --- УМНОЕ КОПИРОВАНИЕ: ПРЕМИУМ-АНИМАЦИЯ ЧЕКА (Замедленная) ---
@@ -3135,7 +3137,7 @@ function generatePDFInvoice() {
     document.getElementById('pdfOrderNum').innerText = `№ ${d}${m}${y}-${h}${min} от ${d}.${m}.${y}`;
     
     const addrEl = document.getElementById('pdfAddressFull');
-    let freshAddress = localStorage.getItem('de_cart_address') || deliveryAddress || "";
+    let freshAddress = localStorage.getItem('de_cart_address_v2') || deliveryAddress || "";
     
     if (freshAddress) {
         addrEl.innerHTML = freshAddress.replace(/\n/g, '<br>');
