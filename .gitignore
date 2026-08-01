@@ -1,0 +1,18 @@
+# Рабочие справочники EMA / MNN
+ema_article57.xlsx
+mnn_cache_new.json
+mnn_matches.csv
+mnn_review.csv
+MNN_PZN.csv
+MNN_REFERENCE.csv
+prepare_google_mnn_reference.py
+
+# Временные и служебные файлы
+*.tmp
+~$*
+__pycache__/
+*.pyc
+
+# Локальные резервные копии
+backup/
+backups/
