@@ -825,12 +825,27 @@
                         ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
                         ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link" onclick="event.stopPropagation()">📄 PDF</a>` : ''}
                     </div>
+
+                    ${getSubstanceHtml(r)}
+
                     <div class="card-bottom">
-                        <div class="c-meta-box">
-                            <div style="font-size:13px;">${r.Form_DE || ''}</div>
-                            <div>${r.Hersteller || ''}</div>
-                            <div>PZN: ${cleanPZN}</div>
+                      <div class="c-meta-box">
+                        ${r.Form_DE ? `
+                            <div class="c-meta">
+                                <span>Form:</span> ${r.Form_DE}
+                            </div>
+                        ` : ''}
+
+                        ${r.Hersteller ? `
+                            <div class="c-meta">
+                                <span>Hersteller:</span> ${r.Hersteller}
+                            </div>
+                        ` : ''}
+
+                        <div class="c-meta">
+                            <span>PZN:</span> ${cleanPZN}
                         </div>
+                    </div>
                         <div style="display:flex; align-items:center; gap:12px;">
                             <div class="u-price" style="display: flex; flex-direction: column; line-height: 1.1;">
                                 <span style="font-size: 16px; font-weight: 800; color: #000;">${Math.round(p)} €</span>
@@ -1037,6 +1052,25 @@
             box.appendChild(chip);
         });
     }
+    function getSubstanceHtml(row) {
+    const substance = String(row.Substance_DE || '').trim();
+
+    // Не выводим пустое значение, кириллицу и подозрительно длинный текст
+    if (
+        !substance ||
+        !/[A-Za-z]/.test(substance) ||
+        /[А-Яа-яЁё]/.test(substance) ||
+        substance.length > 120
+    ) {
+        return '';
+    }
+
+    return `
+        <div class="c-substance" title="${substance}">
+            <span>МНН:</span> ${substance}
+        </div>
+    `;
+}
 
     function handleImgError(img) {
         const div = document.createElement('div');
@@ -2035,11 +2069,26 @@ function handleOrderCopyAndOpen(btnElement) {
                         ${isRx ? '<span class="b-rx">RX</span>' : ''}
                         ${hasPdf ? `<a href="pdf/${cleanPZN}.pdf" target="_blank" class="pdf-link">📄 PDF</a>` : ''}
                     </div>
+
+                        ${getSubstanceHtml(r)}
+
                         <div class="card-bottom">
                             <div class="c-meta-box">
-                                <div style="font-size:13px;">${r.Form_DE || ''}</div>
-                                <div style="font-size:12px; color:#666;">${r.Hersteller || ''}</div>
-                                <div>PZN: ${cleanPZN}</div>
+                                ${r.Form_DE ? `
+                                    <div class="c-meta">
+                                        <span>Form:</span> ${r.Form_DE}
+                                    </div>
+                                ` : ''}
+
+                                ${r.Hersteller ? `
+                                    <div class="c-meta">
+                                        <span>Hersteller:</span> ${r.Hersteller}
+                                    </div>
+                                ` : ''}
+
+                                <div class="c-meta">
+                                    <span>PZN:</span> ${cleanPZN}
+                                </div>
                             </div>
                             <div style="display:flex; align-items:center; gap:12px;">
                                 <div style="display: flex; flex-direction: column; justify-content: center; line-height: 1.1;">

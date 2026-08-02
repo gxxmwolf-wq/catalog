@@ -225,87 +225,165 @@ body {
 /* =========================================
    BLOCK 3: СПИСОК ТОВАРОВ И КАРТОЧКИ
    ========================================= */
-#list { padding: 0 10px; }
-.intro-section { padding: 40px 10px; color: #555; font-size: 15px; text-align: center; }
 
-/* Карточка */
-.card { 
-    display: flex; padding: 12px 0; border-bottom: 1px solid #f0f0f0; 
-    gap: 12px; align-items: flex-start; 
-}
-.card.selected { 
-    background: #f8fbff; margin: 0 -10px; padding: 12px 10px; border-left: 3px solid var(--p); 
+#list {
+    padding: 0 10px;
 }
 
-/* Изображение */
-.product-thumb { 
-    width: 50px; height: 50px; object-fit: contain; border-radius: 6px; 
-    border: 1px solid #eee; background: #fff; flex-shrink: 0; 
-    transition: transform 0.2s; z-index: 1; 
+.intro-section {
+    padding: 40px 10px;
+    color: #555;
+    font-size: 15px;
+    text-align: center;
 }
 
+/* Карточка товара */
+.card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
 
-/* Тело карточки */
-.card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.card.selected {
+    margin: 0 -10px;
+    padding: 12px 10px;
+    background: #f8fbff;
+    border-left: 3px solid var(--p);
+}
 
-.c-title { 
-    font-size: 15px; font-weight: 600; line-height: 1.3; 
-    color: #000; margin-bottom: 2px !important;
+/* Фото */
+.product-thumb {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    object-fit: contain;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fff;
+}
+
+/* Текстовая часть */
+.card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.c-title {
+    margin: 0;
+    color: #000;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.c-substance {
+    max-width: 100%;
+    margin: 2px 0 1px;
+    overflow: hidden;
+    color: #555;
+    font-size: 12px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.c-substance span {
+    color: #666;
+    font-weight: 600;
+}
+
+.card-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: 100%;
+    margin: 0;
+}
+
+.c-meta-box {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.c-meta {
+    margin: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.c-meta span {
+    color: #555;
+    font-weight: 600;
 }
 
 .b-rx {
     display: inline-block;
+    margin-left: 5px;
+    padding: 1px 4px;
     border: 1px solid #d32f2f;
+    border-radius: 3px;
     color: #d32f2f;
     font-size: 10px;
     font-weight: 800;
-    padding: 1px 4px;
-    border-radius: 3px;
-    margin-left: 5px;
     vertical-align: middle;
 }
 
 .pdf-link {
     display: inline-block;
+    margin-left: 5px;
+    padding: 1px 5px;
+    border: 1px solid #eee;
+    border-radius: 3px;
     background: #f5f5f5;
     color: #d32f2f;
     font-size: 10px;
     font-weight: 700;
     text-decoration: none;
-    padding: 1px 5px;
-    border-radius: 3px;
-    border: 1px solid #eee;
-    margin-left: 5px;
     vertical-align: middle;
 }
 
-/* Мета-информация (PZN, Производитель) */
-.c-meta-box {
-    font-size: 13px !important;
-    line-height: 1.3 !important;
-    flex: 1 !important;
-    min-width: 0 !important;
-    margin-top: 0;
-}
-.c-meta-box div {
-    margin-bottom: 0;
-    white-space: normal !important; 
-    word-break: break-word !important;
+.c-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Нижняя панель карточки (Цена, Кнопки) */
-.card-bottom { display: flex; justify-content: space-between; align-items: flex-end; width: 100%; margin-top: 5px; }
+.u-price {
+    min-width: 35px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 800;
+}
 
-.c-ctrl { display: flex; align-items: center; gap: 8px; }
-.u-price { font-size: 14px; font-weight: 800; min-width: 35px; text-align: right; }
-
-/* Единый блок цен (Справа) */
 .sum-box {
-    display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
-    min-width: 85px; line-height: 1.2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    min-width: 85px;
+    line-height: 1.2;
 }
-.s-eur { font-size: 16px; font-weight: 700; color: #000; }
-.s-rub { font-size: 14px; font-weight: 500; color: #000; }
+
+.s-eur {
+    color: #000;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.s-rub {
+    color: #000;
+    font-size: 14px;
+    font-weight: 500;
+}
 
 /* =========================================
    КНОПКИ ДОБАВЛЕНИЯ В КОРЗИНУ (ИСПРАВЛЕНО)
@@ -883,7 +961,7 @@ body {
 }
 
 @media (max-width: 480px) {
-    .card-bottom { flex-direction: column !important; align-items: flex-start !important; margin-top: 6px !important; }
+    .card-bottom { flex-direction: column !important; align-items: flex-start !important; margin-top: 0px !important; }
     .c-meta-box { width: 100% !important; margin-bottom: 8px !important; border-bottom: 1px solid #f7f7f7; padding-bottom: 6px; }
     .c-ctrl { width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; }
     .u-price { font-size: 14px !important; font-weight: 600 !important; margin-right: auto !important; }
@@ -1554,4 +1632,14 @@ button:active {
     opacity: 0.35;
     background: #f0f7ff !important;
     border: 2px dashed #007bff !important;
+}
+.c-meta {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.c-meta span {
+    font-weight: 600;
+    color: #666;
 }
