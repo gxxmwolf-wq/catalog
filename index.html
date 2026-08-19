@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=29">
+    <link rel="stylesheet" href="style.css?v=30">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -2179,40 +2179,49 @@ function clearAdminPanel() {
             e.preventDefault();
             e.stopPropagation();
         }
-        
-        // 🚨 ЗАЩИТА: Работает только если на этом устройстве вводили пароль АДМИН
+
         if (!localStorage.getItem('rxde_super_admin')) return;
-        
         if (cart.length === 0) return;
-        
+
         const sumEl = document.getElementById('footerTotalSum');
         const data = getOrderTextAndLink();
         if (!data || !sumEl) return;
 
+        const flash = (color, vibration) => {
+            if (navigator.vibrate && vibration) navigator.vibrate(vibration);
+            const previous = sumEl.style.color;
+            sumEl.style.color = color;
+            setTimeout(() => { sumEl.style.color = previous || ''; }, 500);
+        };
+
+        const failed = (error) => {
+            console.error('Secret admin copy:', error);
+            flash('#d32f2f', [25, 35, 25]);
+        };
+
         if (secretClickTimer) {
-            // ДВОЙНОЙ КЛИК: ТОЛЬКО ССЫЛКА (Мигает синим + Двойное вибро)
+            // ДВА БЫСТРЫХ НАЖАТИЯ: копируем только ссылку, подсветка синяя.
             clearTimeout(secretClickTimer);
             secretClickTimer = null;
-            
-            copyTextSafe(data.link).then(() => {
-                if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
-                sumEl.style.color = '#007bff'; 
-                setTimeout(() => sumEl.style.color = '#000', 400);
-            });
-        } else {
-            // ОДИНОЧНЫЙ КЛИК: ТЕКСТ + ССЫЛКА (Мигает зеленым + Одинарное вибро)
-            secretClickTimer = setTimeout(() => {
-                secretClickTimer = null;
-                
-                const fullCopy = data.text.includes(data.link) ? data.text : data.text + '\n' + data.link;
-                
-                copyTextSafe(fullCopy).then(() => {
-                    if (navigator.vibrate) navigator.vibrate(15);
-                    sumEl.style.color = '#25D366'; 
-                    setTimeout(() => sumEl.style.color = '#000', 400);
-                });
-            }, 250); 
+
+            copyTextSafe(data.link)
+                .then(() => flash('#007bff', [15, 30, 15]))
+                .catch(failed);
+            return;
         }
+
+        // ОДНО НАЖАТИЕ: ждём 300 мс — если второго не было,
+        // копируем весь шаблон + ссылку, подсветка зелёная.
+        secretClickTimer = setTimeout(() => {
+            secretClickTimer = null;
+            const fullCopy = data.text.includes(data.link)
+                ? data.text
+                : data.text + '\n' + data.link;
+
+            copyTextSafe(fullCopy)
+                .then(() => flash('#25D366', 15))
+                .catch(failed);
+        }, 300);
     }
 
     function updateBar() {
@@ -2255,7 +2264,7 @@ function clearAdminPanel() {
                         <div class="order-summary-main">
                             <span class="order-summary-kicker">Итого</span>
                             <span class="order-summary-dots" aria-hidden="true"></span>
-                            <div class="order-summary-values" onmousedown="secretAdminCopy(event)">
+                            <div class="order-summary-values" onclick="secretAdminCopy(event)">
                                 <span class="order-summary-eur">${grandTotalEur.toLocaleString('ru-RU')} €</span>
                                 <strong id="footerTotalSum" class="order-summary-rub">${grandTotalRub.toLocaleString('ru-RU')} ₽</strong>
                             </div>
@@ -3584,29 +3593,41 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     async function copyTextSafe(text) {
+        const value = String(text ?? '');
+
+        // HTTPS / localhost: основной Clipboard API.
         if (navigator.clipboard && window.isSecureContext) {
-            await copyTextSafe(text);
+            await navigator.clipboard.writeText(value);
             return true;
         }
 
+        // Локальный http://192.168...: fallback для мобильного теста.
         const area = document.createElement('textarea');
-        area.value = text;
+        area.value = value;
         area.setAttribute('readonly', '');
         area.style.position = 'fixed';
-        area.style.left = '-9999px';
+        area.style.opacity = '0';
+        area.style.pointerEvents = 'none';
+        area.style.left = '0';
         area.style.top = '0';
+        area.style.width = '1px';
+        area.style.height = '1px';
         document.body.appendChild(area);
-        area.focus();
+
+        area.focus({ preventScroll: true });
         area.select();
+        area.setSelectionRange(0, area.value.length);
 
         let ok = false;
         try {
             ok = document.execCommand('copy');
+        } catch (_) {
+            ok = false;
         } finally {
             area.remove();
         }
 
-        if (!ok) throw new Error('Копирование недоступно');
+        if (!ok) throw new Error('Копирование заблокировано браузером');
         return true;
     }
 
