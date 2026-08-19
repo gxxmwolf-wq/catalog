@@ -1,0 +1,1645 @@
+/* =========================================
+   BLOCK 1: БАЗОВЫЕ НАСТРОЙКИ (ROOT)
+   ========================================= */
+:root { 
+    --p: #005691;       /* Основной синий */
+    --bg: #f5f7fa;      /* Фон страницы */
+    --rx: #d32f2f;      /* Красный (акцент) */
+    --txt: #1c1c1c;     /* Текст */
+    --ok: #00e676;      /* Зеленый (успех) */
+}
+
+/* Общий шрифт и сближение букв */
+body, .m-box, .success-popup, .top-menu-bar, .card-body {
+    font-family: 'Roboto Condensed', -apple-system, sans-serif;
+    letter-spacing: -0.02em;
+}
+
+body { 
+    background: var(--bg); 
+    color: var(--txt); 
+    margin: 0; 
+    padding-bottom: 0 !important; /* Убрали лишнее место под футером */
+    -webkit-tap-highlight-color: transparent;
+}
+
+.cont { 
+    max-width: 600px; 
+    margin: 0 auto; 
+    padding: 0 !important; /* Убрали гигантский отступ внутри контейнера */
+    background: #fff; 
+    min-height: 100vh; 
+}
+
+/* =========================================
+   BLOCK 2: ШАПКА И МЕНЮ (STICKY)
+   ========================================= */
+.sticky { 
+    position: sticky; top: 0; 
+    background: #fff; 
+    z-index: 1000; /* [ФИКС]: Гарантия перекрытия контента */
+    border-bottom: 1px solid #f0f0f0; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+}
+
+.top-menu-bar {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 15px; 
+    background: #fff;
+}
+
+.tm-item {
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 12px; 
+    color: var(--p);
+    padding: 4px 6px; 
+    border-radius: 6px; 
+    white-space: nowrap; 
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.tm-item:hover { background-color: #f0f4f8; color: #004475; }
+.tm-item:active { background-color: #e3edf5; transform: scale(0.98); }
+
+.tm-sep {
+    color: #d0d0d0;
+    font-weight: 300;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    margin: 0 2px; 
+}
+
+/* Эффект живого присутствия */
+.live-glow {
+    position: relative;
+    color: var(--p) !important; 
+    font-weight: 700 !important;
+    z-index: 1;
+}
+
+.live-glow::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 160%; height: 180%;
+    background: radial-gradient(circle, rgba(0, 230, 118, 0.3) 0%, rgba(0, 230, 118, 0) 70%);
+    filter: blur(6px);
+    z-index: -1;
+    will-change: opacity, transform;
+    animation: mobile-glow 6s infinite ease-in-out;
+}
+
+@keyframes mobile-glow {
+    0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.9); }
+    50% { opacity: 0.9; transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.rates-compact {
+    font-size: 11px; color: #999; 
+    text-align: right; line-height: 1.2; 
+    min-width: 70px;
+}
+
+
+.embedded-logo {
+    display: flex !important;
+    align-items: center;
+    font-weight: 900;
+    font-size: 18px; 
+    cursor: pointer;
+    user-select: none;
+    padding-right: 12px; 
+    white-space: nowrap; 
+}
+
+.rx-part {
+    border: 2px solid #d32f2f !important; 
+    color: #d32f2f !important;            
+    padding: 0 4px;       
+    border-radius: 6px;
+    margin-right: 3px !important; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.de-part { color: #000; }
+.flash-green .de-part { color: var(--ok) !important; }
+.flash-yellow .de-part { color: #ffc107 !important; }
+
+/* =========================================
+   ВОССТАНОВЛЕННЫЙ БЛОК ПОИСКА (ШИРОКИЙ)
+   ========================================= */
+.inp-wrap {
+    position: relative; /* Важно для позиционирования крестика */
+    display: flex;
+    align-items: center;
+    padding: 8px 12px !important;
+    background: #fff;
+    margin-bottom: 0 !important; /* Убираем дыру под поиском, не ломая сам инпут */
+    
+}
+
+/* Возвращаем твои оригинальные размеры */
+.search-input {
+    flex: 1; 
+    background-color: transparent !important; /* УБРАЛИ ЦВЕТ, чтобы видеть маску под ним */
+    border: 2px solid transparent !important; 
+    border-radius: 12px !important; 
+    font-size: 16px !important; 
+    font-weight: 600 !important;
+    padding: 0 45px 0 15px !important; 
+    height: 48px !important; 
+    margin: 0 !important;
+    box-shadow: none !important;
+    transition: all 0.25s ease !important; 
+    color: #333 !important;
+    outline: none !important;
+    -webkit-appearance: none;
+    position: relative;
+    z-index: 2; /* Инпут сверху, маска снизу */
+}
+
+.search-input:focus {
+    background-color: #ffffff !important; 
+    border-color: var(--p) !important; 
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08) !important; 
+    transform: translateY(-1px) !important; 
+}
+
+.search-input::placeholder { color: #888 !important; font-weight: 500 !important; transition: opacity 0.2s !important; }
+.search-input:focus::placeholder { opacity: 0.5 !important; }
+
+/* Крестик очистки строго по центру */
+.cls-btn {
+    position: absolute !important;
+    right: 25px !important; 
+    top: 50% !important;
+    transform: translateY(-50%) !important; /* Ровно по центру высоты поля */
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    z-index: 200 !important; 
+    color: #bbb;
+    font-size: 19px; 
+    cursor: pointer;
+    background: transparent !important;
+    -webkit-tap-highlight-color: transparent;
+}
+.cls-btn:hover { color: var(--p); }
+
+/* Чипсы */
+.suggestions-row { 
+    display: flex; 
+    flex-wrap: nowrap; 
+    overflow-x: auto; 
+    align-items: center; 
+    gap: 8px; 
+    padding: 5px 10px 10px 10px; 
+    scrollbar-width: none;
+    position: relative;
+    z-index: 10;
+}
+.suggestions-row::-webkit-scrollbar { display: none; }
+
+.s-chip { 
+    flex-shrink: 0; background: #e3f2fd; color: var(--p); 
+    border: 1px solid #bbdefb; border-radius: 12px; padding: 6px 12px; 
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.s-chip:active { background: var(--p); color: #fff; transform: scale(0.95); }
+
+/* =========================================
+   BLOCK 3: СПИСОК ТОВАРОВ И КАРТОЧКИ
+   ========================================= */
+
+#list {
+    padding: 0 10px;
+}
+
+.intro-section {
+    padding: 40px 10px;
+    color: #555;
+    font-size: 15px;
+    text-align: center;
+}
+
+/* Карточка товара */
+.card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.card.selected {
+    margin: 0 -10px;
+    padding: 12px 10px;
+    background: #f8fbff;
+    border-left: 3px solid var(--p);
+}
+
+/* Фото */
+.product-thumb {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
+    object-fit: contain;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    background: #fff;
+}
+
+/* Текстовая часть */
+.card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.c-title {
+    margin: 0;
+    color: #000;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.c-substance {
+    max-width: 100%;
+    margin: 2px 0 1px;
+    overflow: hidden;
+    color: #555;
+    font-size: 12px;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.c-substance span {
+    color: #666;
+    font-weight: 600;
+}
+
+.card-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    width: 100%;
+    margin: 0;
+}
+
+.c-meta-box {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.c-meta {
+    margin: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.c-meta span {
+    color: #555;
+    font-weight: 600;
+}
+
+.b-rx {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 4px;
+    border: 1px solid #d32f2f;
+    border-radius: 3px;
+    color: #d32f2f;
+    font-size: 10px;
+    font-weight: 800;
+    vertical-align: middle;
+}
+
+.pdf-link {
+    display: inline-block;
+    margin-left: 5px;
+    padding: 1px 5px;
+    border: 1px solid #eee;
+    border-radius: 3px;
+    background: #f5f5f5;
+    color: #d32f2f;
+    font-size: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.c-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.u-price {
+    min-width: 35px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.sum-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    min-width: 85px;
+    line-height: 1.2;
+}
+
+.s-eur {
+    color: #000;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.s-rub {
+    color: #000;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* =========================================
+   КНОПКИ ДОБАВЛЕНИЯ В КОРЗИНУ (ИСПРАВЛЕНО)
+   ========================================= */
+
+/* Кнопка "ДОБАВИТЬ" (синяя капсула) */
+/* Современная кнопка добавления */
+.btn-add {
+    background: transparent;
+    color: var(--p);
+    border: 1.5px solid var(--p);
+    border-radius: 20px; /* Скругленные края для мягкости */
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.btn-add:hover {
+    background: rgba(0, 123, 255, 0.05);
+}
+
+/* Состояние, когда товар уже в корзине (в списке) */
+.card.selected .btn-add {
+    background: var(--p);
+    color: #fff;
+    border-color: var(--p);
+}
+
+/* Блок счетчика (вместе с кнопками + и -) */
+.qty-capsule, .qty-capsule-wrap {
+    display: inline-flex !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+}
+
+/* Сами круглые кнопки Плюс и Минус */
+.q-btn, .btn-qty {
+    width: 26px !important;
+    height: 26px !important;
+    box-sizing: border-box !important;
+    border-radius: 50% !important;
+    border: 1px solid #333 !important;
+    background: #fff !important;
+    color: #333 !important;
+    font-weight: 900 !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+}
+.q-btn:active, .btn-qty:active {
+    background: #f0f0f0 !important;
+    transform: scale(0.9) !important;
+}
+
+/* Цифра количества между плюсом и минусом */
+.q-val, .qty-val {
+    padding: 0 8px !important;
+    min-width: 18px !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+    font-size: 14px !important;
+    color: #000 !important;
+}
+
+
+/* =========================================
+   BLOCK 4: КОРЗИНА "SMART TRUCK" (ФИНАЛ)
+   ========================================= */
+.mini-cart-fab { 
+    /* Позиционирование (защита от смахивания на S24/Android) */
+    position: fixed; 
+    right: 25px !important; 
+    bottom: 90px !important; 
+    z-index: 9000 !important;
+    
+    /* Базовая форма - идеальный круг */
+    height: 54px; 
+    min-width: 54px; 
+    border-radius: 27px;
+    
+    /* Стиль: Сочный зеленый градиент */
+    background: linear-gradient(135deg, #00e676 0%, #00c853 100%);
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 8px 20px rgba(0, 150, 0, 0.3);
+    
+    /* [ИЗМЕНЕНО]: Окантовка теперь черная */
+    border: 2px solid #000;
+    
+    /* [ИЗМЕНЕНО]: Основной цвет текста теперь черный */
+    color: #000;
+    
+    /* Флекс-сетка */
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    cursor: pointer !important;
+    user-select: none;
+    
+    /* Анимация трансформации в капсулу */
+    transition: all 0.3s cubic-bezier(0.3, 1.5, 0.5, 1);
+    overflow: visible !important;
+    touch-action: manipulation !important;
+}
+
+/* Активное состояние: Превращение в капсулу, когда есть товары */
+.mini-cart-fab.active { 
+    min-width: 130px; 
+    padding: 0 16px; 
+    justify-content: flex-start;
+    box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 12px 25px rgba(0, 150, 0, 0.4);
+}
+
+/* [ИСПРАВЛЕНО]: Полная зачистка от старых фоновых иконок и кругов */
+.mini-cart-icon {
+    background: none !important;
+    background-image: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px; 
+    padding: 0;
+    margin: 0;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+    line-height: 1;
+}
+
+/* Текст цены внутри капсулы */
+.mini-cart-total { 
+    font-size: 15px; 
+    font-weight: 800; 
+    /* [ИЗМЕНЕНО]: Шрифт цены теперь черный */
+    color: #000; 
+    white-space: nowrap; 
+    opacity: 0; 
+    width: 0; 
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+/* Появление цены при активации */
+.mini-cart-fab.active .mini-cart-total { 
+    opacity: 1; 
+    width: auto; 
+    margin-left: 10px; 
+}
+
+.mini-cart-badge { 
+    position: absolute; 
+    top: -5px;      /* Чуть выше */
+    right: -5px;    /* Чуть правее, чтобы не закрывать 🚚 */
+    background: #d32f2f; 
+    color: #fff; 
+    min-width: 20px; 
+    height: 20px; 
+    border-radius: 50%; 
+    font-size: 11px; 
+    font-weight: 900; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    border: 2px solid #000; /* Твоя новая черная окантовка */
+    z-index: 1005; 
+}
+
+/* Анимация тяжелого груза только для иконки 🚚 */
+.truck-jump {
+    animation: truckLoad 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    transform-origin: bottom center; /* Проседает к земле */
+}
+
+@keyframes truckLoad {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    /* Жесткий удар по подвеске */
+    25% { transform: translate3d(0, 8px, 0) scale(1.15, 0.8); } 
+    /* Пружинит обратно */
+    50% { transform: translate3d(0, -4px, 0) scale(0.95, 1.05); } 
+    /* Остаточные колебания */
+    75% { transform: translate3d(0, 1px, 0) scale(1.02, 0.98); } 
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* --- ПЛАВАЮЩАЯ КНОПКА ЧАТА (Синяя + Пульсация) --- */
+.chat-fab {
+    position: fixed;
+    right: 30px; 
+    bottom: 30px; 
+    z-index: 8900; 
+    width: 44px; 
+    height: 44px;
+    border-radius: 50%;
+    
+    /* Закрашиваем и делаем контрастной */
+    background: var(--p); 
+    color: #ffffff; 
+    border: 2px solid #ffffff; 
+    box-shadow: 0 4px 15px rgba(0, 86, 145, 0.4); 
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    
+    /* Мягкое "дыхание" для привлечения внимания */
+    animation: chat-pulse 3s infinite ease-in-out;
+}
+
+.chat-fab:active {
+    transform: scale(0.9);
+    background-color: #004475; /* Чуть темнее при нажатии */
+}
+
+/* Анимация пульсации */
+@keyframes chat-pulse {
+    0% { transform: scale(1); box-shadow: 0 4px 15px rgba(0, 86, 145, 0.4); }
+    50% { transform: scale(1.08); box-shadow: 0 6px 20px rgba(0, 86, 145, 0.6); }
+    100% { transform: scale(1); box-shadow: 0 4px 15px rgba(0, 86, 145, 0.4); }
+}
+
+/* Адаптив для маленьких экранов */
+@media (max-width: 380px) {
+    .chat-fab {
+        right: 20px;
+        bottom: 20px;
+    }
+}
+
+/* =========================================
+   МИНИ-ЧЕК (РАСЧЕТ В КОРЗИНЕ)
+   ========================================= */
+.mini-receipt { 
+    position: absolute; bottom: 75px; right: 0; width: 290px; 
+    background: rgba(255,255,255,0.92); 
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-radius: 14px; padding: 12px; 
+    box-shadow: 0 15px 50px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.05);
+    display: none; flex-direction: column; gap: 4px; 
+    z-index: 990; cursor: pointer;
+}
+
+.receipt-row { 
+    display: flex; align-items: baseline; 
+    font-size: 12px; color: #333; gap: 0;
+}
+.receipt-row .num { flex: 0 0 18px; font-size: 10px; color: #999; }
+.receipt-row .name { 
+    font-weight: 400; white-space: nowrap; overflow: hidden; 
+    text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; color: #000;
+}
+.receipt-row .dots { 
+    display: block; flex: 1 0 10px; border-bottom: 1px dotted #ccc; 
+    margin: 0 4px 4px 4px; min-width: 5px; opacity: 0.4;
+}
+.receipt-row .calc { 
+    flex: 0 0 auto; white-space: nowrap; 
+    font-family: 'Roboto Condensed', sans-serif; font-size: 11px; text-align: right; 
+}
+
+.receipt-divider { height: 1px; background: #eee; margin: 4px 0; }
+
+.receipt-row.total-rub-line { 
+    font-weight: 900; color: #000; font-size: 15px; 
+    margin-top: 5px; border-top: 1px dashed #ccc; padding-top: 5px; 
+}
+.receipt-row.color-ship { color: #666; font-style: normal; }    
+
+/* =========================================
+   BLOCK 5: АНИМАЦИЯ (3D ПИЛЮЛИ)
+   ========================================= */
+.pill-3d-visual { 
+    /* РАЗМЕР: Крупные и заметные */
+    width: 36px; height: 18px; 
+    border-radius: 18px; 
+    
+    /* 3D СТИЛЬ: Красно-желтый + Блик + Тень */
+    background: linear-gradient(90deg, #d32f2f 50%, #ffc107 50%); 
+    box-shadow: 
+        inset 0 3px 6px rgba(255,255,255,0.6), /* Блик сверху */
+        0 4px 10px rgba(0,0,0,0.3);           /* Тень снизу */
+    border: 1px solid rgba(0,0,0,0.15);
+
+    /* ВАЖНО: Убрали position: fixed, чтобы не ломать твой JS */
+    display: block; 
+    pointer-events: none;
+}
+
+
+.pulse { animation: pulse-anim 0.3s ease-in-out; }
+.pulse-remove { animation: pulse-anim 0.5s ease-in-out; }
+
+@keyframes pulse-anim { 
+    0% { transform: scale(1); } 
+    50% { transform: scale(1.15); } 
+    100% { transform: scale(1); } 
+}
+
+
+/* =========================================
+   BLOCK 6: БОЛЬШАЯ КОРЗИНА (MODAL)
+   ========================================= */
+.modal { 
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.5); 
+    z-index: 99999 !important; 
+    align-items: flex-end; justify-content: center; 
+    backdrop-filter: blur(2px); opacity: 0; 
+    /* [ФИКС]: Убрали transition, теперь появляется моментально */
+    padding-top: env(safe-area-inset-top); 
+}
+.modal.active { display: flex; }
+.modal.open { opacity: 1; }
+
+.m-box { 
+    background: #fff; width: 100%; max-width: 600px; 
+    height: 90vh; 
+    border-radius: 20px 20px 0 0; 
+    display: flex; flex-direction: column; 
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.2); 
+    /* [ФИКС]: Убрали transform и transition. Корзина сразу стоит на месте, шрифты не размазываются */
+}
+
+/* ИДЕАЛЬНАЯ ШАПКА КОРЗИНЫ */
+.modal-head { 
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important; 
+    padding: 15px 20px !important;
+    padding-top: max(env(safe-area-inset-top), 45px) !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    background: #fff !important;
+    min-height: 70px !important; 
+    box-sizing: border-box !important;
+    flex-shrink: 0; 
+}
+
+/* Левый блок (Кнопка "Добавить") */
+#modalHeaderLinks {
+    flex: 1.2 !important; 
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+}
+.m-head-add-more {
+    display: flex; align-items: center; cursor: pointer; color: var(--p); user-select: none;
+}
+.m-head-add-more .m-chevron { font-size: 30px; margin-right: 5px; line-height: 1; }
+.m-head-add-more .m-add-txt { font-size: 11px; font-weight: 700; text-transform: uppercase; }
+
+/* Центральный блок (Заявка и Курс) */
+.m-head-info {
+    flex: 1 !important; 
+    text-align: center !important;
+    display: flex; flex-direction: column;
+    line-height: 1.3 !important;
+}
+
+/* Правый блок (Крестик) */
+.close-x { 
+    flex: 0.8 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    font-size: 28px !important; 
+    color: #000 !important; 
+    cursor: pointer; 
+    padding: 10px !important; 
+    margin-right: -10px !important; 
+    line-height: 1 !important; 
+}
+.close-x:active { opacity: 0.5; }
+
+/* ОБЛАСТЬ СКРОЛЛА */
+.m-scroll-area { 
+    flex: 1; overflow-y: auto; padding: 0 20px; scrollbar-width: none; 
+}
+.m-scroll-area::-webkit-scrollbar { display: none; }
+
+/* СТРОКА ТОВАРА */
+.m-row-interactive { 
+    display: flex; align-items: center; justify-content: space-between; 
+    padding: 18px 0; border-bottom: 1px solid #f7f7f7; 
+}
+
+/* ССЫЛКА ВНИЗУ */
+.add-more-link {
+    display: block; text-align: center; padding: 30px 0 20px 0; 
+    color: var(--p); font-weight: 700; font-size: 14px;
+    text-decoration: none; cursor: pointer; user-select: none;
+}
+
+/* ФУТЕР КОРЗИНЫ */
+.modal-footer-sticky {
+    padding: 15px 20px 30px 20px; background: #fff; border-top: 1px solid #eee; z-index: 20; 
+}
+.footer-total-compact { margin-bottom: 15px; }
+
+/* КНОПКИ МЕССЕНДЖЕРОВ */
+.grid-3-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.b-cell {
+    border: none; border-radius: 12px; height: 50px; 
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform 0.1s; background: #f0f2f5; 
+}
+.b-cell:active { transform: scale(0.96); }
+.b-cell span { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-top: 4px; }
+.b-cell.wa { background: #25D366; color: #fff; }
+.b-cell.tg { background: #0088cc; color: #fff; }
+.b-cell.other { background: #eceff1; color: #455a64; border: 1px solid #cfd8dc; }
+
+/* =========================================
+   BLOCK 7: ОКНА, ФОРМЫ И УВЕДОМЛЕНИЯ
+   ========================================= */
+/* Иерархия самых верхних слоев */
+#contactOverlay, #tgOverlay, #infoOverlay, .success-popup { z-index: 999999 !important; }
+
+/* Оверлей и базовые окна */
+.info-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); align-items: center; justify-content: center;
+}
+.info-box {
+    background: #fff; width: 90%; max-width: 360px; border-radius: 20px;
+    padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    /* ДОБАВЛЕНО ДЛЯ МОБИЛЬНЫХ: */
+    max-height: 85vh; 
+    overflow-y: auto; 
+}
+/* Красивый тонкий скроллбар для текста */
+.info-box::-webkit-scrollbar { width: 4px; }
+.info-box::-webkit-scrollbar-thumb { background: #dcdcdc; border-radius: 4px; }
+
+.info-title { font-weight: 800; color: var(--p); margin-bottom: 15px; font-size: 18px; text-transform: uppercase; }
+.info-content { font-size: 14px; line-height: 1.5; color: #333; }
+
+/* Контакты и Формы */
+.contact-box { padding: 30px 20px; border-top: 4px solid var(--p); }
+
+.universal-textarea {
+    width: 100%; height: 80px; box-sizing: border-box; padding: 12px;
+    border: 2px solid #eee; border-radius: 12px; font-family: inherit; font-size: 15px;
+    margin-bottom: 15px; outline: none; resize: none;
+}
+.universal-textarea:focus { border-color: var(--p); }
+
+.cp-input-inline {
+    width: 100%; padding: 12px; box-sizing: border-box;
+    border: 2px solid #eee; border-radius: 12px; font-size: 16px; margin-bottom: 15px;
+}
+.cp-submit-full {
+    width: 100%; padding: 14px; background: var(--p); color: #fff; border: none;
+    border-radius: 12px; font-weight: 700; font-size: 14px; cursor: pointer; 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cp-submit-full:active { transform: scale(0.96); opacity: 0.9; }
+.cp-submit-full:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+.s-close-btn { 
+    background: #333; color: #fff; border: none; padding: 10px 20px; 
+    border-radius: 8px; font-weight: bold; width: 100%; margin-top: 15px; 
+    cursor: pointer; transition: background 0.2s, transform 0.1s; 
+}
+.s-close-btn:active { background: #555; transform: scale(0.98); }
+
+/* Окно Успеха */
+.success-popup { 
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); 
+    background: #fff; padding: 30px; border-radius: 24px; box-shadow: 0 30px 80px rgba(0,0,0,0.5); 
+    text-align: center; width: 85%; max-width: 320px; 
+    opacity: 0; pointer-events: none; transition: all 0.3s ease; 
+}
+.success-popup.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+.s-head-icon { font-size: 40px; margin-bottom: 10px; }
+#succTitle { color: var(--p); font-size: 22px; font-weight: 800; margin-bottom: 12px; line-height: 1.1; letter-spacing: -0.5px; }
+#succSubTitle { font-size: 15px; line-height: 1.45; color: #444; margin-bottom: 15px; }
+.s-order-id { background: #e3f2fd; color: var(--p); padding: 5px 10px; border-radius: 6px; font-family: monospace; display: inline-block; margin-bottom: 20px; }
+
+/* Telegram Toast (iOS Style) */
+.tg-toast-overlay {
+    display: none; opacity: 0; position: fixed; top: 50%; left: 50%; 
+    transform: translate(-50%, -50%) scale(0.8); pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+.tg-toast-overlay.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+.tg-toast-box {
+    background: rgba(30, 30, 30, 0.75); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
+    color: #fff; padding: 25px 20px; border-radius: 22px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); 
+    text-align: center; width: 220px; font-family: -apple-system, sans-serif;
+}
+.tg-toast-preview {
+    background: rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 12px; margin: 12px 0;
+    font-size: 12px; color: #fff; text-align: left; max-height: 56px; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word;
+}
+.tg-toast-icon { font-size: 40px; margin-bottom: 10px; line-height: 1; }
+.tg-toast-title { font-size: 17px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.4px; }
+.tg-toast-desc { font-size: 13px; color: #ebebeb; line-height: 1.3; }
+
+/* Дайлер (Калькулятор телефона) */
+.dialer-box { max-width: 310px !important; padding: 20px 15px !important; border-radius: 24px 24px 0 0 !important; }
+.dial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; justify-items: center; }
+.d-num {
+    width: 60px; height: 60px; border-radius: 50%; border: none; background: #f2f2f2;
+    font-size: 22px; font-weight: 700; color: #333; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: background 0.1s ease; -webkit-tap-highlight-color: transparent;
+}
+.d-num:active { background: #d1d1d1; }
+.d-back { background: none; border: none; font-size: 20px; color: #aaa; cursor: pointer; }
+.dial-cell {
+    width: 22px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-bottom: 2px solid #eee; font-size: 20px; font-weight: 600; color: #000;
+    transition: border-color 0.3s ease; font-variant-numeric: tabular-nums;
+}
+.dial-cell.filled { border-bottom-color: var(--p); animation: digit-bloom 0.2s ease-out; }
+@keyframes digit-bloom { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.dial-cell:empty::after { content: ""; width: 4px; height: 4px; background: #ccc; border-radius: 50%; }
+
+.dial-mode-btn {
+    flex: 1; height: 46px; border-radius: 12px; border: 2px solid #eee; font-size: 11px; font-weight: 800; 
+    cursor: pointer; background: #f8f9fa; color: #aaa; transition: all 0.2s ease;
+}
+.dial-mode-btn.active { background: var(--p) !important; color: #fff !important; border-color: var(--p) !important; }
+
+/* =========================================
+   BLOCK 8: ЛЕНТА НОВОСТЕЙ
+   ========================================= */
+.notepad-wrap { margin: 15px 0 20px; background: #fdfbf7; border: 1px solid #e0dcd1; border-radius: 4px; position: relative; }
+.notepad-header { font-size: 12px; font-weight: 800; color: #111; text-transform: uppercase; padding: 12px 15px; border-bottom: 2px solid #111; letter-spacing: 1.5px; }
+.notepad-item { display: flex; flex-direction: column; border-bottom: 1px solid #e0dcd1; padding-bottom: 8px; }
+.notepad-item:last-child { border-bottom: none; padding-bottom: 0; }
+.notepad-item:nth-child(even) { background-color: rgba(0, 0, 0, 0.02); }
+.np-date-row { padding: 12px 15px 4px 15px; display: flex; justify-content: space-between; align-items: flex-end; }
+.np-date-text { font-size: 11px; font-weight: bold; color: #555; font-family: 'Courier New', monospace; text-transform: uppercase; }
+.np-tag-top { font-size: 10px; font-weight: 800; color: #fff !important; text-transform: uppercase; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; display: inline-flex; }   
+.np-body { padding: 0 15px 15px 15px; font-size: 15px; color: #111; line-height: 1.6; font-family: 'Georgia', serif; text-align: justify; }
+.btn-notepad-more { width: 100%; background: #f4f2eb; color: #555; border: none; padding: 12px; font-family: 'Georgia', serif; font-style: italic; font-size: 14px; cursor: pointer; transition: 0.2s; border-top: 1px solid #e0dcd1; }
+.btn-notepad-more:active { background: #e8e5dc; }
+
+/* Умные элементы в тексте */
+.n-hashtag { color: var(--p); font-weight: 700; cursor: pointer; background: #e3f2fd; padding: 0 4px; border-radius: 4px; transition: 0.2s; }
+.n-hashtag:active { background: #bbdefb; }
+.n-inline-btn { display: inline-flex; align-items: center; background: #fdfdfd; border: 1px solid #ccc; color: #333; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; margin: 4px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.n-inline-btn:active { transform: scale(0.95); background: #f0f0f0; }
+
+.mini-alert { margin: 15px 10px 5px 10px; background: #fffdf5; border: 1px solid #ffeb3b; border-radius: 10px; overflow: hidden; }
+.mini-alert-head { padding: 12px 15px; font-size: 13px; font-weight: 700; color: #b99d00; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+.mini-alert-body { display: none; padding: 0 15px 15px 15px; font-size: 13px; color: #444; line-height: 1.4; }
+.mini-alert.open .mini-alert-body { display: block; animation: fadeIn 0.3s ease; }
+.mini-alert.open .ma-chevron { transform: rotate(180deg); }
+.ma-chevron { transition: transform 0.2s; font-size: 10px; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Эффект встряски для поиска */
+@keyframes shake-focus {
+    0%, 100% { transform: translateX(0); border-color: #e5e5e5; }
+    20%, 60% { transform: translateX(-4px); border-color: var(--p); }
+    40%, 80% { transform: translateX(4px); border-color: var(--p); box-shadow: 0 0 8px rgba(0,86,145, 0.2); }
+}
+.attention-please { animation: shake-focus 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
+/* =========================================
+   BLOCK 9: АДАПТИВНОСТЬ (MOBILE)
+   ========================================= */
+@media (max-width: 767px) {
+    #miniReceipt { display: none !important; }
+}
+
+@media (max-width: 480px) {
+    .card-bottom { flex-direction: column !important; align-items: flex-start !important; margin-top: 0px !important; }
+    .c-meta-box { width: 100% !important; margin-bottom: 8px !important; border-bottom: 1px solid #f7f7f7; padding-bottom: 6px; }
+    .c-ctrl { width: 100% !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; }
+    .u-price { font-size: 14px !important; font-weight: 600 !important; margin-right: auto !important; }
+    .qty-capsule-wrap { flex: 0 0 auto !important; margin-right: 12px !important; }
+    .sum-box { text-align: right !important; flex-shrink: 0 !important; min-width: auto !important; }
+    .s-eur { font-size: 15px !important; font-weight: 700 !important; }
+    .s-rub { font-size: 11px !important; color: #999 !important; }
+}
+
+#miniCart.pulse {
+    animation: truckLoad 0.4s ease-out;
+}
+
+/* Анимация "смотри сюда" (привлечение внимания к поиску) */
+@keyframes shake-attention {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+
+.attention-please {
+    animation: shake-attention 0.5s ease-in-out !important;
+    /* Легкая серая подсветка фона для большего акцента */
+    background-color: #f9f9f9 !important; 
+    border-radius: 12px;
+    transition: background-color 0.3s;
+}
+
+/* футер */
+.site-footer {
+    background: #f9f9f9 !important;
+    /* 20px сверху, 20px по бокам, 80px снизу (запас под кнопку грузовика) */
+    padding: 20px 20px 80px 20px !important; 
+    border-top: 1px solid #eee !important;
+    margin-top: 40px !important;
+    box-sizing: border-box !important;
+}
+
+.disclaimer-text {
+    font-size: 11px;
+    line-height: 1.6;
+    color: #888;
+    text-align: justify;
+    max-width: 800px;
+    margin: 0 auto 20px auto;
+}
+
+.footer-copy {
+    font-size: 10px;
+    color: #bbb;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}   
+
+.nano-banner-img {
+    display: block;
+    width: 100%;    /* <-- ЭТО КЛЮЧЕВОЕ СВОЙСТВО: ширина всегда 100% */
+    height: auto;   /* <-- Высота подстраивается автоматически, сохраняя пропорции */
+    max-height: 85px; /* Ограничиваем высоту для нано-формата */
+    object-fit: cover; /* Заполняем блок, не искажая картинку */
+}
+
+/* ==========================================
+   УБИРАЕМ ДЫРЫ: ПОИСК -> БАННЕР -> ЗАМЕТКИ
+   ========================================== */
+
+
+
+
+/* 2. Прижимаем баннер вплотную к шапке и к заметкам */
+.nano-banner-wrap {
+    margin-top: 4px !important; /* Зазор сверху до поиска */
+    margin-bottom: 10px !important; /* Зазор снизу до заметок */
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+/* 3. Прижимаем блок Заметок вплотную к баннеру */
+.intro-section {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+.notepad-wrap {
+    margin-top: 0 !important; /* Срезаем дыру над рамкой "Заметки сервиса" */
+}
+/* =========================================
+   ЧИСТЫЙ БЛОК ПОИСКА
+   ========================================= */
+.search-container {
+    flex: 1;
+    background-color: #f0f2f5;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    height: 48px;
+}
+
+.search-input {
+    flex: 1; 
+    background-color: #f0f2f5 !important;
+    border: 2px solid transparent !important; 
+    border-radius: 12px !important; 
+    font-size: 16px !important; 
+    font-weight: 600 !important;
+    padding: 0 45px 0 15px !important; 
+    height: 100% !important; 
+    margin: 0 !important;
+    box-shadow: none !important;
+    transition: all 0.25s ease !important; 
+    color: #333 !important;
+    outline: none !important;
+    -webkit-appearance: none;
+    width: 100%;
+}
+
+.search-input:focus {
+    background-color: #ffffff !important; 
+    border-color: var(--p) !important; 
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08) !important; 
+    transform: translateY(-1px) !important; 
+}
+
+/* Метка DHL */
+.dhl-badge {
+    position: absolute;
+    right: 50px; /* Слева от крестика */
+    top: 50%;
+    transform: translateY(-50%);
+    background: #005691;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 3px 6px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* Состояние "Магия включена" */
+.search-container.is-dhl .dhl-badge { opacity: 1; }
+.search-container.is-dhl .search-input { color: #005691 !important; font-family: monospace !important; letter-spacing: 2px; }
+
+/* Маска-подсказка (опционально, если хочешь видеть хвост DE) */
+.dhl-ghost-mask {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #b0bec5;
+    font-family: monospace;
+    letter-spacing: 2px;
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+}
+.search-container.is-dhl .dhl-ghost-mask { display: block; }
+
+/* Контейнер для выравнивания слоев */
+.search-container { position: relative; display: flex; align-items: center; }
+
+/* Слой-подсказка (лежит под инпутом) */
+.search-hint-layer {
+    position: absolute;
+    left: 15px; /* Совпадает с padding инпута */
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: monospace !important; /* Моноширинный для точности */
+    font-size: 16px;
+    letter-spacing: 2px; /* Расстояние между буквами */
+    color: #ccc;
+    pointer-events: none;
+    z-index: 1;
+    display: none;
+    white-space: pre;
+}
+
+/* Настраиваем сам инпут для точности наслоения */
+.search-container.is-dhl .search-input {
+    font-family: monospace !important;
+    letter-spacing: 2px !important;
+    background: transparent !important; /* Чтобы видеть слой под ним */
+    position: relative;
+    z-index: 2;
+}
+
+.search-container.is-dhl .search-hint-layer { display: block; }
+
+/* Умный бейдж DHL в строке поиска */
+.dhl-badge {
+    position: absolute;
+    right: 45px; /* Отодвигаем левее крестика очистки */
+    top: 50%;
+    transform: translateY(-50%);
+    background: #e3f2fd;
+    color: var(--p); /* Синий по умолчанию */
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    z-index: 10;
+    transition: all 0.2s ease;
+    display: none; /* Скрыт пока не начали вводить трек */
+}
+
+/* Показываем бейдж, когда включается магия */
+.search-container.is-dhl .dhl-badge {
+    display: block;
+}
+
+/* Режим ОШИБКИ (Красный + Тряска) */
+.dhl-badge.error {
+    background: #ffebee !important;
+    color: #d32f2f !important;
+    animation: shake-attention 0.4s ease-in-out;
+}
+
+/* Режим УСПЕХА (Зеленый) */
+.dhl-badge.success {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+}
+
+/* СТИЛИ ДЛЯ ГАЛЕРЕИ ФОТО */
+.photo-overlay {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85); z-index: 9999999;
+    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+    opacity: 0; transition: opacity 0.2s ease;
+    cursor: zoom-out; /* Логично: отдалить/вернуться к списку */ /* Надежный крестик/отмена на ПК */
+}
+.photo-overlay.show { display: flex; opacity: 1; }
+
+.photo-close {
+    position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px;
+    color: #fff; font-size: 28px; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.2); border-radius: 50%; cursor: pointer; z-index: 10;
+}
+
+/* 1. Умный контейнер (Переводим на Flexbox для идеального скролла) */
+.photo-pan-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Скролл во все стороны */
+    -webkit-overflow-scrolling: touch; /* Плавный скролл на мобильных */
+}
+
+/* 2. Базовое фото (Центрировано, пропорции защищены) */
+/* =========================================
+   ГАЛЕРЕЯ: ЛОГИКА ОТОБРАЖЕНИЯ ФОТО
+========================================= */
+
+/* 1. БАЗОВОЕ ФОТО (Для всех устройств) */
+#photoZoomed {
+    margin: auto;            /* Flex-магия: идеально центрирует фото */
+    max-width: 100%;
+    max-height: 90vh;        /* Ограничиваем высоту */
+    width: auto !important;  /* ГАРАНТИЯ ПРОПОРЦИЙ */
+    height: auto !important; /* ГАРАНТИЯ ПРОПОРЦИЙ */
+    object-fit: contain;     /* Запрет на сплющивание */
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transition: width 0.2s ease, max-width 0.2s ease;
+    cursor: zoom-in;         /* По умолчанию лупа (для мобильных) */
+}
+
+/* 2. СОСТОЯНИЕ УВЕЛИЧЕНИЯ (Для телефонов) */
+#photoZoomed.zoomed-in {
+    width: 200vw !important; /* Делаем ширину в 2 раза больше экрана */
+    max-width: 1200px;       /* Защита от гигантских размеров */
+    max-height: none;        /* СНИМАЕМ БЛОК ВЫСОТЫ */
+    margin: 20px;            /* Отступы для скролла в углы */
+    cursor: zoom-out;        /* Лупа с минусом */
+}
+
+/* =========================================
+   3. ИСКЛЮЧЕНИЯ ДЛЯ НОУТБУКОВ (Шире 768px)
+========================================= */
+@media (min-width: 768px) {
+    /* Меняем курсор на лупу с МИНУСОМ: клик отдаляет/закрывает фото */
+    #photoZoomed {
+        cursor: zoom-out !important; 
+    }
+    
+    /* Жестко блокируем попытки зума на компьютере */
+    #photoZoomed.zoomed-in {
+        width: auto !important;
+        max-width: 100% !important;
+        max-height: 90vh !important;
+        margin: auto !important;
+        cursor: zoom-out !important;
+    }
+}
+
+/* Отключаем выделение текста для UI элементов */
+.top-menu-bar, .s-chip, .btn-add, .q-btn, .s-close-btn, .mini-cart-fab, .modal-head {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+/* ОБЩИЕ СТИЛИ ДЛЯ ВСЕХ КНОПОК ДЛЯ СВЯЗИ */
+.contact-method-btn, .s-close-btn, #dialSubmit, #requestManualSearchBtn {
+    background-color: #fff; /* Белый фон */
+    border-radius: 8px; /* Чуть больше скругления для мягкости */
+    font-size: 14px; /* Немного уменьшим шрифт для аккуратности */
+    font-weight: 600; /* Полужирный, но не слишком тяжелый */
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease; /* Плавная анимация для всех эффектов */
+    box-shadow: none; /* Убираем тень, если она была */
+}
+
+/* КНОПКА WHATSAPP */
+.whatsapp-btn {
+    color: #25D366; /* Зеленый текст */
+    border: 1px solid #25D366; /* Зеленая рамка */
+}
+
+/* Эффект при наведении/нажатии для WhatsApp (легкая заливка) */
+.whatsapp-btn:hover, .whatsapp-btn:active {
+    background-color: rgba(37, 211, 102, 0.05); /* Очень светлый зеленый фон (5% непрозрачности) */
+}
+
+/* КНОПКА TELEGRAM */
+.telegram-btn {
+    color: #0088cc; /* Синий текст */
+    border: 1px solid #0088cc; /* Синяя рамка */
+}
+
+/* Эффект при наведении/нажатии для Telegram */
+.telegram-btn:hover, .telegram-btn:active {
+    background-color: rgba(0, 136, 204, 0.05); /* Очень светлый синий фон (5% непрозрачности) */
+}
+
+/* КНОПКА E-MAIL */
+.email-btn {
+    color: #333; /* Темно-серый текст */
+    border: 1px solid #ccc; /* Светло-серая рамка */
+}
+
+/* Эффект при наведении/нажатии для E-mail */
+.email-btn:hover, .email-btn:active {
+    background-color: rgba(0, 0, 0, 0.03); /* Очень светлый серый фон (3% непрозрачности) */
+}
+
+/* КНОПКА "ОСТАВИТЬ НОМЕР ТЕЛЕФОНА" */
+.phone-btn {
+    color: #000; /* Черный текст */
+    border: 1px solid #ccc; /* Светло-серая рамка */
+    background-color: #f9f9f9; /* Оставим легкий серый фон, чтобы выделить */
+}
+
+.phone-btn:hover, .phone-btn:active {
+    background-color: #f0f0f0; /* Чуть более темный серый при наведении */
+}
+
+/* --- СТИЛИ ДЛЯ ДАЙЛЕРА (Цифровые кнопки) --- */
+
+.dial-grid .d-num {
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #ddd; /* Тонкая серая рамка */
+    border-radius: 50%; /* Круглые кнопки */
+    font-size: 20px;
+    font-weight: 400; /* Более тонкий шрифт */
+    width: 60px;
+    height: 60px;
+    transition: all 0.2s ease;
+    box-shadow: none;
+}
+
+/* Эффект при нажатии на цифру (легкая серая заливка) */
+.dial-grid .d-num:active {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Кнопки "МЕССЕНДЖЕР", "ЗВОНОК", "ОТПРАВИТЬ" */
+#dialBtnMsg, #dialBtnCall, #dialSubmit, #requestManualSearchBtn {
+    background-color: #fff;
+    color: #0056b3; /* Наш основной синий */
+    border: 1px solid #0056b3;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+}
+
+/* Специфические иконки (💬, 📞) */
+.dial-mode-btn i {
+    margin-right: 5px;
+}
+
+/* Эффект для активной кнопки режима */
+.dial-mode-btn.active {
+    background-color: #0056b3; /* Заливка только для активной */
+    color: #fff;
+    border: none;
+}
+
+/* Эффект при нажатии */
+#dialBtnMsg:active, #dialBtnCall:active, #dialSubmit:active, #requestManualSearchBtn:active {
+    background-color: rgba(0, 86, 179, 0.05); /* Легкая синяя заливка */
+}
+
+/* --- СТИЛИ ДЛЯ КНОПОК В КОРЗИНЕ И ПОИСКЕ --- */
+
+/* Кнопки WhatsApp и Telegram в корзине */
+.cart-checkout-btn-group .contact-method-btn {
+    flex: 1; /* Кнопки делят место пополам */
+    margin: 0 5px; /* Небольшой отступ между ними */
+}
+
+/* Кнопка "ЗАПРОСИТЬ РАСШИРЕННЫЙ ПОИСК" */
+#requestManualSearchBtn {
+    border-width: 2px; /* Чуть толще рамку, чтобы выделить */
+}
+
+/* КНОПКА "ПОНЯТНО" (в окне "Наш опыт") */
+.s-close-btn {
+    border: 1px solid #ccc;
+    color: #333;
+}
+/* Эффект "живой" кнопки при нажатии */
+button:active {
+    transform: scale(0.96); /* Кнопка визуально чуть вдавливается */
+    background-color: rgba(0, 0, 0, 0.05) !important; /* Слегка темнеет */
+    transition: transform 0.1s ease;
+}
+/* Стиль для квадратика галочки */
+    .dial-checkbox {
+        width: 22px; height: 22px; border-radius: 6px; 
+        border: 1.5px solid #ddd; display: flex; 
+        align-items: center; justify-content: center; 
+        font-size: 14px; font-weight: bold; transition: 0.2s;
+    }
+    /* Тонкие и элегантные грани для карточек и окон */
+.card {
+    border: 1px solid #f0f0f0 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+}
+
+.info-box, .contact-box, .notepad-item {
+    border: 1px solid #ebebeb !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04) !important;
+}
+
+/* ========================================== */
+/* СТИЛИ ДЛЯ PDF СЧЕТА (ИНВОЙСА)              */
+/* ========================================== */
+#pdfInvoiceWrap {
+    display: none; 
+    width: 800px; 
+    /* min-height: 1130px; УДАЛИЛИ ЭТУ СТРОКУ */
+    padding: 40px 50px;
+    background: #fff;
+    color: #111;
+    font-family: 'Roboto Condensed', sans-serif;
+    box-sizing: border-box;
+}
+.pdf-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2e7d32; padding-bottom: 20px; margin-bottom: 30px; }
+.pdf-logo { font-size: 32px; font-weight: 900; letter-spacing: -1px; }
+.pdf-logo span.rx { color: #d32f2f; }
+.pdf-logo span.de { color: #111; }
+.pdf-slogan { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+.pdf-title-block { text-align: right; }
+.pdf-title { font-size: 28px; font-weight: 900; color: #111; text-transform: uppercase; margin-bottom: 5px; }
+.pdf-date { font-size: 14px; color: #555; }
+
+.pdf-client-info { background: #f9f9f9; padding: 15px 20px; border-left: 4px solid #2e7d32; margin-bottom: 30px; font-size: 14px; line-height: 1.5; }
+.pdf-client-info strong { display: block; margin-bottom: 5px; font-size: 12px; color: #888; text-transform: uppercase; }
+
+.pdf-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+.pdf-table th { text-align: left; padding: 10px 5px; border-bottom: 2px solid #eee; font-size: 12px; color: #888; text-transform: uppercase; }
+.pdf-table td { padding: 12px 5px; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: top; }
+.pdf-table td.qty, .pdf-table th.qty { text-align: center; }
+.pdf-table td.sum, .pdf-table th.sum { text-align: right; font-weight: 700; }
+
+.pdf-totals { width: 300px; margin-left: auto; margin-bottom: 40px; }
+.pdf-totals-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; color: #555; }
+.pdf-totals-row.grand { border-top: 2px solid #111; margin-top: 5px; padding-top: 10px; font-size: 24px; font-weight: 900; color: #111; }
+
+.pdf-payment-box { border: 2px dashed #ccc; border-radius: 12px; padding: 25px; background: #fafafa; text-align: center; }
+.pdf-pay-title { font-size: 18px; font-weight: 900; margin-bottom: 15px; color: #111; }
+.pdf-pay-link { display: inline-block; background: #2e7d32; color: #fff; text-decoration: none; padding: 12px 30px; font-size: 16px; font-weight: 700; border-radius: 8px; margin-bottom: 20px; }
+.pdf-cards { display: flex; flex-direction: column; gap: 8px; font-size: 15px; color: #333; }
+.pdf-card-row { display: flex; justify-content: center; align-items: center; gap: 10px; }
+.pdf-card-num { font-size: 18px; font-weight: 900; letter-spacing: 1.5px; } 
+
+.pdf-footer { margin-top: 50px; text-align: center; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
+
+/* Столбик нумерации */
+.pdf-table th.num, .pdf-table td.num { text-align: center; width: 30px; color: #999; font-size: 12px; }
+
+/* 🟢 ЗАПРЕТ РАЗРЕЗАНИЯ БЛОКОВ ПОПОЛАМ ПРИ ПЕРЕНОСЕ НА 2 СТРАНИЦУ */
+.pdf-table tr { page-break-inside: avoid; }
+.pdf-totals { page-break-inside: avoid; }
+.pdf-payment-box { page-break-inside: avoid; }
+
+.pdf-card-num {
+    font-family: monospace;
+    background: #f0f0f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 10px;
+    border-bottom: 1px dashed #999; /* Визуально показывает, что можно кликнуть */
+}
+
+/* ========================================== */
+/* 🔍 ПАНЕЛЬ СРАВНЕНИЯ ТЕКСТОВ (VS DIFF)      */
+/* ========================================== */
+.vs-diff-container { font-family: sans-serif; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
+.vs-controls { margin-bottom: 15px; display: flex; gap: 10px; }
+.vs-btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+.vs-btn-primary { background: #007bff; color: white; }
+.vs-btn-danger { background: #dc3545; color: white; }
+.vs-row { display: flex; gap: 15px; margin-bottom: 15px; }
+.vs-col { flex: 1; display: flex; flex-direction: column; }
+.vs-col label { font-size: 12px; font-weight: bold; color: #555; margin-bottom: 5px; }
+.vs-col textarea { height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; resize: vertical; font-family: monospace; }
+.vs-highlight-box { height: 300px; padding: 10px; border: 1px solid #aaa; border-radius: 4px; background: #fff; overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 13px; line-height: 1.5; }
+
+/* Цвета подсветки */
+.diff-green { background-color: #d4edda; color: #155724; border-radius: 2px; padding: 0 2px; }
+.diff-red { background-color: #f8d7da; color: #721c24; border-radius: 2px; padding: 0 2px; text-decoration: underline; font-weight: bold; }
+
+/* 🟢 РАЗВОРОТ ПАНЕЛИ СВЕРКИ НА ВЕСЬ ЭКРАН */
+.fullscreen-mode {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999999 !important;
+    background: #ffffff !important;
+    padding: 40px 20px !important;
+    font-size: 16px !important; /* Крупный, читаемый шрифт */
+    box-sizing: border-box !important;
+    overflow-y: auto !important;
+    border-radius: 0 !important;
+    border: none !important;
+    cursor: zoom-out !important; /* Курсор закрытия для ПК */
+}
+/* --- СОВРЕМЕННАЯ СЕТКА КОНТАКТОВ 2x3 --- */
+.modern-contact-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+/* Базовый стиль кнопки (БЕЗ АНИМАЦИИ СКОЛЬЖЕНИЯ) */
+.mc-btn {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 85px; 
+    border-radius: 16px;
+    border: 2px solid transparent; 
+    background: #fff;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    /* Кнопки просто статично появляются вместе с окном */
+    opacity: 1; 
+    transform: none;
+}
+
+.mc-btn:active { 
+    transform: scale(0.94); 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02); 
+    transition: transform 0.1s ease;
+}
+
+.mc-icon { 
+    margin-bottom: 8px; 
+    line-height: 1; 
+    display: flex; /* Чтобы SVG стояло ровно */
+    align-items: center;
+    justify-content: center;
+    height: 28px; /* Фиксируем высоту для ровности */
+}
+
+.mc-txt { 
+    font-size: 12px; 
+    font-weight: 800; 
+    letter-spacing: -0.2px; 
+}
+
+/* ЦВЕТОВЫЕ СХЕМЫ С ЭФФЕКТОМ "СТЕКЛА" (Soft UI) */
+.mc-wa { color: #25D366; border-color: rgba(37, 211, 102, 0.2); background: rgba(37, 211, 102, 0.05); }
+.mc-tg { color: #0088cc; border-color: rgba(0, 136, 204, 0.2); background: rgba(0, 136, 204, 0.05); }
+.mc-max { color: var(--p); border-color: rgba(0, 86, 145, 0.2); background: rgba(0, 86, 145, 0.05); } /* Теперь рамка прозрачная, как у всех */
+.mc-sms { color: #ff9800; border-color: rgba(255, 152, 0, 0.2); background: rgba(255, 152, 0, 0.05); }
+.mc-email { color: #555; border-color: rgba(0, 0, 0, 0.1); background: #fdfdfd; }
+.mc-phone { color: #333; border-color: rgba(0, 0, 0, 0.15); background: #f4f6f8; }
+
+/* Красный бейджик "БЫСТРЕЕ" */
+.mc-badge {
+    position: absolute;
+    top: 0; right: 0;
+    background: #d32f2f;
+    color: #fff;
+    font-size: 9px;
+    padding: 3px 6px;
+    border-bottom-left-radius: 8px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+/* Анимация плавного появления снизу */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Добавляем параметры анимации к базовому классу кнопок */
+.mc-btn {
+    /* Твои старые стили остаются, добавляем только это: */
+    opacity: 0; /* Изначально кнопки скрыты */
+    animation: slideInUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Каскадная задержка (staggered effect) для 6 кнопок */
+.modern-contact-grid .mc-btn:nth-child(1) { animation-delay: 0.05s; }
+.modern-contact-grid .mc-btn:nth-child(2) { animation-delay: 0.10s; }
+.modern-contact-grid .mc-btn:nth-child(3) { animation-delay: 0.15s; }
+.modern-contact-grid .mc-btn:nth-child(4) { animation-delay: 0.20s; }
+.modern-contact-grid .mc-btn:nth-child(5) { animation-delay: 0.25s; }
+.modern-contact-grid .mc-btn:nth-child(6) { animation-delay: 0.30s; }
+
+/* Отключаем выделение текста и системное меню при зажатии карточек */
+#cartItems .card {
+    -webkit-user-select: none;         /* iOS Safari */
+    -moz-user-select: none;            /* Firefox */
+    -ms-user-select: none;             /* IE/Edge */
+    user-select: none;                 /* Chrome, Android, ПК */
+    -webkit-touch-callout: none;       /* Запрещает меню «Копировать/Поделиться» на iOS */
+    -webkit-tap-highlight-color: transparent; /* Убирает серое мигание при тапе */
+}
+/* Карточка в момент перетаскивания (парит под пальцем) */
+.sortable-drag {
+    opacity: 0.95;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18) !important;
+    transform: scale(1.02);
+    border-color: #007bff !important;
+    z-index: 99999 !important;
+}
+
+/* Пустая рамка-фантом на месте, куда встанет карточка */
+.sortable-ghost {
+    opacity: 0.35;
+    background: #f0f7ff !important;
+    border: 2px dashed #007bff !important;
+}
+.c-meta {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.25;
+}
+
+.c-meta span {
+    font-weight: 600;
+    color: #666;
+}
