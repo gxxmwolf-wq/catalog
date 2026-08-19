@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=26">
+    <link rel="stylesheet" href="style.css?v=27">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -175,23 +175,71 @@
             <button onclick="closeInfo()" style="width: 100%; margin-top: 15px; padding: 14px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: 0.2s; flex-shrink: 0;">ПОНЯТНО</button></div>
     </div>
 
-    <div id="contactOverlay" class="info-overlay" onclick="closeContact()">
-        <div class="info-box contact-box" onclick="event.stopPropagation()" style="max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; position: relative; padding: 20px 15px;">
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <div id="contactTitle" class="info-title" style="margin: 0; padding: 0; border: none; font-size: 18px; text-align: left;">ВАШ ВОПРОС</div>
-                <div onclick="closeContact()" style="font-size: 22px; color: #999; cursor: pointer; padding: 0 5px; line-height: 1;">✕</div>
+    <div id="contactOverlay" class="info-overlay rxde-contact-overlay" onclick="closeContact()">
+        <div class="info-box contact-box rxde-contact-box" onclick="event.stopPropagation()">
+            <div class="rxde-contact-head">
+                <div id="contactTitle" class="rxde-contact-title">СВЯЗАТЬСЯ С RXDE</div>
+                <button type="button" class="rxde-contact-close" onclick="closeContact()" aria-label="Закрыть">✕</button>
             </div>
-            
-            <textarea id="manualMsgInput" class="universal-textarea" style="display:none; width: 100%; height: 100px; border: 1px solid #ccc; border-radius: 8px; padding: 12px; font-family: inherit; font-size: 14px; margin-bottom: 20px; resize: none; outline: none;" placeholder="Напишите ваш вопрос..."></textarea>
-            
-            <div id="contactButtonsGrid" style="display: flex; flex-direction: column; gap: 8px;">
+
+            <div id="contactPhoneStep">
+                <div id="contactContext" class="rxde-contact-context"></div>
+
+                <label class="rxde-phone-label" for="clientPhone">Номер телефона</label>
+                <input
+                    id="clientPhone"
+                    class="rxde-phone-input"
+                    type="tel"
+                    inputmode="tel"
+                    autocomplete="tel"
+                    maxlength="32"
+                    placeholder="+7 999 123-45-67"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();showPhoneConfirmation();}"
+                >
+                <div class="rxde-phone-hint">Укажите полный номер с кодом страны.</div>
+                <div id="phoneError" class="rxde-phone-error" role="alert"></div>
+
+                <div class="rxde-honeypot" aria-hidden="true">
+                    <label for="contactWebsite">Website</label>
+                    <input type="text" id="contactWebsite" name="website" tabindex="-1" autocomplete="off">
                 </div>
 
+                <button type="button" class="rxde-contact-primary" onclick="showPhoneConfirmation()">
+                    Продолжить
+                </button>
+
+                <div class="rxde-contact-consent">
+                    Отправляя запрос, вы соглашаетесь на обработку указанного номера телефона
+                    для ответа на обращение.
+                    <button type="button" onclick="showInfo('privacy')">Политика</button>
+                </div>
+            </div>
+
+            <div id="contactConfirmStep" class="rxde-contact-step-hidden">
+                <div class="rxde-confirm-title">Проверьте номер телефона</div>
+                <div id="confirmedPhone" class="rxde-confirm-phone"></div>
+                <div class="rxde-confirm-note">
+                    Мы свяжемся с вами в рабочее время:<br>
+                    <strong>с 10:00 до 19:00 по Москве.</strong>
+                </div>
+
+                <div class="rxde-confirm-actions">
+                    <button type="button" class="rxde-contact-secondary" onclick="backToPhoneInput()">Изменить</button>
+                    <button id="submitContactBtn" type="button" class="rxde-contact-primary" onclick="submitContactRequest()">Отправить</button>
+                </div>
+            </div>
+
+            <div id="contactSuccessStep" class="rxde-contact-step-hidden rxde-contact-success">
+                <div class="rxde-success-check">✓</div>
+                <div class="rxde-success-title">Запрос отправлен</div>
+                <div class="rxde-success-caption">Номер заявки:</div>
+                <div id="contactRequestId" class="rxde-request-id">RX</div>
+                <div class="rxde-success-note">Мы свяжемся с вами с 10:00 до 19:00 по Москве.</div>
+                <button type="button" class="rxde-contact-secondary rxde-success-close" onclick="closeContact()">Понятно</button>
+            </div>
         </div>
     </div>
 
-    
     <div id="adminOverlay" class="info-overlay" onclick="closeAdminModal()" style="z-index: 9999999 !important;">
         <div class="info-box contact-box" onclick="event.stopPropagation()" style="background: #fffdf0; border: 2px solid #ffe082;">
             
@@ -3058,109 +3106,197 @@ function handleOrderCopyAndOpen(btnElement) {
     БЛОК СВЯЗИ: ТРИ КНОПКИ И УМНЫЙ ВВОД ТЕЛЕФОНА
     ========================================= */
 
-    function openContact(type, index = null) {
+    let contactFormOpenedAt = 0;
+    let normalizedPhoneForSubmit = '';
+    let pendingContactContext = '';
+    let pendingContactSource = 'rxde.online/question';
+
+    function setPhoneError(message = '') {
+        const box = document.getElementById('phoneError');
+        if (!box) return;
+        box.textContent = message;
+        box.style.display = message ? 'block' : 'none';
+    }
+
+    function normalizeContactPhone(value) {
+        const phone = String(value || '').trim();
+        if (!phone) throw new Error('Укажите номер телефона.');
+
+        if (!/^[+0-9\s()\-–—.]+$/.test(phone)) {
+            throw new Error('Используйте только цифры, +, пробелы, скобки и дефисы.');
+        }
+
+        let digits = phone.replace(/\D/g, '');
+
+        if (phone.startsWith('00')) {
+            digits = digits.slice(2);
+        } else if (!phone.startsWith('+')) {
+            throw new Error('Начните номер со знака + и укажите код страны.');
+        }
+
+        if (digits.length < 8 || digits.length > 15) {
+            throw new Error('Проверьте номер: должно быть от 8 до 15 цифр.');
+        }
+
+        return '+' + digits;
+    }
+
+    function buildContactContext(type, index = null) {
+        if (type === 'order') {
+            const data = getOrderTextAndLink();
+            if (!data) return '';
+            return `Лист заказа: ${data.link}`;
+        }
+
+        if (type === 'search') {
+            const q = document.getElementById('search')?.value.trim();
+            return q ? `Поиск препарата: ${q}` : 'Запрос с каталога RXDE.online';
+        }
+
+        if (type === 'news' && index !== null && newsDB[index]) {
+            return `Вопрос по заметке от ${newsDB[index].Date}`;
+        }
+
+        if (filters.prescriptionMode) {
+            const q = document.getElementById('search')?.value.trim();
+            return q ? `Индивидуальный запрос: ${q}` : 'Индивидуальный запрос по препарату';
+        }
+
+        if (filters.publicCategory) {
+            return `Запрос из раздела: ${filters.publicCategory}`;
+        }
+
+        return 'Общий запрос с RXDE.online';
+    }
+
+    function openContact(type = 'question', index = null) {
         if (navigator.vibrate) navigator.vibrate(15);
         closeModal();
 
         const overlay = document.getElementById('contactOverlay');
         const title = document.getElementById('contactTitle');
-        const manualInput = document.getElementById('manualMsgInput');
-        const buttons = document.getElementById('contactButtonsGrid');
-        if (!overlay || !buttons || !manualInput) return;
+        const contextBox = document.getElementById('contactContext');
+        const phoneInput = document.getElementById('clientPhone');
+
+        if (!overlay || !phoneInput) return;
 
         isQuestionMode = (type !== 'order');
-        title.innerText = isQuestionMode ? 'СВЯЗАТЬСЯ С RXDE' : 'ПЕРЕДАТЬ ЛИСТ ЗАКАЗА';
-        manualInput.style.display = 'block';
+        pendingContactSource = isQuestionMode ? 'rxde.online/question' : 'rxde.online/order';
+        pendingContactContext = buildContactContext(type, index);
 
-        if (type === 'order') {
-            const data = getOrderTextAndLink();
-            if (data) currentPreparedText = `Здравствуйте!\nХочу оформить заказ.\n\nСсылка на мой лист заказа:\n${data.link}\n\nПрошу проверить и подтвердить детали.`;
-            manualInput.value = currentPreparedText;
-        } else if (type === 'search') {
-            const q = document.getElementById('search').value.trim();
-            manualInput.value = `Здравствуйте! Помогите найти: "${q.toUpperCase()}"`;
-        } else if (type === 'news' && index !== null && newsDB[index]) {
-            manualInput.value = `Вопрос по заметке от ${newsDB[index].Date}: `;
-        } else {
-            manualInput.value = 'Здравствуйте! У меня вопрос:\n';
-        }
-
-        buttons.innerHTML = `
-            <form class="anonymous-contact-form" onsubmit="submitAnonymousRequest(event)">
-                <div class="anonymous-contact-intro">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4.5 6v5.2c0 4.7 3.1 8.1 7.5 9.8 4.4-1.7 7.5-5.1 7.5-9.8V6z"></path><path d="m8.5 12 2.2 2.2 4.8-5"></path></svg>
-                    <span><strong>Единый канал связи</strong><small>Сообщение поступит специалисту RXDE. Устанавливать отдельный мессенджер не требуется.</small></span>
-                </div>
-                <label class="anonymous-contact-label" for="anonymousContact">Как с вами связаться</label>
-                <input id="anonymousContact" class="anonymous-contact-input" type="text" maxlength="120" autocomplete="email" placeholder="Телефон, e-mail или имя в доступном мессенджере" required>
-                <label class="anonymous-consent">
-                    <input id="anonymousConsent" type="checkbox" required>
-                    <span>Согласен на обработку данных для ответа на запрос. <button type="button" onclick="showInfo('privacy')">Политика</button></span>
-                </label>
-                <button id="anonymousSubmit" class="anonymous-submit" type="submit"><span>${isQuestionMode ? 'Отправить запрос' : 'Передать заказ менеджеру'}</span><i>→</i></button>
-                <div id="anonymousStatus" class="anonymous-contact-status" role="status" aria-live="polite"></div>
-            </form>`;
-
-        overlay.style.display = 'flex';
-        setTimeout(() => {
-            const target = isQuestionMode ? manualInput : document.getElementById('anonymousContact');
-            if (target) target.focus();
-        }, 120);
-    }
-
-    async function submitAnonymousRequest(event) {
-        if (event) event.preventDefault();
-        const contact = document.getElementById('anonymousContact');
-        const consent = document.getElementById('anonymousConsent');
-        const manualInput = document.getElementById('manualMsgInput');
-        const button = document.getElementById('anonymousSubmit');
-        const status = document.getElementById('anonymousStatus');
-        const context = manualInput ? manualInput.value.trim() : '';
-
-        if (!contact || !contact.value.trim() || !consent || !consent.checked || !context) {
-            if (status) status.textContent = 'Заполните сообщение, контакт для ответа и подтвердите согласие.';
+        if (type === 'order' && !pendingContactContext) {
+            alert('Лист заказа пуст.');
             return;
         }
 
+        contactFormOpenedAt = Date.now();
+        normalizedPhoneForSubmit = '';
+
+        if (title) title.textContent = isQuestionMode ? 'СВЯЗАТЬСЯ С RXDE' : 'ПЕРЕДАТЬ ЛИСТ ЗАКАЗА';
+        if (contextBox) {
+            contextBox.textContent = isQuestionMode
+                ? 'Укажите номер телефона — специалист RXDE свяжется с вами.'
+                : 'Укажите номер телефона — специалист проверит ваш лист заказа и свяжется с вами.';
+        }
+
+        phoneInput.value = '';
+        const website = document.getElementById('contactWebsite');
+        if (website) website.value = '';
+
+        document.getElementById('contactPhoneStep')?.classList.remove('rxde-contact-step-hidden');
+        document.getElementById('contactConfirmStep')?.classList.add('rxde-contact-step-hidden');
+        document.getElementById('contactSuccessStep')?.classList.add('rxde-contact-step-hidden');
+
+        setPhoneError('');
+        overlay.style.display = 'flex';
+
+        setTimeout(() => phoneInput.focus(), 120);
+    }
+
+    function showPhoneConfirmation() {
+        const input = document.getElementById('clientPhone');
+        if (!input) return;
+
+        try {
+            normalizedPhoneForSubmit = normalizeContactPhone(input.value);
+            setPhoneError('');
+        } catch (error) {
+            setPhoneError(error.message || 'Проверьте номер телефона.');
+            input.focus();
+            return;
+        }
+
+        document.getElementById('confirmedPhone').textContent = normalizedPhoneForSubmit;
+        document.getElementById('contactPhoneStep').classList.add('rxde-contact-step-hidden');
+        document.getElementById('contactConfirmStep').classList.remove('rxde-contact-step-hidden');
+    }
+
+    function backToPhoneInput() {
+        document.getElementById('contactConfirmStep')?.classList.add('rxde-contact-step-hidden');
+        document.getElementById('contactPhoneStep')?.classList.remove('rxde-contact-step-hidden');
+        setTimeout(() => document.getElementById('clientPhone')?.focus(), 50);
+    }
+
+    async function submitContactRequest() {
+        if (Date.now() - contactFormOpenedAt < 2500) {
+            backToPhoneInput();
+            setPhoneError('Проверьте номер телефона и повторите отправку.');
+            return;
+        }
+
+        const button = document.getElementById('submitContactBtn');
+        if (!button || !normalizedPhoneForSubmit) return;
+
         button.disabled = true;
-        button.classList.add('is-loading');
-        if (status) status.textContent = 'Передаём сообщение…';
+        const originalText = button.textContent;
+        button.textContent = 'Отправка...';
 
         try {
             const response = await fetch(CONTACT_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    source: isQuestionMode ? 'rxde.online/question' : 'rxde.online/order',
-                    contact: contact.value.trim(),
-                    context,
-                    page_url: window.location.href
+                    source: pendingContactSource,
+                    contact: normalizedPhoneForSubmit,
+                    context: pendingContactContext,
+                    page_url: window.location.href,
+                    website: document.getElementById('contactWebsite')?.value || ''
                 })
             });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            if (status) {
-                status.classList.add('success');
-                status.textContent = isQuestionMode ? 'Запрос отправлен. Специалист ответит по указанному контакту.' : 'Лист заказа передан менеджеру для проверки.';
+
+            const responseText = await response.text();
+            let result = {};
+            try {
+                result = responseText ? JSON.parse(responseText) : {};
+            } catch (_) {
+                throw new Error('Сервер вернул некорректный ответ.');
             }
-            button.classList.remove('is-loading');
-            button.classList.add('is-sent');
-            button.querySelector('span').textContent = 'Отправлено';
+
+            if (!response.ok || result.ok !== true) {
+                throw new Error(result.detail || result.error || `Ошибка ${response.status}`);
+            }
+
+            document.getElementById('contactConfirmStep').classList.add('rxde-contact-step-hidden');
+            document.getElementById('contactRequestId').textContent = result.request_id || 'RX';
+            document.getElementById('contactSuccessStep').classList.remove('rxde-contact-step-hidden');
+
             if (navigator.vibrate) navigator.vibrate([20, 35, 20]);
         } catch (error) {
             console.error('Contact API error:', error);
+            backToPhoneInput();
+            setPhoneError('Не удалось передать запрос. Проверьте интернет и повторите отправку.');
+        } finally {
             button.disabled = false;
-            button.classList.remove('is-loading');
-            if (status) {
-                status.classList.remove('success');
-                status.textContent = 'Не удалось передать сообщение. Проверьте интернет и повторите отправку.';
-            }
+            button.textContent = originalText;
         }
     }
 
     function closeContact() {
         const overlay = document.getElementById('contactOverlay');
         if (overlay) overlay.style.display = 'none';
+        setPhoneError('');
     }
+
     /* =========================================
     BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
     ========================================= */

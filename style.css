@@ -4822,3 +4822,267 @@ button { letter-spacing: 0; }
     #modal .order-summary-rub { font-size: 26px; }
     #modal .send-order-button.final-order-action { width: 100%; min-height: 60px; }
 }
+
+
+/* =========================================
+   RXDE CONTACT v27 — телефон -> подтверждение -> заявка
+   ========================================= */
+.rxde-contact-overlay {
+    z-index: 2147483646 !important;
+    background: rgba(14, 23, 31, .62);
+    backdrop-filter: blur(5px);
+}
+
+.rxde-contact-box {
+    width: min(100% - 28px, 430px) !important;
+    max-width: 430px !important;
+    padding: 24px !important;
+    border: 1px solid rgba(17, 38, 54, .08);
+    border-radius: 22px !important;
+    background: #fff !important;
+    box-shadow: 0 26px 70px rgba(8, 24, 35, .24) !important;
+    overflow: visible !important;
+}
+
+.rxde-contact-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #edf1f4;
+}
+
+.rxde-contact-title {
+    color: #14202b;
+    font-size: 18px;
+    font-weight: 850;
+    letter-spacing: -.02em;
+}
+
+.rxde-contact-close {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #91a0ac;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.rxde-contact-context {
+    margin: 0 0 16px;
+    color: #66737f;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.rxde-phone-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #36434f;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rxde-phone-input {
+    width: 100%;
+    height: 50px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border: 1px solid #d6e0e7;
+    border-radius: 13px;
+    outline: none;
+    background: #fff;
+    color: #18232c;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 750;
+    letter-spacing: .01em;
+    transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.rxde-phone-input:focus {
+    border-color: #0b8b70;
+    box-shadow: 0 0 0 3px rgba(11, 139, 112, .11);
+}
+
+.rxde-phone-hint {
+    margin-top: 6px;
+    color: #909ca6;
+    font-size: 11px;
+}
+
+.rxde-phone-error {
+    display: none;
+    margin-top: 8px;
+    color: #c43d48;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.35;
+}
+
+.rxde-contact-primary,
+.rxde-contact-secondary {
+    width: 100%;
+    min-height: 48px;
+    box-sizing: border-box;
+    border-radius: 13px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 850;
+    cursor: pointer;
+    transition: transform .15s ease, opacity .15s ease, background .15s ease;
+}
+
+.rxde-contact-primary {
+    margin-top: 18px;
+    border: 0;
+    background: #087d68;
+    color: #fff;
+}
+
+.rxde-contact-primary:hover { background: #066d5b; }
+.rxde-contact-primary:active,
+.rxde-contact-secondary:active { transform: scale(.985); }
+.rxde-contact-primary:disabled { opacity: .55; cursor: wait; }
+
+.rxde-contact-secondary {
+    border: 0;
+    background: #f0f4f7;
+    color: #273642;
+}
+
+.rxde-contact-consent {
+    margin-top: 11px;
+    color: #8a969f;
+    font-size: 10px;
+    line-height: 1.4;
+    text-align: center;
+}
+
+.rxde-contact-consent button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #55798f;
+    font: inherit;
+    font-weight: 750;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.rxde-contact-step-hidden { display: none !important; }
+
+.rxde-confirm-title {
+    margin: 10px 0 9px;
+    color: #26323d;
+    font-size: 14px;
+    font-weight: 850;
+    text-align: center;
+}
+
+.rxde-confirm-phone {
+    padding: 16px;
+    border: 1px solid #dce5eb;
+    border-radius: 13px;
+    background: #f7f9fb;
+    color: #17232c;
+    font-size: 19px;
+    font-weight: 850;
+    text-align: center;
+    letter-spacing: .02em;
+}
+
+.rxde-confirm-note {
+    margin: 13px 0 20px;
+    color: #71808c;
+    font-size: 12px;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.rxde-confirm-note strong { color: #3c4a56; }
+
+.rxde-confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+
+.rxde-confirm-actions .rxde-contact-primary {
+    margin-top: 0;
+}
+
+.rxde-contact-success {
+    padding: 25px 0 4px;
+    text-align: center;
+}
+
+.rxde-success-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: #d9f8ea;
+    color: #059669;
+    font-size: 29px;
+    font-weight: 500;
+}
+
+.rxde-success-title {
+    color: #17232d;
+    font-size: 16px;
+    font-weight: 850;
+}
+
+.rxde-success-caption {
+    margin-top: 8px;
+    color: #7d8b97;
+    font-size: 11px;
+}
+
+.rxde-request-id {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 10px 13px;
+    border: 1px solid #dde5eb;
+    border-radius: 9px;
+    background: #f3f6f8;
+    color: #263743;
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.rxde-success-note {
+    margin: 16px 0 20px;
+    color: #74838f;
+    font-size: 12px;
+}
+
+.rxde-success-close { min-height: 46px; }
+
+.rxde-honeypot {
+    position: absolute !important;
+    left: -10000px !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+}
+
+@media (max-width: 520px) {
+    .rxde-contact-box {
+        width: calc(100% - 20px) !important;
+        padding: 20px 17px !important;
+        border-radius: 19px !important;
+    }
+
+    .rxde-contact-title { font-size: 17px; }
+}
