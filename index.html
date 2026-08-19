@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=27">
+    <link rel="stylesheet" href="style.css?v=29">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -52,7 +52,7 @@
                 </div>
 
                 <div class="header-utilities">
-                <div class="flip-calendar" onclick="refreshHeaderSnapshot()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();refreshHeaderSnapshot();}" role="button" tabindex="0" aria-label="Обновить дату и курс" title="Обновить дату и курс">
+                <div class="flip-calendar" onclick="handleCalendarClick()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();handleCalendarClick();}" role="button" tabindex="0" aria-label="Обновить дату и курс" title="Обновить дату и курс">
                     <div id="calendarMonth" class="flip-calendar-month">—</div>
                     <div id="calendarDay" class="flip-calendar-day">
                         <span class="flip-calendar-current">--</span>
@@ -757,7 +757,7 @@
 
         const url = new URL(window.location);
         url.searchParams.set(type, ''); 
-        window.history.replaceState({}, '', url);
+        window.history.replaceState({ rxdeView: true }, '', url);
 
         document.getElementById('infoTitle').innerText = data[type].t;
         document.getElementById('infoContent').innerHTML = data[type].c;
@@ -986,7 +986,7 @@
             if (val) url.searchParams.set('q', val);
             else url.searchParams.delete('q');
             url.searchParams.delete('letter');
-            window.history.replaceState({}, '', url);
+            window.history.replaceState({ rxdeView: true }, '', url);
         }
 
         // 4. ПРОВЕРКА НА ЗАВЕРШЕННЫЙ ТРЕК 
@@ -1038,7 +1038,7 @@
         url.searchParams.delete('q');
         if (filters.alphabet) url.searchParams.set('letter', filters.alphabet);
         else url.searchParams.delete('letter');
-        window.history.replaceState({}, '', url);
+        rxdeNavigate(url);
         render(true);
     }
 
@@ -1316,7 +1316,7 @@
             if (!myOrder) {
                 box.innerHTML = `
                     <div class="s-chip" style="background: #fffdf0; border: 1px solid #ffe082; color: #b08d00; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02);" 
-                        onclick="navigator.clipboard.writeText('${cleanTrack}').then(() => window.open('https://www.pochta.ru/tracking#${cleanTrack}', '_blank'))">
+                        onclick="copyTextSafe('${cleanTrack}').then(() => window.open('https://www.pochta.ru/tracking#${cleanTrack}', '_blank'))">
                         <div style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3; padding-right: 10px;">
                             <span style="font-weight: 800; font-size: 14px; color: #8e7200;">Трек номер идентифицирован</span>
                             <span style="font-size: 12px; color: #b08d00; margin-top: 2px;">Посылка создана не в нашей системе. По ссылке сможете узнать статус.</span>
@@ -1526,7 +1526,7 @@
         url.searchParams.delete('letter');
         if (filters.search) url.searchParams.set('q', filters.search);
         else url.searchParams.delete('q');
-        window.history.replaceState({}, '', url);
+        window.history.replaceState({ rxdeView: true }, '', url);
 
         render(true);
         renderSuggestions(filters.search);
@@ -1601,7 +1601,7 @@
         if (input) {
             input.value = ''; filters.search = ''; filters.alphabet = '';
             const url = new URL(window.location); url.searchParams.delete('q'); url.searchParams.delete('letter');
-            window.history.replaceState({}, '', url);
+            window.history.replaceState({ rxdeView: true }, '', url);
             if (document.getElementById('suggestRow')) document.getElementById('suggestRow').innerHTML = '';
             render(true); input.focus(); 
         }
@@ -1618,7 +1618,7 @@
         url.searchParams.delete('q');
         url.searchParams.delete('letter');
         url.searchParams.set('service', 'rx');
-        window.history.replaceState({}, '', url);
+        rxdeNavigate(url);
         const suggestions = document.getElementById('suggestRow');
         if (suggestions) suggestions.innerHTML = '';
         render(true);
@@ -1639,7 +1639,7 @@
         url.searchParams.delete('sub');
         url.searchParams.delete('service');
         url.searchParams.delete('letter');
-        window.history.replaceState({}, '', url);
+        rxdeNavigate(url);
         const suggestions = document.getElementById('suggestRow');
         if (suggestions) suggestions.innerHTML = '';
         render(true);
@@ -1687,6 +1687,15 @@
  // ==========================================
     // 🥷 БЫСТРЫЙ ВХОД В АДМИНКУ ПО КЛИКУ НА КУРСЫ
     // ==========================================
+    function handleCalendarClick() {
+        if (localStorage.getItem('rxde_super_admin')) {
+            if (navigator.vibrate) navigator.vibrate(15);
+            runAdminImport();
+            return;
+        }
+        refreshHeaderSnapshot();
+    }
+
     function openAdminSecretly() {
         // Если ты еще не вводил слово АДМИН в поиске — клик не сработает
         if (!localStorage.getItem('rxde_super_admin')) return;
@@ -1957,7 +1966,7 @@ function clearAdminPanel() {
         
         // Обработчик копирования
         document.getElementById('copyPznBtn').onclick = () => {
-            navigator.clipboard.writeText(missingText).then(() => {
+            copyTextSafe(missingText).then(() => {
                 const btn = document.getElementById('copyPznBtn');
                 btn.style.background = '#25D366';
                 btn.innerText = '✅ СКОПИРОВАНО';
@@ -2185,7 +2194,7 @@ function clearAdminPanel() {
             clearTimeout(secretClickTimer);
             secretClickTimer = null;
             
-            navigator.clipboard.writeText(data.link).then(() => {
+            copyTextSafe(data.link).then(() => {
                 if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
                 sumEl.style.color = '#007bff'; 
                 setTimeout(() => sumEl.style.color = '#000', 400);
@@ -2197,7 +2206,7 @@ function clearAdminPanel() {
                 
                 const fullCopy = data.text.includes(data.link) ? data.text : data.text + '\n' + data.link;
                 
-                navigator.clipboard.writeText(fullCopy).then(() => {
+                copyTextSafe(fullCopy).then(() => {
                     if (navigator.vibrate) navigator.vibrate(15);
                     sumEl.style.color = '#25D366'; 
                     setTimeout(() => sumEl.style.color = '#000', 400);
@@ -2276,7 +2285,57 @@ function clearAdminPanel() {
     BLOCK 7: ИНИЦИАЛИЗАЦИЯ И ЛОГИКА БОЛЬШОЙ КОРЗИНЫ
     ========================================= */
 
+    function rxdeNavigate(url, replace = false) {
+        const target = typeof url === 'string' ? url : url.toString();
+        const state = { rxdeView: true };
+        if (replace) window.history.replaceState(state, '', target);
+        else window.history.pushState(state, '', target);
+    }
+
+    function restoreViewFromCurrentUrl() {
+        const params = new URLSearchParams(window.location.search);
+        const q = params.get('q') || '';
+        const cat = params.get('cat') || '';
+        const sub = params.get('sub') || '';
+        const service = params.get('service') || '';
+        const letter = params.get('letter') || '';
+
+        filters.search = q;
+        filters.publicCategory = '';
+        filters.publicSubcategory = '';
+        filters.prescriptionMode = false;
+        filters.prescriptionVisible = 24;
+        filters.alphabet = '';
+
+        if (service === 'rx') {
+            filters.prescriptionMode = true;
+        } else if (cat && PUBLIC_CATEGORY_ORDER.includes(cat)) {
+            filters.publicCategory = cat;
+            filters.publicSubcategory = sub || '';
+        }
+
+        if (!q && (filters.publicCategory || filters.prescriptionMode) &&
+            letter && /^[A-Za-zА-Яа-яЁё#]$/.test(letter)) {
+            filters.alphabet = letter.toLocaleUpperCase('ru-RU');
+        }
+
+        const input = document.getElementById('search');
+        if (input) input.value = q;
+
+        const suggestions = document.getElementById('suggestRow');
+        if (suggestions) suggestions.innerHTML = '';
+
+        render(true);
+        if (q && typeof renderSuggestions === 'function') renderSuggestions(q);
+    }
+
     function tryRestoreSearchFromUrl() {
+        filters.search = '';
+        filters.publicCategory = '';
+        filters.publicSubcategory = '';
+        filters.prescriptionMode = false;
+        filters.prescriptionVisible = 24;
+        filters.alphabet = '';
         const params = new URLSearchParams(window.location.search);
         const q = params.get('q');
         const cat = params.get('cat');
@@ -2917,7 +2976,7 @@ function handleOrderCopyAndOpen(btnElement) {
             url.searchParams.delete('cat');
             url.searchParams.delete('sub');
         }
-        window.history.replaceState({}, '', url);
+        window.history.replaceState({ rxdeView: true }, '', url);
         render(true);
         renderSuggestions(substance);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2935,7 +2994,7 @@ function handleOrderCopyAndOpen(btnElement) {
         return `${d}${m}${y}-${h}${min}`;
     }
 
-    function openCart() { 
+    function openCart(fromHistory = false) { 
         // 1. Добавляем виброотклик (20 мс - плотный, но короткий щелчок)
         if (navigator.vibrate) {
             navigator.vibrate(20); 
@@ -2970,7 +3029,15 @@ function handleOrderCopyAndOpen(btnElement) {
             return; // ПРЕРЫВАЕМ ФУНКЦИЮ (Модалку не открываем)
         }
 
-        // 2. ЕСЛИ ЕСТЬ ТОВАРЫ — ОТКРЫВАЕМ МОДАЛКУ (Стандартная логика)
+        // 2. ЕСЛИ ЕСТЬ ТОВАРЫ — ОТКРЫВАЕМ МОДАЛКУ
+        if (!fromHistory && (!window.history.state || window.history.state.rxdeModal !== 'cart')) {
+            window.history.pushState(
+                { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'cart' },
+                '',
+                window.location.href
+            );
+        }
+
         const newID = generateOrderID(); 
         const numberEl = document.getElementById('modalOrderNumber');
         const dateEl = document.getElementById('modalOrderDate');
@@ -3064,22 +3131,26 @@ function handleOrderCopyAndOpen(btnElement) {
         return sortableLoadPromise;
     }
 
-    function closeModal() {
-        // Микро-отклик при закрытии крестиком или тапом мимо окна
-        if (navigator.vibrate) {
-            navigator.vibrate(10); 
-        }
-
+    function closeModal(fromHistory = false) {
         const modal = document.getElementById('modal');
         if (!modal) return;
 
+        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'cart') {
+            window.history.back();
+            return;
+        }
+
+        if (navigator.vibrate) navigator.vibrate(10);
+
         document.body.style.overflow = '';
         document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
         window.scrollTo(0, scrollPos);
 
         modal.classList.remove('open', 'active');
         modal.style.display = 'none';
-        updateBar(); 
+        updateBar();
     }
 
     function addMoreItems() {
@@ -3130,8 +3201,12 @@ function handleOrderCopyAndOpen(btnElement) {
 
         if (phone.startsWith('00')) {
             digits = digits.slice(2);
+        } else if (!phone.startsWith('+') && digits.length === 11 && digits.startsWith('8')) {
+            digits = '7' + digits.slice(1);
+        } else if (!phone.startsWith('+') && digits.length === 11 && digits.startsWith('7')) {
+            digits = digits;
         } else if (!phone.startsWith('+')) {
-            throw new Error('Начните номер со знака + и укажите код страны.');
+            throw new Error('Для международного номера укажите + и код страны.');
         }
 
         if (digits.length < 8 || digits.length > 15) {
@@ -3169,9 +3244,19 @@ function handleOrderCopyAndOpen(btnElement) {
         return 'Общий запрос с RXDE.online';
     }
 
-    function openContact(type = 'question', index = null) {
+    function openContact(type = 'question', index = null, fromHistory = false) {
+        const cartModal = document.getElementById('modal');
+        const cartWasOpen = !!(cartModal && cartModal.classList.contains('active'));
+        if (cartWasOpen) closeModal(true);
+
+        if (!fromHistory) {
+            window.history.pushState(
+                { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'contact', contactType: type, contactIndex: index },
+                '',
+                window.location.href
+            );
+        }
         if (navigator.vibrate) navigator.vibrate(15);
-        closeModal();
 
         const overlay = document.getElementById('contactOverlay');
         const title = document.getElementById('contactTitle');
@@ -3291,11 +3376,19 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
 
-    function closeContact() {
+    function closeContact(fromHistory = false) {
         const overlay = document.getElementById('contactOverlay');
-        if (overlay) overlay.style.display = 'none';
+        if (!overlay) return;
+
+        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'contact') {
+            window.history.back();
+            return;
+        }
+
+        overlay.style.display = 'none';
         setPhoneError('');
     }
+
 
     /* =========================================
     BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
@@ -3490,12 +3583,39 @@ function handleOrderCopyAndOpen(btnElement) {
         }, 400); 
     }
 
+    async function copyTextSafe(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            await copyTextSafe(text);
+            return true;
+        }
+
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', '');
+        area.style.position = 'fixed';
+        area.style.left = '-9999px';
+        area.style.top = '0';
+        document.body.appendChild(area);
+        area.focus();
+        area.select();
+
+        let ok = false;
+        try {
+            ok = document.execCommand('copy');
+        } finally {
+            area.remove();
+        }
+
+        if (!ok) throw new Error('Копирование недоступно');
+        return true;
+    }
+
     function copyCartData() {
         if (cart.length === 0) return;
         
         const data = getOrderTextAndLink();
         if (data) {
-            navigator.clipboard.writeText(data.text).then(() => blinkLogo('green'));
+            copyTextSafe(data.text).then(() => blinkLogo('green'));
         }
     }
 
@@ -3569,7 +3689,7 @@ function handleOrderCopyAndOpen(btnElement) {
         text += `Ваш сервис доставки: ${baseUrl}?q=${encodeURIComponent(filters.search.trim())}`;
 
         // Копируем и мигаем желтым
-        navigator.clipboard.writeText(text).then(() => {
+        copyTextSafe(text).then(() => {
             blinkLogo('yellow');
         });
     }
@@ -3620,39 +3740,65 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: УНИВЕРСАЛЬНЫЙ ПЕРЕХВАТ "НАЗАД" (Mobile Optimized)
+    BLOCK 11: НАТИВНАЯ ИСТОРИЯ БРАУЗЕРА V29
+    Back/Forward + корзина + подтверждение выхода
     ========================================= */
 
-    // Создаем фейковую точку в истории, чтобы первый "Назад" пришелся на наш обработчик
-    window.history.pushState({ noExit: true }, "");
+    window.history.replaceState(
+        { rxdeView: true, rxdeEntryBoundary: true, rxdeModal: null },
+        '',
+        window.location.href
+    );
+    window.history.pushState(
+        { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
+        '',
+        window.location.href
+    );
+
+    let rxdeExitConfirmed = false;
 
     window.addEventListener('popstate', function(event) {
+        const state = event.state || {};
         const modal = document.getElementById('modal');
         const contact = document.getElementById('contactOverlay');
         const info = document.getElementById('infoOverlay');
         const tgOver = document.getElementById('tgOverlay');
 
-        // Проверяем, открыто ли хоть одно окно
-        const isAnyOpen = (modal && modal.classList.contains('active')) ||
-                        (contact && contact.style.display === 'flex') ||
-                        (info && info.style.display === 'flex') ||
-                        (tgOver && tgOver.style.display === 'flex');
-
-        if (isAnyOpen) {
-            // Закрываем всё по очереди
-            if (modal && modal.classList.contains('active')) closeModal();
-            if (contact && contact.style.display === 'flex') closeContact();
-            if (info && info.style.display === 'flex') closeInfo();
-            if (tgOver && tgOver.style.display === 'flex') closeTgOverlay();
-            
-            // Возвращаем фейковую точку, чтобы не выйти при следующем нажатии
-            window.history.pushState({ noExit: true }, "");
-        } else {
-            // Если все окна закрыты, позволяем системный выход (стандартное поведение)
-            // Если нужно жестко запретить выход - раскомментируй pushState ниже
-            // window.history.pushState({ noExit: true }, "");
+        if (state.rxdeEntryBoundary && !rxdeExitConfirmed) {
+            const leave = window.confirm('Выйти из RXDE?');
+            if (!leave) {
+                window.history.forward();
+                return;
+            }
+            rxdeExitConfirmed = true;
+            setTimeout(() => window.history.back(), 0);
+            return;
         }
+
+        rxdeExitConfirmed = false;
+
+        if (state.rxdeModal === 'cart') {
+            if (contact && contact.style.display === 'flex') closeContact(true);
+            if (!(modal && modal.classList.contains('active'))) openCart(true);
+            return;
+        }
+
+        if (state.rxdeModal === 'contact') {
+            if (modal && modal.classList.contains('active')) closeModal(true);
+            if (!(contact && contact.style.display === 'flex')) {
+                openContact(state.contactType || 'question', state.contactIndex ?? null, true);
+            }
+            return;
+        }
+
+        if (modal && modal.classList.contains('active')) closeModal(true);
+        if (contact && contact.style.display === 'flex') closeContact(true);
+        if (info && info.style.display === 'flex') closeInfo();
+        if (tgOver && tgOver.style.display === 'flex' && typeof closeTgOverlay === 'function') closeTgOverlay();
+
+        if (db && db.length) restoreViewFromCurrentUrl();
     });
+
     /* =========================================
     BLOCK 12: ЖИВАЯ ЛЕНТА И НОВОСТИ (ФИНАЛ)
     ========================================= */
@@ -3786,7 +3932,7 @@ function handleOrderCopyAndOpen(btnElement) {
         url.searchParams.set('cat', recent.category);
         if (recent.subcategory) url.searchParams.set('sub', recent.subcategory);
         else url.searchParams.delete('sub');
-        window.history.replaceState({}, '', url);
+        window.history.replaceState({ rxdeView: true }, '', url);
         render(true);
     }
 
@@ -3889,7 +4035,7 @@ function handleOrderCopyAndOpen(btnElement) {
         url.searchParams.delete('sub');
         url.searchParams.delete('service');
         url.searchParams.delete('letter');
-        window.history.replaceState({}, '', url);
+        rxdeNavigate(url);
         render(true);
     }
 
@@ -3908,7 +4054,7 @@ function handleOrderCopyAndOpen(btnElement) {
         url.searchParams.delete('letter');
         if (retainedSearch) url.searchParams.set('q', retainedSearch);
         else url.searchParams.delete('q');
-        window.history.replaceState({}, '', url);
+        rxdeNavigate(url);
         render(true);
         if (retainedSearch) renderSuggestions(retainedSearch);
     }
@@ -3925,7 +4071,7 @@ function handleOrderCopyAndOpen(btnElement) {
         url.searchParams.delete('letter');
         if (filters.publicSubcategory) url.searchParams.set('sub', filters.publicSubcategory);
         else url.searchParams.delete('sub');
-        window.history.replaceState({}, '', url);
+        rxdeNavigate(url);
         render(true);
     }
 
@@ -3945,7 +4091,7 @@ function handleOrderCopyAndOpen(btnElement) {
         url.searchParams.delete('letter');
         if (filters.search) url.searchParams.set('q', filters.search);
         else url.searchParams.delete('q');
-        window.history.replaceState({}, '', url);
+        rxdeNavigate(url);
         const suggestions = document.getElementById('suggestRow');
         if (suggestions) suggestions.innerHTML = '';
         render(true);

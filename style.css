@@ -5086,3 +5086,38 @@ button { letter-spacing: 0; }
 
     .rxde-contact-title { font-size: 17px; }
 }
+
+
+/* =========================================
+   RXDE MOBILE V29 — фикс верхушки листа заказа
+   ========================================= */
+@media (max-width: 620px) {
+    #modal {
+        padding-top: 0 !important;
+        align-items: stretch !important;
+    }
+
+    #modal .m-box {
+        width: 100% !important;
+        max-width: none !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+    }
+
+    #modal .order-document-brand {
+        flex: 0 0 auto !important;
+        min-height: 54px;
+        padding-top: max(10px, env(safe-area-inset-top)) !important;
+    }
+
+    #modal .modal-head {
+        flex: 0 0 auto !important;
+        min-height: 56px !important;
+    }
+
+    #modal .m-scroll-area {
+        min-height: 0 !important;
+        overscroll-behavior: contain;
+    }
+}
