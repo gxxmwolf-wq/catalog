@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v64">
+    <link rel="stylesheet" href="style.css?build=v65">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -371,8 +371,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v64';
-    const RXDE_DB_BUILD = '08-21 00:07';
+    const RXDE_BUILD = 'v65';
+    const RXDE_DB_BUILD = '08-21 00:15';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -2760,11 +2760,7 @@ function clearAdminPanel() {
                         </div>
                         <small>${activeItems.length} поз. · ${totalPacks} уп. · логистика DHL включена</small>
                     </div>
-                    <div id="orderPullZone" class="order-pull-zone" aria-label="Потяните вниз для перехода к оформлению">
-                        <span class="order-pull-grip"></span>
-                        <small>Потяните вниз — к оформлению</small>
-                    </div>
-                    <button id="copyActionBlock" class="send-order-button final-order-action" type="button" onclick="handleOrderCopyAndOpen(this)" ${totalPacks > 0 ? '' : 'disabled'}>
+<button id="copyActionBlock" class="send-order-button final-order-action" type="button" onclick="handleOrderCopyAndOpen(this)" ${totalPacks > 0 ? '' : 'disabled'}>
                         <span id="copyActionIcon" class="send-order-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -3121,74 +3117,6 @@ function clearAdminPanel() {
 
     // --- УМНОЕ КОПИРОВАНИЕ: ПРЕМИУМ-АНИМАЦИЯ ЧЕКА (Замедленная) ---
     // --- УМНОЕ КОПИРОВАНИЕ: ПРЕМИУМ-АНИМАЦИЯ ЧЕКА (С имитацией текста и штрихкодом) ---
-let orderPullCleanup = null;
-
-function initOrderPullGesture() {
-    if (orderPullCleanup) {
-        orderPullCleanup();
-        orderPullCleanup = null;
-    }
-
-    const zone = document.getElementById('orderPullZone');
-    const button = document.getElementById('copyActionBlock');
-    if (!zone || !button || button.disabled) return;
-
-    let pointerId = null;
-    let startY = 0;
-    let currentY = 0;
-
-    const reset = () => {
-        zone.classList.remove('is-pulling', 'is-ready');
-        zone.style.removeProperty('--pull-y');
-        pointerId = null;
-    };
-
-    const onDown = (event) => {
-        if (event.pointerType === 'mouse' && event.button !== 0) return;
-        pointerId = event.pointerId;
-        startY = event.clientY;
-        currentY = startY;
-        zone.setPointerCapture?.(pointerId);
-        zone.classList.add('is-pulling');
-    };
-
-    const onMove = (event) => {
-        if (pointerId !== event.pointerId) return;
-        currentY = event.clientY;
-        const dy = Math.max(0, Math.min(86, currentY - startY));
-        zone.style.setProperty('--pull-y', `${dy}px`);
-        zone.classList.toggle('is-ready', dy >= 58);
-        if (dy > 4) event.preventDefault();
-    };
-
-    const onUp = (event) => {
-        if (pointerId !== event.pointerId) return;
-        const dy = Math.max(0, currentY - startY);
-        try { zone.releasePointerCapture?.(pointerId); } catch (_) {}
-
-        if (dy >= 58) {
-            zone.classList.add('is-triggered');
-            setTimeout(() => {
-                zone.classList.remove('is-triggered');
-                handleOrderCopyAndOpen(button);
-            }, 110);
-        }
-        reset();
-    };
-
-    zone.addEventListener('pointerdown', onDown);
-    zone.addEventListener('pointermove', onMove, { passive: false });
-    zone.addEventListener('pointerup', onUp);
-    zone.addEventListener('pointercancel', reset);
-
-    orderPullCleanup = () => {
-        zone.removeEventListener('pointerdown', onDown);
-        zone.removeEventListener('pointermove', onMove);
-        zone.removeEventListener('pointerup', onUp);
-        zone.removeEventListener('pointercancel', reset);
-    };
-}
-
 function handleOrderCopyAndOpen(btnElement) {
         if (btnElement.dataset.processing === "true") return;
         btnElement.dataset.processing = "true";
@@ -3557,7 +3485,6 @@ function handleOrderCopyAndOpen(btnElement) {
         </section>
         <div style="height: 15px;"></div>`;
     
-        requestAnimationFrame(initOrderPullGesture);
 
 } // <-- Конец функции renderCartItems 
 
@@ -5435,7 +5362,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v64 · style v64 · база 08-21 00:07
+                index v65 · style v65 · база 08-21 00:15
             </div>
         </div>
     </footer>

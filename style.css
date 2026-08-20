@@ -10139,3 +10139,114 @@ body.rxde-mode-cart .quick-order-total {
         max-width: 92px !important;
     }
 }
+
+
+/* RXDE V65 — remove pull-to-checkout experiment completely */
+.order-pull-zone,
+.order-pull-grip {
+    display: none !important;
+}
+
+
+/* Убираем декоративные точки/пунктир около ИТОГО */
+#modal .modal-footer-sticky .total-label::after,
+#modal .modal-footer-sticky .summary-label::after,
+#modal .modal-footer-sticky .cart-total-label::after,
+#modal .modal-footer-sticky .total-row::before,
+#modal .modal-footer-sticky .total-row::after,
+#modal .cart-total-row::before,
+#modal .cart-total-row::after {
+    content: none !important;
+    display: none !important;
+}
+
+#modal .modal-footer-sticky [style*="dotted"],
+#modal .modal-footer-sticky [style*="dashed"] {
+    border-style: solid !important;
+    border-color: transparent !important;
+}
+
+/* На случай, если точки рисуются border-top */
+#modal .modal-footer-sticky .total-row,
+#modal .cart-total-row {
+    border-top-style: solid !important;
+}
+
+
+/* Кнопка "Передать заказ менеджеру" компактнее и не спорит с плавающим итогом */
+#modal .final-order-action,
+#modal #copyActionBlock {
+    width: calc(100% - 104px) !important;
+    max-width: calc(100% - 104px) !important;
+    min-height: 66px !important;
+    padding: 10px 16px !important;
+    margin-right: 104px !important;
+    border-radius: 18px !important;
+}
+
+#modal .final-order-action .send-order-title,
+#modal #copyActionBlock .send-order-title {
+    font-size: 15px !important;
+    line-height: 1.05 !important;
+}
+
+#modal .final-order-action .send-order-subtitle,
+#modal #copyActionBlock .send-order-subtitle {
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+}
+
+@media (max-width: 390px) {
+    #modal .final-order-action,
+    #modal #copyActionBlock {
+        width: calc(100% - 96px) !important;
+        max-width: calc(100% - 96px) !important;
+        margin-right: 96px !important;
+        min-height: 62px !important;
+        padding: 9px 13px !important;
+    }
+}
+
+
+/* Общий итог — чуть прозрачнее и визуально легче */
+.mobile-quick-actions .quick-order-total {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(228,241,250,.72),
+            rgba(255,255,255,.54)
+        ) !important;
+    border-color: rgba(55,105,142,.22) !important;
+    box-shadow:
+        0 7px 20px rgba(37,74,101,.10),
+        inset 0 1px 0 rgba(255,255,255,.66) !important;
+    backdrop-filter: blur(7px) !important;
+    -webkit-backdrop-filter: blur(7px) !important;
+}
+
+body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(224,242,232,.70),
+            rgba(255,255,255,.56)
+        ) !important;
+    border-color: rgba(42,132,84,.22) !important;
+}
+
+
+/* Стабилизация нижней части корзины против "двойных" кадров Chromium */
+body.rxde-mode-cart #modal .modal-footer-sticky,
+body.rxde-mode-cart #modal .final-order-action,
+body.rxde-mode-cart #modal #copyActionBlock {
+    transform: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    will-change: auto !important;
+}
+
+body.rxde-mode-cart #modal .modal-footer-sticky {
+    contain: layout paint !important;
+    isolation: isolate !important;
+}
