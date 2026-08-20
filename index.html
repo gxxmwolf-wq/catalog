@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v60">
+    <link rel="stylesheet" href="style.css?build=v61">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -141,7 +141,7 @@
 
         <div class="mobile-search-sheet">
             <div class="search-one-line">
-                <img src="assets/rxde-logo.svg" class="search-inline-logo" alt="RXDE">
+                <img src="assets/rxde-logo.svg" class="search-inline-logo rxde-home-logo" alt="RXDE" role="button" tabindex="0" aria-label="На главную">
 
                 <div class="search-field-shell">
                     <span class="search-field-lens" aria-hidden="true">
@@ -199,7 +199,7 @@
     <div id="modal" class="modal" onclick="closeModal()">
         <div class="m-box" onclick="event.stopPropagation()">
             <div class="order-document-brand">
-                <div class="order-brand-wordmark" aria-label="RXDE">
+                <div class="order-brand-wordmark rxde-home-logo" aria-label="RXDE" role="button" tabindex="0">
                     <span>RX</span><b>DE</b>
                 </div>
                 <div class="order-doc-heading">
@@ -367,8 +367,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v60';
-    const RXDE_DB_BUILD = '08-20 21:25';
+    const RXDE_BUILD = 'v61';
+    const RXDE_DB_BUILD = '08-20 23:07';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -1750,6 +1750,30 @@
         render(true);
     }
 
+    function goHomeFromAnyLogo(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        const contact = document.getElementById('contactOverlay');
+        if (contact && contact.style.display === 'flex') closeContact(true);
+        if (mobileSearchIsOpen) closeMobileSearch(true);
+        const modal = document.getElementById('modal');
+        if (modal && modal.classList.contains('active')) closeModal(true);
+        goHome();
+        setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
+    }
+
+    document.addEventListener('click', event => {
+        const logo = event.target.closest('.rxde-home-logo');
+        if (logo) goHomeFromAnyLogo(event);
+    });
+    document.addEventListener('keydown', event => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target.closest('.rxde-home-logo')) {
+            goHomeFromAnyLogo(event);
+        }
+    });
+
     function goHome() {
         const input = document.getElementById('search');
         if (input) input.value = '';
@@ -2803,70 +2827,50 @@ function clearAdminPanel() {
         const principles = document.getElementById('headerPrinciples');
 
         if (principles) principles.classList.remove('is-ready');
-
         if (monthEl) {
             monthEl.textContent = now.toLocaleDateString('ru-RU', { month: 'short' })
-                .replace('.', '')
-                .toUpperCase();
+                .replace('.', '').toUpperCase();
         }
-
         if (!dayEl) return;
 
         const currentPage = dayEl.querySelector('.flip-calendar-current');
         const turningPage = dayEl.querySelector('.flip-calendar-sheet');
         const actualDay = now.getDate();
-        const formatDay = value => String(value).padStart(2, '0');
-
-        const fullDate = now.toLocaleDateString('ru-RU', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
-        dayEl.parentElement.setAttribute('aria-label', `Сегодня ${fullDate}`);
-
-        if (!currentPage || !turningPage) {
-            dayEl.textContent = formatDay(actualDay);
-            revealHeaderPrinciples();
-            return;
-        }
-
-        if (calendarAnimationTimer) {
-            clearTimeout(calendarAnimationTimer);
-            calendarAnimationTimer = null;
-        }
-
-        if (dayEl.dataset.animatedDay === String(actualDay)) {
-            currentPage.textContent = formatDay(actualDay);
-            turningPage.textContent = formatDay(actualDay);
-            revealHeaderPrinciples();
-            return;
-        }
-
-        // РОВНО 4 числа: сегодня-3 -> сегодня-2 -> сегодня-1 -> сегодня.
-        // Для декоративного цикла допустимы только 1..28.
         const target = Math.min(Math.max(actualDay, 1), 28);
         const wrap28 = value => ((value - 1 + 28) % 28) + 1;
-        const sequence = [
-            wrap28(target - 3),
-            wrap28(target - 2),
-            wrap28(target - 1),
-            target
-        ];
+        const formatDay = value => String(value).padStart(2, '0');
+        const sequence = [5,4,3,2,1,0].map(offset => wrap28(target - offset));
+
+        dayEl.parentElement.setAttribute('aria-label', `Сегодня ${now.toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' })}`);
+
+        if (!currentPage || !turningPage) {
+            dayEl.textContent = formatDay(target);
+            revealHeaderPrinciples();
+            return;
+        }
+
+        if (calendarAnimationTimer) clearTimeout(calendarAnimationTimer);
+        dayEl.dataset.animatedDay = '';
+        currentPage.textContent = formatDay(sequence[0]);
+        turningPage.textContent = '';
+        turningPage.classList.remove('is-flipping');
+        turningPage.style.visibility = 'hidden';
 
         let index = 0;
-        currentPage.textContent = formatDay(sequence[0]);
-        turningPage.textContent = formatDay(sequence[1]);
-        turningPage.classList.remove('is-flipping');
-
-        const flipNext = () => {
+        const step = () => {
             if (index >= sequence.length - 1) {
+                currentPage.textContent = formatDay(target);
+                turningPage.textContent = '';
+                turningPage.style.visibility = 'hidden';
                 dayEl.dataset.animatedDay = String(actualDay);
                 revealHeaderPrinciples();
                 calendarAnimationTimer = null;
                 return;
             }
 
-            turningPage.textContent = formatDay(sequence[index + 1]);
+            const nextValue = sequence[index + 1];
+            turningPage.textContent = formatDay(nextValue);
+            turningPage.style.visibility = 'visible';
             turningPage.classList.remove('is-flipping');
             void turningPage.offsetWidth;
             turningPage.classList.add('is-flipping');
@@ -2875,19 +2879,17 @@ function clearAdminPanel() {
                 index += 1;
                 currentPage.textContent = formatDay(sequence[index]);
                 turningPage.classList.remove('is-flipping');
-
-                if (index >= sequence.length - 1) {
+                turningPage.style.visibility = 'hidden';
+                turningPage.textContent = '';
+                if (index < sequence.length - 1) calendarAnimationTimer = setTimeout(step, 45);
+                else {
                     dayEl.dataset.animatedDay = String(actualDay);
                     revealHeaderPrinciples();
                     calendarAnimationTimer = null;
-                    return;
                 }
-
-                calendarAnimationTimer = setTimeout(flipNext, 55);
-            }, 350);
+            }, 300);
         };
-
-        calendarAnimationTimer = setTimeout(flipNext, 140);
+        calendarAnimationTimer = setTimeout(step, 100);
     }
 
     async function refreshHeaderSnapshot() {
@@ -3368,7 +3370,6 @@ function handleOrderCopyAndOpen(btnElement) {
 
                 div.innerHTML += `
                 <div class="card cart-reorder-card" data-cart-pzn="${cleanPZN}" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
-                    <button class="cart-drag-handle" type="button" aria-label="Изменить порядок позиции" title="Перетащить"><span></span><span></span><span></span></button>
                 ${renderPriceCheckIndicator(cleanPZN)}
                 <div class="order-line-number" style="background: ${badgeBg};">
                     ${displayNum}
@@ -3459,191 +3460,6 @@ function handleOrderCopyAndOpen(btnElement) {
     
         requestAnimationFrame(initOrderPullGesture);
 } // <-- Конец функции renderCartItems 
-
-        requestAnimationFrame(initCartReorder);
-    let cartReorderCleanup = null;
-
-    function saveCartOrder() {
-        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-        updateBar();
-    }
-
-    function reorderCartByPzn(draggedPzn, targetPzn, placeAfter = false) {
-        if (!draggedPzn || !targetPzn || draggedPzn === targetPzn) return false;
-
-        const from = cart.findIndex(item => String(item.pzn) === String(draggedPzn));
-        let to = cart.findIndex(item => String(item.pzn) === String(targetPzn));
-        if (from < 0 || to < 0) return false;
-
-        const [moved] = cart.splice(from, 1);
-
-        // index target may shift after removal
-        to = cart.findIndex(item => String(item.pzn) === String(targetPzn));
-        if (to < 0) {
-            cart.push(moved);
-        } else {
-            cart.splice(placeAfter ? to + 1 : to, 0, moved);
-        }
-
-        saveCartOrder();
-        return true;
-    }
-
-    function initCartReorder() {
-        if (cartReorderCleanup) {
-            cartReorderCleanup();
-            cartReorderCleanup = null;
-        }
-
-        const container = document.getElementById('cartItems');
-        if (!container) return;
-
-        const handles = Array.from(container.querySelectorAll('.cart-drag-handle'));
-        if (!handles.length) return;
-
-        let activeCard = null;
-        let activeHandle = null;
-        let pointerId = null;
-        let startY = 0;
-        let latestY = 0;
-        let ghost = null;
-        let targetCard = null;
-        let placeAfter = false;
-
-        const clearTarget = () => {
-            container.querySelectorAll('.cart-reorder-target-before, .cart-reorder-target-after')
-                .forEach(el => el.classList.remove('cart-reorder-target-before', 'cart-reorder-target-after'));
-        };
-
-        const cleanupGhost = () => {
-            if (ghost) ghost.remove();
-            ghost = null;
-            clearTarget();
-            if (activeCard) activeCard.classList.remove('is-reordering');
-            activeCard = null;
-            activeHandle = null;
-            pointerId = null;
-            targetCard = null;
-        };
-
-        const onMove = (event) => {
-            if (event.pointerId !== pointerId || !activeCard) return;
-
-            latestY = event.clientY;
-            const dy = latestY - startY;
-
-            if (Math.abs(dy) < 5 && !ghost) return;
-
-            event.preventDefault();
-
-            if (!ghost) {
-                const rect = activeCard.getBoundingClientRect();
-                ghost = activeCard.cloneNode(true);
-                ghost.classList.add('cart-reorder-ghost');
-                ghost.querySelectorAll('button,input').forEach(el => {
-                    el.disabled = true;
-                    el.tabIndex = -1;
-                });
-                ghost.style.width = `${rect.width}px`;
-                ghost.style.left = `${rect.left}px`;
-                ghost.style.top = `${rect.top}px`;
-                document.body.appendChild(ghost);
-                activeCard.classList.add('is-reordering');
-            }
-
-            ghost.style.transform = `translate3d(0, ${dy}px, 0)`;
-
-            clearTarget();
-
-            const cards = Array.from(container.querySelectorAll('.cart-reorder-card'))
-                .filter(card => card !== activeCard);
-
-            targetCard = null;
-            let bestDistance = Infinity;
-
-            for (const card of cards) {
-                const rect = card.getBoundingClientRect();
-                if (latestY < rect.top - 12 || latestY > rect.bottom + 12) continue;
-
-                const center = rect.top + rect.height / 2;
-                const distance = Math.abs(latestY - center);
-                if (distance < bestDistance) {
-                    bestDistance = distance;
-                    targetCard = card;
-                    placeAfter = latestY > center;
-                }
-            }
-
-            if (targetCard) {
-                targetCard.classList.add(placeAfter ? 'cart-reorder-target-after' : 'cart-reorder-target-before');
-            }
-        };
-
-        const onUp = (event) => {
-            if (event.pointerId !== pointerId) return;
-
-            if (activeHandle) {
-                try { activeHandle.releasePointerCapture(pointerId); } catch (_) {}
-            }
-
-            if (ghost && targetCard && activeCard) {
-                const draggedPzn = activeCard.dataset.cartPzn;
-                const targetPzn = targetCard.dataset.cartPzn;
-
-                ghost.classList.add('is-dropping');
-
-                setTimeout(() => {
-                    const changed = reorderCartByPzn(draggedPzn, targetPzn, placeAfter);
-                    cleanupGhost();
-
-                    if (changed) {
-                        renderCartItems(); // номера пересчитываются автоматически
-                    }
-                }, 120);
-            } else {
-                cleanupGhost();
-            }
-        };
-
-        const onCancel = () => cleanupGhost();
-
-        const listeners = [];
-
-        handles.forEach(handle => {
-            const onDown = (event) => {
-                if (event.pointerType === 'mouse' && event.button !== 0) return;
-
-                const card = handle.closest('.cart-reorder-card');
-                if (!card) return;
-
-                event.preventDefault();
-                event.stopPropagation();
-
-                activeCard = card;
-                activeHandle = handle;
-                pointerId = event.pointerId;
-                startY = event.clientY;
-                latestY = startY;
-
-                try { handle.setPointerCapture(pointerId); } catch (_) {}
-
-                window.addEventListener('pointermove', onMove, { passive: false });
-                window.addEventListener('pointerup', onUp, { once: true });
-                window.addEventListener('pointercancel', onCancel, { once: true });
-            };
-
-            handle.addEventListener('pointerdown', onDown);
-            listeners.push([handle, onDown]);
-        });
-
-        cartReorderCleanup = () => {
-            cleanupGhost();
-            listeners.forEach(([handle, fn]) => handle.removeEventListener('pointerdown', fn));
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-            window.removeEventListener('pointercancel', onCancel);
-        };
-    }
 
     function toggleLogisticsInfo(event) {
         if (event) event.stopPropagation();
@@ -3803,6 +3619,8 @@ function handleOrderCopyAndOpen(btnElement) {
                     animation: 150,
                     draggable: '.card',
                     handle: '.card',
+                    filter: 'button,input,textarea,select,a,.qty-capsule,.position-delete-bar,.order-line-delete,.order-variant-search',
+                    preventOnFilter: false,
                     forceFallback: true,
                     fallbackOnBody: true,
                     fallbackTolerance: 3,
@@ -4412,6 +4230,42 @@ function handleOrderCopyAndOpen(btnElement) {
     }
     window.addEventListener('resize', syncContactVisualViewport, { passive: true });
 
+    let rxdeContactKeyboardWasOpen = false;
+    let rxdeKeyboardBackConsumedUntil = 0;
+
+    function rxdeContactKeyboardMonitor() {
+        const overlay = document.getElementById('contactOverlay');
+        if (!overlay || overlay.style.display !== 'flex') {
+            rxdeContactKeyboardWasOpen = false;
+            return;
+        }
+
+        const vv = window.visualViewport;
+        const keyboardOpen = !!vv && (window.innerHeight - vv.height) > 120;
+
+        if (keyboardOpen) {
+            rxdeContactKeyboardWasOpen = true;
+            return;
+        }
+
+        // Android/iOS may consume the first system Back only to hide the keyboard
+        // and never send popstate to the page. Treat that viewport expansion as
+        // the same user's Back intention and close the contact step immediately.
+        if (rxdeContactKeyboardWasOpen) {
+            rxdeContactKeyboardWasOpen = false;
+            rxdeKeyboardBackConsumedUntil = Date.now() + 650;
+            rxdeDismissKeyboardNow();
+            closeContact(true);
+            setTimeout(() => {
+                if (typeof rxdeStabilizeHistory === 'function') rxdeStabilizeHistory(window.location.href);
+            }, 0);
+        }
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', rxdeContactKeyboardMonitor, { passive: true });
+    }
+
     function openContact(type = 'question', index = null, fromHistory = false) {
         const cartModal = document.getElementById('modal');
         const cartWasOpen = !!(cartModal && cartModal.classList.contains('active'));
@@ -4489,6 +4343,7 @@ function handleOrderCopyAndOpen(btnElement) {
 
         setPhoneError('');
 
+        overlay.classList.add('contact-top-overlay');
         overlay.classList.toggle('order-finalize-overlay', type === 'order');
         const contactBox = overlay.querySelector('.rxde-contact-box');
         if (contactBox) {
@@ -4600,7 +4455,7 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!overlay) return;
 
         overlay.style.display = 'none';
-        overlay.classList.remove('order-finalize-overlay');
+        overlay.classList.remove('order-finalize-overlay', 'contact-top-overlay');
         overlay.querySelector('.rxde-contact-box')?.classList.remove('order-finalize-box');
         document.body.classList.remove('rxde-contact-front', 'rxde-mode-contact');
         setPhoneError('');
@@ -5194,6 +5049,13 @@ function handleOrderCopyAndOpen(btnElement) {
     window.addEventListener('popstate', function(event) {
         if (rxdeHistoryBusy) return;
 
+        if (Date.now() < rxdeKeyboardBackConsumedUntil) {
+            rxdeHistoryBusy = true;
+            rxdeStabilizeHistory(window.location.href);
+            rxdeHistoryBusy = false;
+            return;
+        }
+
         rxdeHistoryBusy = true;
 
         // 1. Любой открытый слой съедает ровно один Back.
@@ -5563,7 +5425,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v60 · style v60 · база 08-20 21:25
+                index v61 · style v61 · база 08-20 23:07
             </div>
         </div>
     </footer>
