@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v53">
+    <link rel="stylesheet" href="style.css?build=v56">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -367,7 +367,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v53';
+    const RXDE_BUILD = 'v56';
     const RXDE_DB_BUILD = '08-20 19:33';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
@@ -1376,7 +1376,7 @@
                                     </button>
                                 `)}
                             </div>
-                            ${q > 0 ? `<div class="sum-box"><div class="s-eur">${rowSumEur} €</div><div class="s-rub">${rowSumRub.toLocaleString()} ₽</div></div>` : ''}
+                            ${q > 0 ? `<button type="button" class="sum-box sum-box-cart-link" onclick="openCart()" aria-label="Открыть лист заказа"><div class="s-eur">${rowSumEur} €</div><div class="s-rub">${rowSumRub.toLocaleString('ru-RU')} ₽</div><span class="sum-box-cart-hint">к заказу →</span></button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -2661,6 +2661,10 @@ function clearAdminPanel() {
                         </div>
                         <small>${activeItems.length} поз. · ${totalPacks} уп. · логистика DHL включена</small>
                     </div>
+                    <div id="orderPullZone" class="order-pull-zone" aria-label="Потяните вниз для перехода к оформлению">
+                        <span class="order-pull-grip"></span>
+                        <small>Потяните вниз — к оформлению</small>
+                    </div>
                     <button id="copyActionBlock" class="send-order-button final-order-action" type="button" onclick="handleOrderCopyAndOpen(this)" ${totalPacks > 0 ? '' : 'disabled'}>
                         <span id="copyActionIcon" class="send-order-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
@@ -3013,6 +3017,74 @@ function clearAdminPanel() {
 
     // --- УМНОЕ КОПИРОВАНИЕ: ПРЕМИУМ-АНИМАЦИЯ ЧЕКА (Замедленная) ---
     // --- УМНОЕ КОПИРОВАНИЕ: ПРЕМИУМ-АНИМАЦИЯ ЧЕКА (С имитацией текста и штрихкодом) ---
+let orderPullCleanup = null;
+
+function initOrderPullGesture() {
+    if (orderPullCleanup) {
+        orderPullCleanup();
+        orderPullCleanup = null;
+    }
+
+    const zone = document.getElementById('orderPullZone');
+    const button = document.getElementById('copyActionBlock');
+    if (!zone || !button || button.disabled) return;
+
+    let pointerId = null;
+    let startY = 0;
+    let currentY = 0;
+
+    const reset = () => {
+        zone.classList.remove('is-pulling', 'is-ready');
+        zone.style.removeProperty('--pull-y');
+        pointerId = null;
+    };
+
+    const onDown = (event) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        pointerId = event.pointerId;
+        startY = event.clientY;
+        currentY = startY;
+        zone.setPointerCapture?.(pointerId);
+        zone.classList.add('is-pulling');
+    };
+
+    const onMove = (event) => {
+        if (pointerId !== event.pointerId) return;
+        currentY = event.clientY;
+        const dy = Math.max(0, Math.min(86, currentY - startY));
+        zone.style.setProperty('--pull-y', `${dy}px`);
+        zone.classList.toggle('is-ready', dy >= 58);
+        if (dy > 4) event.preventDefault();
+    };
+
+    const onUp = (event) => {
+        if (pointerId !== event.pointerId) return;
+        const dy = Math.max(0, currentY - startY);
+        try { zone.releasePointerCapture?.(pointerId); } catch (_) {}
+
+        if (dy >= 58) {
+            zone.classList.add('is-triggered');
+            setTimeout(() => {
+                zone.classList.remove('is-triggered');
+                handleOrderCopyAndOpen(button);
+            }, 110);
+        }
+        reset();
+    };
+
+    zone.addEventListener('pointerdown', onDown);
+    zone.addEventListener('pointermove', onMove, { passive: false });
+    zone.addEventListener('pointerup', onUp);
+    zone.addEventListener('pointercancel', reset);
+
+    orderPullCleanup = () => {
+        zone.removeEventListener('pointerdown', onDown);
+        zone.removeEventListener('pointermove', onMove);
+        zone.removeEventListener('pointerup', onUp);
+        zone.removeEventListener('pointercancel', reset);
+    };
+}
+
 function handleOrderCopyAndOpen(btnElement) {
         if (btnElement.dataset.processing === "true") return;
         btnElement.dataset.processing = "true";
@@ -3023,11 +3095,12 @@ function handleOrderCopyAndOpen(btnElement) {
         // ЗАМЕНИТЬ ЭТУ СТРОКУ (чтобы в буфер попадало красивое письмо)
         currentPreparedText = `Здравствуйте!\nХочу оформить заказ.\n\nСсылка на мою корзину:\n${data.link}\n\nЖду обратной связи для подтверждения деталей!`; 
 
-        if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
-        btnElement.classList.add('is-confirmed');
+        btnElement.classList.add('is-confirmed', 'is-launching-order');
+        document.getElementById('modal')?.classList.add('is-handing-off');
         setTimeout(() => {
-            btnElement.classList.remove('is-confirmed');
+            btnElement.classList.remove('is-confirmed', 'is-launching-order');
             openContact('order');
+            setTimeout(() => document.getElementById('modal')?.classList.remove('is-handing-off'), 360);
             btnElement.dataset.processing = "false";
         }, 160);
     }
@@ -3379,7 +3452,9 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
         </section>
         <div style="height: 15px;"></div>`;
-    } // <-- Конец функции renderCartItems 
+    
+        requestAnimationFrame(initOrderPullGesture);
+} // <-- Конец функции renderCartItems 
 
     function toggleLogisticsInfo(event) {
         if (event) event.stopPropagation();
@@ -3481,6 +3556,9 @@ function handleOrderCopyAndOpen(btnElement) {
 
         // Сначала показываем оболочку. Даже если внутри рендера ошибка,
         // пользователь всё равно увидит корзину, а ошибка попадёт в console.
+        document.body.classList.remove('rxde-search-front', 'rxde-contact-front');
+        document.body.classList.add('rxde-cart-front');
+
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
         document.body.style.position = 'fixed';
@@ -3590,6 +3668,12 @@ function handleOrderCopyAndOpen(btnElement) {
 
         modal.classList.remove('open', 'active');
         modal.style.display = 'none';
+
+        document.body.classList.remove('rxde-cart-front');
+        if (mobileSearchIsOpen) {
+            document.body.classList.add('rxde-search-front');
+        }
+
         updateBar();
 
         // Крестик корзины — локальное закрытие, без browser Back.
@@ -3621,6 +3705,7 @@ function handleOrderCopyAndOpen(btnElement) {
     let normalizedPhoneForSubmit = '';
     let pendingContactContext = '';
     let pendingContactSource = 'rxde.online/question';
+    let contactReturnToCart = false;
 
     function setPhoneError(message = '') {
         const box = document.getElementById('phoneError');
@@ -3774,6 +3859,11 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         mobileSearchIsOpen = true;
+
+        // Активный режим всегда становится верхним рабочим слоем.
+        document.body.classList.remove('rxde-cart-front', 'rxde-contact-front');
+        document.body.classList.add('rxde-search-front');
+
         overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('mobile-search-open');
 
@@ -3830,7 +3920,12 @@ function handleOrderCopyAndOpen(btnElement) {
         mobileSearchIsOpen = false;
         overlay.classList.remove('active');
         overlay.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('mobile-search-open');
+        document.body.classList.remove('mobile-search-open', 'rxde-search-front');
+
+        const cartUnderSearch = document.getElementById('modal');
+        if (cartUnderSearch && cartUnderSearch.classList.contains('active')) {
+            document.body.classList.add('rxde-cart-front');
+        }
 
         restoreProductListHome();
         clearSearchBackdrop();
@@ -4072,10 +4167,26 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
 
+    function syncContactVisualViewport() {
+        const vv = window.visualViewport;
+        const height = vv ? vv.height : window.innerHeight;
+        const offsetTop = vv ? vv.offsetTop : 0;
+        document.documentElement.style.setProperty('--rxde-contact-vh', `${Math.max(320, height)}px`);
+        document.documentElement.style.setProperty('--rxde-contact-vtop', `${Math.max(0, offsetTop)}px`);
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncContactVisualViewport, { passive: true });
+        window.visualViewport.addEventListener('scroll', syncContactVisualViewport, { passive: true });
+    }
+    window.addEventListener('resize', syncContactVisualViewport, { passive: true });
+
     function openContact(type = 'question', index = null, fromHistory = false) {
         const cartModal = document.getElementById('modal');
         const cartWasOpen = !!(cartModal && cartModal.classList.contains('active'));
-        if (cartWasOpen) closeModal(true);
+
+        contactReturnToCart = (type === 'order' && cartWasOpen);
+        if (cartWasOpen && type !== 'order') closeModal(true);
 
         if (!fromHistory) {
             window.history.replaceState(
@@ -4084,6 +4195,9 @@ function handleOrderCopyAndOpen(btnElement) {
                 window.location.href
             );
         }
+        document.body.classList.remove('rxde-search-front', 'rxde-cart-front');
+        document.body.classList.add('rxde-contact-front');
+
         const overlay = document.getElementById('contactOverlay');
         const title = document.getElementById('contactTitle');
         const contextBox = document.getElementById('contactContext');
@@ -4142,9 +4256,26 @@ function handleOrderCopyAndOpen(btnElement) {
         document.getElementById('contactSuccessStep')?.classList.add('rxde-contact-step-hidden');
 
         setPhoneError('');
-        overlay.style.display = 'flex';
 
-        setTimeout(() => phoneInput.focus(), 120);
+        overlay.classList.toggle('order-finalize-overlay', type === 'order');
+        const contactBox = overlay.querySelector('.rxde-contact-box');
+        if (contactBox) {
+            contactBox.classList.toggle('order-finalize-box', type === 'order');
+            contactBox.scrollTop = 0;
+        }
+
+        syncContactVisualViewport();
+        overlay.style.display = 'flex';
+        overlay.scrollTop = 0;
+
+        setTimeout(() => {
+            try {
+                phoneInput.focus({ preventScroll: true });
+                phoneInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            } catch (_) {
+                phoneInput.focus();
+            }
+        }, 210);
     }
 
     function showPhoneConfirmation() {
@@ -4235,12 +4366,30 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!overlay) return;
 
         overlay.style.display = 'none';
+        overlay.classList.remove('order-finalize-overlay');
+        overlay.querySelector('.rxde-contact-box')?.classList.remove('order-finalize-box');
+        document.body.classList.remove('rxde-contact-front');
         setPhoneError('');
 
-        // Крестик связи — локальное закрытие слоя. Никакого Back и,
-        // следовательно, никакого случайного "Выйти из RXDE?".
+        const cartModal = document.getElementById('modal');
+        const shouldReturnToCart = contactReturnToCart &&
+            cartModal && cartModal.classList.contains('active');
+
+        if (shouldReturnToCart) {
+            document.body.classList.add('rxde-cart-front');
+        } else if (mobileSearchIsOpen) {
+            document.body.classList.add('rxde-search-front');
+        }
+
+        contactReturnToCart = false;
+
         if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'contact') {
-            const cleanState = { ...(window.history.state || {}), rxdeView: true, rxdeRootGuard: true, rxdeModal: null };
+            const cleanState = {
+                ...(window.history.state || {}),
+                rxdeView: true,
+                rxdeRootGuard: true,
+                rxdeModal: shouldReturnToCart ? 'cart' : null
+            };
             delete cleanState.contactType;
             delete cleanState.contactIndex;
             window.history.replaceState(cleanState, '', window.location.href);
@@ -5077,7 +5226,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v53 · style v53 · база 08-20 19:33
+                index v56 · style v56 · база 08-20 19:33
             </div>
         </div>
     </footer>
