@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=34">
+    <link rel="stylesheet" href="style.css?v=36">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -48,8 +48,7 @@
                         <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE">
                     </div>
                     <button class="header-catalog-btn" type="button" onclick="goHome()">Каталог</button>
-                    <button class="header-contact-btn" type="button" onclick="openSmartContact()">Написать нам</button>
-                    <button class="header-search-btn mobile-search-entry" type="button" onclick="openMobileSearch()" aria-label="Открыть поиск">
+                    <button class="header-search-btn mobile-search-entry" type="button" aria-label="Открыть поиск">
                         <span class="header-search-lens" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
                         </span>
@@ -74,7 +73,7 @@
                     <div class="cbr-rate-line">ЦБ: <span id="cbrRate">0</span><span id="cbrTrend" class="rate-trend" aria-label="Изменение курса"></span></div>
                     <div style="white-space: nowrap;">Расчетный: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
                 </div>
-                <button id="headerOrderButton" class="header-order-button js-cart-trigger" type="button" onclick="openCart()" aria-label="Открыть лист заказа">
+                <button id="headerOrderButton" class="header-order-button js-cart-trigger" type="button" aria-label="Открыть лист заказа">
                     <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
                     <span class="header-order-copy"><strong>Лист заказа</strong><small id="headerOrderMeta">Пока пуст</small></span>
                     <span id="headerOrderCount" class="header-order-count">0</span>
@@ -98,9 +97,6 @@
         <section class="home-catalog" aria-labelledby="homeCatalogSeedTitle">
             <div class="home-catalog-layout">
                 <div class="catalog-main">
-                    <div class="home-section-head home-catalog-head">
-                        <div><span>Каталог</span><h1 id="homeCatalogSeedTitle">Безрецептурные товары</h1></div>
-                    </div>
                     <div class="category-grid">
                         <button class="category-tile category-vitamins" type="button" onclick="selectPublicCategory('Витамины и минералы')"><strong>Витамины и минералы</strong><span>Открыть раздел</span></button>
                         <button class="category-tile category-cosmetics" type="button" onclick="selectPublicCategory('Уход и косметика')"><strong>Уход и косметика</strong><span>Открыть раздел</span></button>
@@ -142,19 +138,28 @@
 
     <div id="mobileSearchOverlay" class="mobile-search-overlay" aria-hidden="true">
         <div id="mobileSearchBackdropSnapshot" class="mobile-search-backdrop-snapshot" aria-hidden="true"></div>
+
         <div class="mobile-search-sheet">
-            <div class="mobile-search-input-wrap">
-                <img src="assets/rxde-logo.svg" class="mobile-search-inline-logo" alt="RXDE">
-                <span class="mobile-search-lens" aria-hidden="true">
-                    <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
-                </span>
-                <input id="mobileSearchInput" type="search" inputmode="search"
-                       placeholder="Название, вещество или PZN"
-                       autocomplete="off" autocorrect="off" spellcheck="false"
-                       oninput="handleMobileSearchInput()"
-                       onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
-                <button type="button" class="mobile-search-clear" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
-                <button type="button" class="mobile-search-close-inline" onclick="closeMobileSearch()" aria-label="Закрыть поиск">Закрыть</button>
+            <div class="search-one-line">
+                <img src="assets/rxde-logo.svg" class="search-inline-logo" alt="RXDE">
+
+                <div class="search-field-shell">
+                    <span class="search-field-lens" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
+                    </span>
+
+                    <input id="mobileSearchInput" type="text" inputmode="search"
+                           placeholder="Название, вещество или PZN"
+                           autocomplete="off" autocorrect="off" spellcheck="false"
+                           oninput="handleMobileSearchInput()"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
+
+                    <button type="button" class="search-clear-btn" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
+                </div>
+
+                <button type="button" class="search-close-btn" onclick="closeMobileSearch()" aria-label="Закрыть поиск">
+                    <span class="search-close-wide">Закрыть</span>
+                </button>
             </div>
 
             <div id="mobileSearchScopeRow" class="mobile-search-scope-row" hidden>
@@ -176,7 +181,7 @@
         <button id="quickSearchButton" type="button" onclick="openMobileSearch()" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 4.6 4.6"/></svg>
         </button>
-        <button id="quickContactButton" type="button" onclick="openSmartContact()" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
+        <button id="quickContactButton" type="button" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
             <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
         </button>
         <button id="quickCartButton" type="button" onclick="openCart()" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
@@ -185,7 +190,7 @@
         </button>
     </nav>
 
-    <div id="infoOverlay" class="info-overlay" onclick="closeInfo()" style="z-index: 2147483647 !important;">
+    <div id="infoOverlay" class="info-overlay" onclick="closeInfo()">
         <div class="info-box" onclick="event.stopPropagation()" style="position: relative; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 12px; margin-bottom: 15px; flex-shrink: 0;">
@@ -270,7 +275,7 @@
         </div>
     </div>
 
-    <div id="adminOverlay" class="info-overlay" onclick="closeAdminModal()" style="z-index: 9999999 !important;">
+    <div id="adminOverlay" class="info-overlay" onclick="closeAdminModal()">
         <div class="info-box contact-box" onclick="event.stopPropagation()" style="background: #fffdf0; border: 2px solid #ffe082;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -3030,23 +3035,36 @@ function handleOrderCopyAndOpen(btnElement) {
         return `${d}${m}${y}-${h}${min}`;
     }
 
-    function openCart(fromHistory = false) { 
-        isQuestionMode = false; // Жестко включаем режим "ЗАКАЗ"
-        
-        // Пустая корзина остаётся корзиной — никаких неожиданных переходов в поиск.
-        if (cart.length === 0) {
-            if (!fromHistory && (!window.history.state || window.history.state.rxdeModal !== 'cart')) {
-                window.history.pushState(
-                    { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'cart' },
-                    '',
-                    window.location.href
-                );
-            }
+    function openCart(fromHistory = false) {
+        isQuestionMode = false;
 
-            const modal = document.getElementById('modal');
-            const items = document.getElementById('cartItems');
-            const footer = document.getElementById('footerTotalContent');
-            if (!modal || !items || !footer) return;
+        const modal = document.getElementById('modal');
+        const items = document.getElementById('cartItems');
+        const footer = document.getElementById('footerTotalContent');
+        if (!modal || !items || !footer) return;
+
+        // Корзина — самостоятельный верхний слой. Поиск под ней сохраняется.
+        const contact = document.getElementById('contactOverlay');
+        const info = document.getElementById('infoOverlay');
+        if (contact) contact.style.display = 'none';
+        if (info) info.style.display = 'none';
+
+        if (!fromHistory && (!window.history.state || window.history.state.rxdeModal !== 'cart')) {
+            window.history.pushState(
+                { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'cart' },
+                '',
+                window.location.href
+            );
+        }
+
+        const numberEl = document.getElementById('modalOrderNumber');
+        const dateEl = document.getElementById('modalOrderDate');
+
+        if (cart.length === 0) {
+            if (numberEl) numberEl.innerText = 'Лист заказа';
+            if (dateEl) dateEl.innerText = new Date().toLocaleDateString('ru-RU', {
+                day: '2-digit', month: 'long', year: 'numeric'
+            });
 
             items.innerHTML = `
                 <div class="empty-cart-state">
@@ -3056,105 +3074,66 @@ function handleOrderCopyAndOpen(btnElement) {
                     <button type="button" onclick="closeModal()">Вернуться в каталог</button>
                 </div>`;
             footer.innerHTML = '';
+        } else {
+            const newID = generateOrderID();
+            if (numberEl) numberEl.innerText = `№ ${newID}`;
+            if (dateEl) dateEl.innerText = new Date().toLocaleDateString('ru-RU', {
+                day: '2-digit', month: 'long', year: 'numeric'
+            });
 
-            const numberEl = document.getElementById('modalOrderNumber');
-            const dateEl = document.getElementById('modalOrderDate');
-            if (numberEl) numberEl.innerText = 'Лист заказа';
-            if (dateEl) dateEl.innerText = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
+            updateBar();
+            renderCartItems();
+        }
 
-            modal.style.display = 'flex';
+        if (!modal.classList.contains('active')) {
             scrollPos = window.pageYOffset;
-            document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollPos}px`;
-            document.body.style.width = '100%';
-            setTimeout(() => modal.classList.add('active', 'open'), 10);
-            return;
         }
-
-        // 2. ЕСЛИ ЕСТЬ ТОВАРЫ — ОТКРЫВАЕМ МОДАЛКУ
-        if (!fromHistory && (!window.history.state || window.history.state.rxdeModal !== 'cart')) {
-            window.history.pushState(
-                { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'cart' },
-                '',
-                window.location.href
-            );
-        }
-
-        const newID = generateOrderID(); 
-        const numberEl = document.getElementById('modalOrderNumber');
-        const dateEl = document.getElementById('modalOrderDate');
-        if (numberEl) numberEl.innerText = `№ ${newID}`;
-        if (dateEl) dateEl.innerText = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
-        const modal = document.getElementById('modal');
-        if (!modal) return;
-
-        closeContact();
-        closeInfo();
-
-        updateBar(); 
-        renderCartItems(); 
 
         modal.style.display = 'flex';
-        scrollPos = window.pageYOffset;
         document.body.style.overflow = 'hidden';
         document.body.style.position = 'fixed';
         document.body.style.top = `-${scrollPos}px`;
         document.body.style.width = '100%';
 
-        setTimeout(() => { 
-            modal.classList.add('active', 'open'); 
-        }, 10);
-            // 🛡️ БЕЗОПАСНЫЙ DRAG & DROP ЗА ВСЮ КАРТОЧКУ (С ЗАДЕРЖКОЙ ДЛЯ СКРОЛЛА)
-                // 🛡️ БЕЗОПАСНЫЙ DRAG & DROP ЗА ВСЮ КАРТОЧКУ
-                            // 🛡️ БЕЗОПАСНЫЙ DRAG & DROP ДЛЯ СМАРТФОНОВ
-                ensureSortableLoaded().then(() => setTimeout(() => {
-                    const container = document.getElementById('cartItems');
-                    if (container && container.children.length > 0 && typeof Sortable !== 'undefined') {
-                        try {
-                            if (window.cartSortable) window.cartSortable.destroy();
-                            
-                            window.cartSortable = new Sortable(container, {
-                                animation: 150,
-                                draggable: '.card',
-                                handle: '.card',
-                                
-                                // 🚀 ВКЛЮЧАЕМ НАСТОЯЩИЙ ТАЧ-ЗАХВАТ ДЛЯ ТЕЛЕФОНА:
-                                forceFallback: true,        // Отключает глючный нативный HTML5 Drag&Drop на смартфонах
-                                fallbackOnBody: true,       // Вынимает карточку из скролл-контейнера, чтобы она не обрезалась
-                                fallbackTolerance: 3,       // Сдвиг на 3px активирует движение
-                                
-                                delay: 200,                 // Задержка удержания 200 мс (вибро сработает как отклик захвата)
-                                delayOnTouchOnly: true,     // На ПК захват мгновенный, на смартфоне — через легкое зажатие
-                                
-                                ghostClass: 'sortable-ghost',
-                                onEnd: function (evt) {
-                                    const oldIdx = (evt.oldDraggableIndex !== undefined) ? evt.oldDraggableIndex : evt.oldIndex;
-                                    const newIdx = (evt.newDraggableIndex !== undefined) ? evt.newDraggableIndex : evt.newIndex;
-                                    
-                                    if (oldIdx === undefined || newIdx === undefined || oldIdx === newIdx) return;
+        requestAnimationFrame(() => modal.classList.add('active', 'open'));
 
-                                    const movedItem = cart.splice(oldIdx, 1)[0];
-                                    cart.splice(newIdx, 0, movedItem);
+        if (cart.length > 0) {
+            ensureSortableLoaded().then(() => setTimeout(() => {
+                const container = document.getElementById('cartItems');
+                if (!container || !container.children.length || typeof Sortable === 'undefined') return;
 
-                                    localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-                                    if (navigator.vibrate) navigator.vibrate(15);
+                try {
+                    if (window.cartSortable) window.cartSortable.destroy();
 
-                                    setTimeout(() => {
-                                        renderCartItems(); 
-                                        updateBar();       
-                                    }, 50);
-                                }
-                            });
-                        } catch(e) {
-                            console.log("Sortable init skipped:", e);
+                    window.cartSortable = new Sortable(container, {
+                        animation: 150,
+                        draggable: '.card',
+                        handle: '.card',
+                        forceFallback: true,
+                        fallbackOnBody: true,
+                        fallbackTolerance: 3,
+                        delay: 200,
+                        delayOnTouchOnly: true,
+                        ghostClass: 'sortable-ghost',
+                        onEnd: function(evt) {
+                            const oldIdx = evt.oldDraggableIndex ?? evt.oldIndex;
+                            const newIdx = evt.newDraggableIndex ?? evt.newIndex;
+                            if (oldIdx === undefined || newIdx === undefined || oldIdx === newIdx) return;
+
+                            const movedItem = cart.splice(oldIdx, 1)[0];
+                            cart.splice(newIdx, 0, movedItem);
+                            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+                            renderCartItems();
+                            updateBar();
                         }
-                    }
-                }, 0));
-
+                    });
+                } catch (error) {
+                    console.error('Sortable init:', error);
+                }
+            }, 50));
+        }
     }
 
-    let sortableLoadPromise = null;
     function ensureSortableLoaded() {
         if (typeof Sortable !== 'undefined') return Promise.resolve();
         if (sortableLoadPromise) return sortableLoadPromise;
@@ -3360,26 +3339,19 @@ function handleOrderCopyAndOpen(btnElement) {
         mobileSearchOriginalSubcategory = filters.publicSubcategory || '';
         mobileSearchOriginalPrescriptionMode = !!filters.prescriptionMode;
         mobileSearchParentScrollY = window.scrollY;
-        mobileSearchParentUrl = window.location.href;
-        mobileSearchParentState = { ...(window.history.state || {}) };
 
         captureSearchBackdrop();
 
         if (!fromHistory) {
-            const searchUrl = new URL(window.location.href);
-            if (mobileSearchSavedQuery) searchUrl.searchParams.set('q', mobileSearchSavedQuery);
-            else searchUrl.searchParams.delete('q');
-
-            window.history.pushState(
+            window.history.replaceState(
                 {
                     ...(window.history.state || {}),
                     rxdeView: true,
                     rxdeModal: 'search',
-                    searchParentUrl: mobileSearchParentUrl,
                     searchParentScrollY: mobileSearchParentScrollY
                 },
                 '',
-                searchUrl
+                window.location.href
             );
         }
 
@@ -3390,7 +3362,7 @@ function handleOrderCopyAndOpen(btnElement) {
 
         moveProductListToMobileSearch();
 
-        const query = mobileSearchSavedQuery || desktopInput?.value || '';
+        const query = mobileSearchSavedQuery || '';
         mobileInput.value = query;
         if (desktopInput) desktopInput.value = query;
 
@@ -3411,19 +3383,15 @@ function handleOrderCopyAndOpen(btnElement) {
         const overlay = document.getElementById('mobileSearchOverlay');
         if (!overlay || !mobileSearchIsOpen) return;
 
-        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'search') {
-            window.history.back();
-            return;
-        }
-
         mobileSearchIsOpen = false;
         overlay.classList.remove('active');
         overlay.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('mobile-search-open');
+
         restoreProductListHome();
         clearSearchBackdrop();
 
-        // Возвращаем именно тот экран, поверх которого был открыт поиск.
+        // Возвращаем экран, поверх которого был открыт поиск.
         filters.search = '';
         filters.publicCategory = mobileSearchOriginalCategory || '';
         filters.publicSubcategory = mobileSearchOriginalSubcategory || '';
@@ -3435,7 +3403,15 @@ function handleOrderCopyAndOpen(btnElement) {
         if (desktopInput) desktopInput.value = '';
 
         render(false);
-        requestAnimationFrame(() => window.scrollTo({ top: mobileSearchParentScrollY, behavior: 'instant' }));
+
+        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'search') {
+            const cleanState = { ...(window.history.state || {}), rxdeModal: null };
+            window.history.replaceState(cleanState, '', mobileSearchParentUrl || window.location.href);
+        }
+
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: mobileSearchParentScrollY, behavior: 'instant' });
+        });
     }
 
 
@@ -3646,14 +3622,12 @@ function handleOrderCopyAndOpen(btnElement) {
         if (cartWasOpen) closeModal(true);
 
         if (!fromHistory) {
-            window.history.pushState(
+            window.history.replaceState(
                 { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'contact', contactType: type, contactIndex: index },
                 '',
                 window.location.href
             );
         }
-        if (navigator.vibrate) navigator.vibrate(15);
-
         const overlay = document.getElementById('contactOverlay');
         const title = document.getElementById('contactTitle');
         const contextBox = document.getElementById('contactContext');
@@ -3804,15 +3778,18 @@ function handleOrderCopyAndOpen(btnElement) {
         const overlay = document.getElementById('contactOverlay');
         if (!overlay) return;
 
-        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'contact') {
-            window.history.back();
-            return;
-        }
-
         overlay.style.display = 'none';
         setPhoneError('');
-    }
 
+        // Крестик связи — локальное закрытие слоя. Никакого Back и,
+        // следовательно, никакого случайного "Выйти из RXDE?".
+        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'contact') {
+            const cleanState = { ...(window.history.state || {}), rxdeModal: null };
+            delete cleanState.contactType;
+            delete cleanState.contactIndex;
+            window.history.replaceState(cleanState, '', window.location.href);
+        }
+    }
 
     /* =========================================
     BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
@@ -4176,8 +4153,8 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: НАТИВНАЯ ИСТОРИЯ БРАУЗЕРА V33
-    Строгая иерархия + финальный фокус вверх + выход
+    BLOCK 11: НАТИВНАЯ ИСТОРИЯ V35
+    Поиск = 1 шаг; корень внизу -> верх; затем выход
     ========================================= */
 
     window.history.replaceState(
@@ -4192,9 +4169,8 @@ function handleOrderCopyAndOpen(btnElement) {
     );
 
     let rxdeExitConfirmed = false;
-    let rxdeRootTopArmed = false;
 
-    function isRootCatalogState() {
+    function rootCatalogNow() {
         return !filters.publicCategory &&
                !filters.publicSubcategory &&
                !filters.prescriptionMode &&
@@ -4209,66 +4185,88 @@ function handleOrderCopyAndOpen(btnElement) {
         const info = document.getElementById('infoOverlay');
         const tgOver = document.getElementById('tgOverlay');
 
-        // Корзина и связь — полноценные слои истории.
+        // 1. Поиск — ровно один уровень назад.
+        if (mobileSearchIsOpen && state.rxdeModal !== 'search') {
+            closeMobileSearch(true);
+            return;
+        }
+
+        // 2. Корзина и связь — самостоятельные верхние слои.
         if (state.rxdeModal === 'cart') {
-            if (contact && contact.style.display === 'flex') closeContact(true);
-            if (mobileSearchIsOpen) closeMobileSearch(true);
             if (!(modal && modal.classList.contains('active'))) openCart(true);
             return;
         }
 
         if (state.rxdeModal === 'contact') {
             if (modal && modal.classList.contains('active')) closeModal(true);
-            if (mobileSearchIsOpen) closeMobileSearch(true);
             if (!(contact && contact.style.display === 'flex')) {
                 openContact(state.contactType || 'question', state.contactIndex ?? null, true);
             }
             return;
         }
 
-        // Search is exactly one history level: one swipe returns to its parent.
-        if (mobileSearchIsOpen && state.rxdeModal !== 'search') {
-            closeMobileSearch(true);
-            return;
-        }
-
         if (state.rxdeModal === 'search') {
-            if (modal && modal.classList.contains('active')) closeModal(true);
-            if (contact && contact.style.display === 'flex') closeContact(true);
             if (!mobileSearchIsOpen) openMobileSearch(true);
             return;
         }
 
-        if (mobileSearchIsOpen) closeMobileSearch(true);
         if (modal && modal.classList.contains('active')) closeModal(true);
         if (contact && contact.style.display === 'flex') closeContact(true);
         if (info && info.style.display === 'flex') closeInfo();
         if (tgOver && tgOver.style.display === 'flex' && typeof closeTgOverlay === 'function') closeTgOverlay();
 
+        // 3. На корневой странице из нижней части сайта Back сначала
+        //    возвращает пользователя на верх категорий и НЕ выходит.
+        if ((state.rxdeEntryBoundary || state.rxdeRootGuard) && rootCatalogNow() && window.scrollY > 80) {
+            window.history.pushState(
+                { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
+                '',
+                window.location.href
+            );
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        // 4. Возвращаем состояние каталога по URL.
         if (db && db.length) restoreViewFromCurrentUrl();
 
-        // Последний уровень всегда приводит на верх общей страницы категорий.
-        if (state.rxdeRootGuard || state.rxdeEntryBoundary) {
-            if (!isRootCatalogState()) {
-                goHome();
+        // 5. Дошли до границы приложения — сначала гарантируем главную сверху.
+        if (state.rxdeEntryBoundary || state.rxdeRootGuard) {
+            if (!rootCatalogNow()) {
+                filters.search = '';
+                filters.publicCategory = '';
+                filters.publicSubcategory = '';
+                filters.prescriptionMode = false;
+                filters.prescriptionVisible = 24;
+                filters.alphabet = '';
+
+                const input = document.getElementById('search');
+                if (input) input.value = '';
+
+                render(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                window.history.pushState(
+                    { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
+                    '',
+                    window.location.pathname
+                );
                 return;
             }
 
-            if (window.scrollY > 80 && !rxdeRootTopArmed) {
-                rxdeRootTopArmed = true;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (window.scrollY > 80) {
                 window.history.pushState(
                     { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
                     '',
                     window.location.href
                 );
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
 
             if (!rxdeExitConfirmed) {
                 const leave = window.confirm('Выйти из RXDE?');
                 if (!leave) {
-                    rxdeRootTopArmed = false;
                     window.history.pushState(
                         { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
                         '',
@@ -4276,13 +4274,13 @@ function handleOrderCopyAndOpen(btnElement) {
                     );
                     return;
                 }
+
                 rxdeExitConfirmed = true;
                 setTimeout(() => window.history.back(), 0);
                 return;
             }
         }
 
-        rxdeRootTopArmed = false;
         rxdeExitConfirmed = false;
     });
 
@@ -4395,12 +4393,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <section class="home-catalog" aria-labelledby="homeCatalogTitle">
                 <div class="home-catalog-layout">
                     <div class="catalog-main">
-                        <div class="home-section-head">
-                            <div><span>Каталог</span><h1 id="homeCatalogTitle">Безрецептурные товары</h1></div>
-                            <div class="home-section-actions">
-                                <small>${visibleCategories.length} разделов · ${visibleCategories.reduce((sum, category) => sum + counts[category], 0)} позиций</small>
-                            </div>
-                        </div>
+
                         <div class="category-grid">
                             ${visibleCategories.slice(0, categoryLimit).map(category => `
                                 <button class="category-tile category-${PUBLIC_CATEGORY_COVERS[category] || 'default'}" type="button" onclick="selectPublicCategory('${category}')">
@@ -4548,6 +4541,35 @@ function handleOrderCopyAndOpen(btnElement) {
     function showOldNews() {
         toggleNewsList();
     }
+
+    // Три постоянные кнопки — независимый верхний слой интерфейса.
+    // pointerdown в capture-фазе: быстро и без конфликтов с overlay/drag/click.
+    document.addEventListener('pointerdown', function(event) {
+        const quick = event.target.closest && event.target.closest(
+            '#quickSearchButton, #quickContactButton, #quickCartButton'
+        );
+        if (!quick) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (quick.id === 'quickSearchButton') {
+            openMobileSearch();
+        } else if (quick.id === 'quickContactButton') {
+            openSmartContact();
+        } else if (quick.id === 'quickCartButton') {
+            openCart();
+        }
+    }, true);
+
+
+    document.addEventListener('pointerdown', function(event) {
+        const headerCart = event.target.closest && event.target.closest('#headerOrderButton');
+        if (!headerCart) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openCart();
+    }, true);
 
     // Единственный запуск приложения.
     document.addEventListener('DOMContentLoaded', init);
