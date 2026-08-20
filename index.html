@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v56">
+    <link rel="stylesheet" href="style.css?build=v57">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -367,8 +367,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v56';
-    const RXDE_DB_BUILD = '08-20 19:33';
+    const RXDE_BUILD = 'v57';
+    const RXDE_DB_BUILD = '08-20 21:03';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -1376,7 +1376,17 @@
                                     </button>
                                 `)}
                             </div>
-                            ${q > 0 ? `<button type="button" class="sum-box sum-box-cart-link" onclick="openCart()" aria-label="Открыть лист заказа"><div class="s-eur">${rowSumEur} €</div><div class="s-rub">${rowSumRub.toLocaleString('ru-RU')} ₽</div><span class="sum-box-cart-hint">к заказу →</span></button>` : ''}
+                            ${q > 0 ? `<button type="button" class="sum-box sum-box-cart-link" onclick="openCart()" aria-label="Открыть лист заказа">
+                            <div class="sum-box-line-total">
+                                <span class="s-eur">${rowSumEur.toLocaleString('ru-RU')} €</span>
+                                <span class="s-rub">${rowSumRub.toLocaleString('ru-RU')} ₽</span>
+                            </div>
+                            <div class="sum-box-order-total">
+                                <span>Заказ</span>
+                                <strong>${getCurrentCartRubTotal().toLocaleString('ru-RU')} ₽</strong>
+                                <b>→</b>
+                            </div>
+                        </button>` : ''}
                         </div>
                     </div>
                 </div>
@@ -4084,6 +4094,23 @@ function handleOrderCopyAndOpen(btnElement) {
         return '+' + digits;
     }
 
+    function getCurrentCartRubTotal() {
+        let eur = 0;
+        for (const cartItem of cart) {
+            const product = db.find(row => String(row.PZN || '').trim() === String(cartItem.pzn || '').trim());
+            if (!product) continue;
+            const price = Number(product.Price || product.price || 0);
+            const qty = Number(cartItem.qty || 0);
+            if (Number.isFinite(price) && Number.isFinite(qty)) eur += price * qty;
+        }
+
+        // Логистика уже включается в текущий итог корзины.
+        if (cart.length) eur += 50;
+
+        const rub = Math.round(eur * rateCalc / 100) * 100;
+        return Number.isFinite(rub) ? rub : 0;
+    }
+
     function getCartContactSummary() {
         let totalEur = 0;
         let totalPacks = 0;
@@ -5226,7 +5253,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v56 · style v56 · база 08-20 19:33
+                index v57 · style v57 · база 08-20 21:03
             </div>
         </div>
     </footer>
