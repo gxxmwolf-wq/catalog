@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=36">
+    <link rel="stylesheet" href="style.css?build=v37">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -323,7 +323,11 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const CACHE_WINDOW_MS = 5 * 60 * 1000;
+    const RXDE_BUILD = 'v37';
+    console.info('[RXDE build]', RXDE_BUILD);
+    document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
+
+        const CACHE_WINDOW_MS = 5 * 60 * 1000;
     const CACHE_BUCKET = Math.floor(Date.now() / CACHE_WINDOW_MS);
     const LOCAL_DB_URL = `db.csv?v=${CACHE_BUCKET}`;
     const GOOGLE_SETTINGS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTh9jBKA_RFbB03wt7VljCrZqxM9wBq9aGadw1uHCD4PQ5z5K3YoiF1bkxabc1kzPtP6tA6FLOxOB6b/pub?gid=23735297&single=true&output=csv';
@@ -4588,6 +4592,9 @@ function handleOrderCopyAndOpen(btnElement) {
                 </span>
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
+            <div class="build-version-stamp" aria-label="Версия сборки">
+                index v37 · style v37
+            </div>
         </div>
     </footer>
 

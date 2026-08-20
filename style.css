@@ -6528,3 +6528,24 @@ body.mobile-search-open .mobile-quick-actions button {
         bottom: 28px !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE BUILD v37
+   ========================================================== */
+.build-version-stamp {
+    margin-top: 7px;
+    text-align: center;
+    color: #a8b0b6;
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: .04em;
+    user-select: text;
+}
+
+@media (max-width: 720px) {
+    .build-version-stamp {
+        margin-top: 8px;
+        font-size: 9px;
+    }
+}
