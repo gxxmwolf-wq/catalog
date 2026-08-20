@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v62">
+    <link rel="stylesheet" href="style.css?build=v63">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -189,6 +189,10 @@
         <button id="quickContactButton" type="button" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
             <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
         </button>
+        <button id="quickOrderTotal" class="quick-order-total" type="button" onclick="openCart()" hidden aria-label="Открыть лист заказа">
+            <span id="quickOrderEur">0 €</span>
+            <strong id="quickOrderRub">0 ₽</strong>
+        </button>
         <button id="quickCartButton" type="button" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
             <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
             <span id="mobileCartCount" class="mobile-cart-count">0</span>
@@ -367,8 +371,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v62';
-    const RXDE_DB_BUILD = '08-20 23:32';
+    const RXDE_BUILD = 'v63';
+    const RXDE_DB_BUILD = '08-20 23:48';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -1376,20 +1380,10 @@
                                     </button>
                                 `)}
                             </div>
-                            ${q > 0 ? `<button type="button" class="sum-box sum-box-cart-link" onclick="openCart()" aria-label="Открыть лист заказа">
-                            <div class="sum-box-line-total">
-                                <span class="sum-box-label">Позиция</span>
-                                <strong>${rowSumEur.toLocaleString('ru-RU')} €</strong>
-                                <small>${rowSumRub.toLocaleString('ru-RU')} ₽</small>
-                            </div>
-                            <div class="sum-box-divider"></div>
-                            <div class="sum-box-order-total">
-                                <span class="sum-box-label">Весь заказ</span>
-                                <strong>${getCurrentCartEurTotal().toLocaleString('ru-RU')} €</strong>
-                                <small>${getCurrentCartRubTotal().toLocaleString('ru-RU')} ₽</small>
-                                <b>→</b>
-                            </div>
-                        </button>` : ''}
+                            ${q > 0 ? `<div class="sum-box">
+                            <div class="s-eur">${rowSumEur.toLocaleString('ru-RU')} €</div>
+                            <div class="s-rub">${rowSumRub.toLocaleString('ru-RU')} ₽</div>
+                        </div>` : ''}
                         </div>
                     </div>
                 </div>
@@ -2739,6 +2733,13 @@ function clearAdminPanel() {
         if (headerOrderCount) headerOrderCount.textContent = totalPacks;
         const mobileCartCount = document.getElementById('mobileCartCount');
         if (mobileCartCount) { mobileCartCount.textContent = totalPacks; mobileCartCount.hidden = totalPacks <= 0; }
+
+        const quickOrderTotal = document.getElementById('quickOrderTotal');
+        const quickOrderEur = document.getElementById('quickOrderEur');
+        const quickOrderRub = document.getElementById('quickOrderRub');
+        if (quickOrderTotal) quickOrderTotal.hidden = totalPacks <= 0;
+        if (quickOrderEur) quickOrderEur.textContent = `${grandTotalEur.toLocaleString('ru-RU')} €`;
+        if (quickOrderRub) quickOrderRub.textContent = `${grandTotalRub.toLocaleString('ru-RU')} ₽`;
         if (headerOrderMeta) headerOrderMeta.textContent = totalPacks > 0
             ? `${activeItems.length} поз. · ${grandTotalRub.toLocaleString('ru-RU')} ₽`
             : 'Пока пуст';
@@ -3467,7 +3468,7 @@ function handleOrderCopyAndOpen(btnElement) {
                 const titleStyle = isZero ? 'text-decoration: line-through; color: #888;' : '';
 
                 div.innerHTML += `
-                <div class="card cart-sort-card" data-cart-pzn="${cleanPZN}" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
+                <div class="card" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
                 ${renderPriceCheckIndicator(cleanPZN)}
                 <div class="order-line-number" style="background: ${badgeBg};">
                     ${displayNum}
@@ -3558,181 +3559,7 @@ function handleOrderCopyAndOpen(btnElement) {
     
         requestAnimationFrame(initOrderPullGesture);
 
-        requestAnimationFrame(initWholeCardSort);
 } // <-- Конец функции renderCartItems 
-
-    let wholeCardSortCleanup = null;
-
-    function initWholeCardSort() {
-        if (wholeCardSortCleanup) {
-            wholeCardSortCleanup();
-            wholeCardSortCleanup = null;
-        }
-
-        const container = document.getElementById('cartItems');
-        if (!container) return;
-
-        const cards = Array.from(container.querySelectorAll('.cart-sort-card'));
-        if (cards.length < 2) return;
-
-        let activeCard = null;
-        let pointerId = null;
-        let startY = 0;
-        let longPressTimer = null;
-        let sorting = false;
-        let moved = false;
-        const listeners = [];
-
-        const isInteractive = target => !!target.closest(
-            'button, input, textarea, select, a, .order-variant-search, .product-thumb, .position-delete-bar'
-        );
-
-        const clearTimer = () => {
-            if (longPressTimer) clearTimeout(longPressTimer);
-            longPressTimer = null;
-        };
-
-        const clearMarkers = () => {
-            container.querySelectorAll('.cart-sort-card')
-                .forEach(card => card.classList.remove('is-sort-active', 'is-sort-near'));
-        };
-
-        const stop = () => {
-            clearTimer();
-            clearMarkers();
-            activeCard = null;
-            pointerId = null;
-            sorting = false;
-            moved = false;
-        };
-
-        const saveDomOrder = () => {
-            const orderedPzns = Array.from(container.querySelectorAll('.cart-sort-card'))
-                .map(card => card.dataset.cartPzn)
-                .filter(Boolean);
-
-            if (!orderedPzns.length) return;
-
-            const byPzn = new Map(cart.map(item => [String(item.pzn), item]));
-            const reordered = orderedPzns
-                .map(pzn => byPzn.get(String(pzn)))
-                .filter(Boolean);
-
-            // На случай служебных строк/неожиданного PZN ничего не теряем.
-            for (const item of cart) {
-                if (!reordered.includes(item)) reordered.push(item);
-            }
-
-            cart = reordered;
-            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-            updateBar();
-        };
-
-        const onMove = event => {
-            if (!activeCard || event.pointerId !== pointerId) return;
-
-            const dy = event.clientY - startY;
-
-            // До long-press обычный вертикальный жест остаётся скроллом.
-            if (!sorting) {
-                if (Math.abs(dy) > 10) {
-                    clearTimer();
-                    activeCard = null;
-                    pointerId = null;
-                }
-                return;
-            }
-
-            event.preventDefault();
-            moved = true;
-
-            const candidates = Array.from(container.querySelectorAll('.cart-sort-card'))
-                .filter(card => card !== activeCard);
-
-            let nearest = null;
-            let nearestDistance = Infinity;
-
-            for (const card of candidates) {
-                const rect = card.getBoundingClientRect();
-                const center = rect.top + rect.height / 2;
-                const distance = Math.abs(event.clientY - center);
-                if (distance < nearestDistance) {
-                    nearest = card;
-                    nearestDistance = distance;
-                }
-            }
-
-            clearMarkers();
-            activeCard.classList.add('is-sort-active');
-
-            if (!nearest) return;
-
-            nearest.classList.add('is-sort-near');
-            const rect = nearest.getBoundingClientRect();
-            const after = event.clientY > rect.top + rect.height / 2;
-
-            // Меняем только порядок DOM. Никаких clone/ghost/render во время движения.
-            if (after) {
-                if (nearest.nextSibling !== activeCard) {
-                    nearest.after(activeCard);
-                }
-            } else {
-                if (nearest.previousSibling !== activeCard) {
-                    nearest.before(activeCard);
-                }
-            }
-        };
-
-        const onUp = event => {
-            if (event.pointerId !== pointerId) return;
-            clearTimer();
-
-            if (sorting && moved) {
-                saveDomOrder();
-
-                // Единственная перерисовка ПОСЛЕ отпускания.
-                // Номера 01/02/03 пересчитаются здесь.
-                requestAnimationFrame(() => renderCartItems());
-            }
-
-            stop();
-        };
-
-        cards.forEach(card => {
-            const onDown = event => {
-                if (event.pointerType === 'mouse' && event.button !== 0) return;
-                if (isInteractive(event.target)) return;
-
-                activeCard = card;
-                pointerId = event.pointerId;
-                startY = event.clientY;
-                moved = false;
-
-                longPressTimer = setTimeout(() => {
-                    if (!activeCard || pointerId !== event.pointerId) return;
-                    sorting = true;
-                    activeCard.classList.add('is-sort-active');
-                    try { activeCard.setPointerCapture(pointerId); } catch (_) {}
-                }, 260);
-            };
-
-            card.addEventListener('pointerdown', onDown, { passive: true });
-            listeners.push([card, onDown]);
-        });
-
-        window.addEventListener('pointermove', onMove, { passive: false });
-        window.addEventListener('pointerup', onUp, { passive: true });
-        window.addEventListener('pointercancel', stop, { passive: true });
-
-        wholeCardSortCleanup = () => {
-            clearTimer();
-            listeners.forEach(([card, fn]) => card.removeEventListener('pointerdown', fn));
-            window.removeEventListener('pointermove', onMove);
-            window.removeEventListener('pointerup', onUp);
-            window.removeEventListener('pointercancel', stop);
-            clearMarkers();
-        };
-    }
 
     function toggleLogisticsInfo(event) {
         if (event) event.stopPropagation();
@@ -4503,73 +4330,6 @@ function handleOrderCopyAndOpen(btnElement) {
     }
     window.addEventListener('resize', syncContactVisualViewport, { passive: true });
 
-    let rxdeContactKeyboardWasOpen = false;
-    let rxdeKeyboardBackConsumedUntil = 0;
-
-    function rxdeContactKeyboardMonitor() {
-        const overlay = document.getElementById('contactOverlay');
-        if (!overlay || overlay.style.display !== 'flex') {
-            rxdeContactKeyboardWasOpen = false;
-            return;
-        }
-
-        const vv = window.visualViewport;
-        const keyboardOpen = !!vv && (window.innerHeight - vv.height) > 120;
-
-        if (keyboardOpen) {
-            rxdeContactKeyboardWasOpen = true;
-            return;
-        }
-
-        // Android/iOS may consume the first system Back only to hide the keyboard
-        // and never send popstate to the page. Treat that viewport expansion as
-        // the same user's Back intention and close the contact step immediately.
-        if (rxdeContactKeyboardWasOpen) {
-            rxdeContactKeyboardWasOpen = false;
-            rxdeKeyboardBackConsumedUntil = Date.now() + 650;
-            rxdeDismissKeyboardNow();
-            closeContact(true);
-            setTimeout(() => {
-                if (typeof rxdeStabilizeHistory === 'function') rxdeStabilizeHistory(window.location.href);
-            }, 0);
-        }
-    }
-
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', rxdeContactKeyboardMonitor, { passive: true });
-    }
-
-    function rxdeCloseContactAfterKeyboardBack(event) {
-        const overlay = document.getElementById('contactOverlay');
-        if (!overlay || overlay.style.display !== 'flex') return;
-
-        const target = event.target;
-        if (!target || !target.matches('input, textarea')) return;
-
-        // Даём браузеру один кадр закончить скрытие клавиатуры.
-        setTimeout(() => {
-            const currentOverlay = document.getElementById('contactOverlay');
-            if (!currentOverlay || currentOverlay.style.display !== 'flex') return;
-
-            const vv = window.visualViewport;
-            const keyboardNowClosed = !vv || (window.innerHeight - vv.height) < 90;
-            const nothingElseFocused = !document.activeElement ||
-                document.activeElement === document.body ||
-                !document.activeElement.matches?.('input, textarea, select');
-
-            if (keyboardNowClosed && nothingElseFocused) {
-                rxdeKeyboardBackConsumedUntil = Date.now() + 700;
-                closeContact(true);
-                setTimeout(() => {
-                    if (typeof rxdeStabilizeHistory === 'function') {
-                        rxdeStabilizeHistory(window.location.href);
-                    }
-                }, 0);
-            }
-        }, 40);
-    }
-
-    document.addEventListener('focusout', rxdeCloseContactAfterKeyboardBack, true);
 
     function openContact(type = 'question', index = null, fromHistory = false) {
         const cartModal = document.getElementById('modal');
@@ -5154,54 +4914,11 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: RXDE BACK/SWIPE STATE MACHINE V58
-
-    Иерархия всегда одна:
-    верхний слой -> экран под ним -> главная сверху -> выход.
-    После каждого Back история "перешивается" в 2 локальные записи,
-    поэтому браузер не может случайно перескочить наружу.
+    BLOCK 11: RXDE BACK / SWIPE V63
+    Текущий слой -> внутренний экран -> главная сверху -> выход.
     ========================================= */
 
-    let rxdeExitConfirmed = false;
     let rxdeHistoryBusy = false;
-
-    function rxdeIsEditableElement(element) {
-        if (!element) return false;
-        const tag = (element.tagName || '').toUpperCase();
-        return tag === 'INPUT' ||
-               tag === 'TEXTAREA' ||
-               tag === 'SELECT' ||
-               element.isContentEditable === true;
-    }
-
-    function rxdeKeyboardLikelyOpen() {
-        const active = document.activeElement;
-        if (!rxdeIsEditableElement(active)) return false;
-
-        const vv = window.visualViewport;
-        if (!vv) return true;
-
-        // На мобильных клавиатура обычно заметно уменьшает visualViewport.
-        // 120 px — достаточно мягкий порог, чтобы не спутать с адресной строкой.
-        return (window.innerHeight - vv.height) > 120;
-    }
-
-    function rxdeDismissKeyboardNow() {
-        const active = document.activeElement;
-        if (!rxdeIsEditableElement(active)) return false;
-
-        try { active.blur(); } catch (_) {}
-
-        // Safari/Chrome иногда держат selection ещё один кадр.
-        try {
-            const selection = window.getSelection && window.getSelection();
-            if (selection && typeof selection.removeAllRanges === 'function') {
-                selection.removeAllRanges();
-            }
-        } catch (_) {}
-
-        return true;
-    }
 
     function rxdeRootUrl() {
         return window.location.origin + window.location.pathname;
@@ -5222,47 +4939,70 @@ function handleOrderCopyAndOpen(btnElement) {
         const tg = document.getElementById('tgOverlay');
 
         if (contact && contact.style.display === 'flex') return 'contact';
-        if (info && info.style.display === 'flex') return 'info';
-        if (tg && tg.style.display === 'flex') return 'telegram';
         if (mobileSearchIsOpen) return 'mobile-search';
         if (modal && modal.classList.contains('active')) return 'cart';
+        if (info && info.style.display === 'flex') return 'info';
+        if (tg && tg.style.display === 'flex') return 'telegram';
         return null;
     }
 
-    function rxdeStateForCurrentUi(extra = {}) {
+    function rxdeState(screen = rxdeCurrentScreen(), layer = rxdeTopLayer(), guard = false) {
         return {
             rxdeView: true,
-            rxdeScreen: rxdeCurrentScreen(),
-            rxdeLayer: rxdeTopLayer(),
-            rxdeModal: rxdeTopLayer(),
-            ...extra
+            rxdeScreen: screen,
+            rxdeLayer: layer,
+            rxdeModal: layer,
+            rxdeGuard: guard
         };
     }
 
-    function rxdeStabilizeHistory(url = window.location.href) {
-        // Текущий UI становится гарантированным "основанием".
-        // Поверх кладём guard. Следующий Back всегда останется внутри документа.
-        const base = rxdeStateForCurrentUi({ rxdeGuard: false });
-        const guard = rxdeStateForCurrentUi({ rxdeGuard: true });
+    function rxdeDismissKeyboardNow() {
+        const active = document.activeElement;
+        if (!active) return;
+        const tag = (active.tagName || '').toUpperCase();
 
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) {
+            try { active.blur(); } catch (_) {}
+        }
+    }
+
+    function rxdeArmBack(url = window.location.href) {
         try {
+            const base = rxdeState(rxdeCurrentScreen(), rxdeTopLayer(), false);
             window.history.replaceState(base, '', url);
-            window.history.pushState(guard, '', url);
+            window.history.pushState({ ...base, rxdeGuard: true }, '', url);
         } catch (_) {}
     }
 
-    function rxdeStabilizeAfterLocalUiChange() {
-        if (rxdeHistoryBusy) return;
-        setTimeout(() => rxdeStabilizeHistory(window.location.href), 0);
+    function rxdeCloseTopLayerForBack() {
+        const layer = rxdeTopLayer();
+
+        if (layer === 'contact') {
+            rxdeDismissKeyboardNow();
+            closeContact(true);
+            return true;
+        }
+        if (layer === 'mobile-search') {
+            rxdeDismissKeyboardNow();
+            closeMobileSearch(true);
+            return true;
+        }
+        if (layer === 'cart') {
+            closeModal(true);
+            return true;
+        }
+        if (layer === 'info') {
+            closeInfo();
+            return true;
+        }
+        if (layer === 'telegram' && typeof closeTgOverlay === 'function') {
+            closeTgOverlay();
+            return true;
+        }
+        return false;
     }
 
-    function rootCatalogNow() {
-        return rxdeCurrentScreen() === 'root' && !mobileSearchIsOpen;
-    }
-
-    function forceHomeTop() {
-        rxdeHistoryBusy = true;
-
+    function rxdeGoRootTop() {
         filters.search = '';
         filters.publicCategory = '';
         filters.publicSubcategory = '';
@@ -5275,144 +5015,73 @@ function handleOrderCopyAndOpen(btnElement) {
 
         render(true);
 
-        const rootUrl = rxdeRootUrl();
         requestAnimationFrame(() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Критично: НЕ push поверх старой category-state.
-            // Заменяем её на чистую root-base и только затем кладём guard.
-            const base = {
-                rxdeView: true,
-                rxdeScreen: 'root',
-                rxdeLayer: null,
-                rxdeModal: null,
-                rxdeGuard: false
-            };
-            const guard = { ...base, rxdeGuard: true };
-
             try {
-                window.history.replaceState(base, '', rootUrl);
-                window.history.pushState(guard, '', rootUrl);
+                const base = rxdeState('root', null, false);
+                window.history.replaceState(base, '', rxdeRootUrl());
+                window.history.pushState({ ...base, rxdeGuard: true }, '', rxdeRootUrl());
             } catch (_) {}
 
             rxdeHistoryBusy = false;
         });
     }
 
-    function closeTopLayerForBack() {
-        const layer = rxdeTopLayer();
-
-        if (layer === 'contact') {
-            closeContact(true);
-            return true;
-        }
-        if (layer === 'info') {
-            closeInfo();
-            return true;
-        }
-        if (layer === 'telegram' && typeof closeTgOverlay === 'function') {
-            closeTgOverlay();
-            return true;
-        }
-        if (layer === 'mobile-search') {
-            closeMobileSearch(true);
-            return true;
-        }
-        if (layer === 'cart') {
-            closeModal(true);
-            return true;
-        }
-        return false;
-    }
-
-    // Initial shield: fresh page always has one local history entry behind it.
+    // Всегда держим одну локальную запись перед текущим экраном.
     window.history.replaceState(
-        { rxdeView: true, rxdeScreen: rxdeCurrentScreen(), rxdeLayer: null, rxdeGuard: false },
+        rxdeState(rxdeCurrentScreen(), rxdeTopLayer(), false),
         '',
         window.location.href
     );
     window.history.pushState(
-        { rxdeView: true, rxdeScreen: rxdeCurrentScreen(), rxdeLayer: null, rxdeGuard: true },
+        rxdeState(rxdeCurrentScreen(), rxdeTopLayer(), true),
         '',
         window.location.href
     );
 
-    document.addEventListener('keydown', function(event) {
-        if (event.key !== 'Escape') return;
-
-        const layer = rxdeTopLayer();
-        if (!layer) return;
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        rxdeDismissKeyboardNow();
-        closeTopLayerForBack();
-        rxdeStabilizeAfterLocalUiChange();
-    }, true);
-
-    window.addEventListener('popstate', function(event) {
+    window.addEventListener('popstate', function() {
         if (rxdeHistoryBusy) return;
-
-        if (Date.now() < rxdeKeyboardBackConsumedUntil) {
-            rxdeHistoryBusy = true;
-            rxdeStabilizeHistory(window.location.href);
-            rxdeHistoryBusy = false;
-            return;
-        }
-
         rxdeHistoryBusy = true;
 
-        // 1. Любой открытый слой съедает ровно один Back.
-        // Если открыта клавиатура, этот ЖЕ Back одновременно:
-        // blur поля -> закрытие клавиатуры -> закрытие слоя.
-        // Второй свайп только ради клавиатуры не нужен.
-        const topLayer = rxdeTopLayer();
-        if (topLayer) {
-            const hadKeyboard = rxdeKeyboardLikelyOpen() || rxdeIsEditableElement(document.activeElement);
-
-            if (hadKeyboard) {
-                rxdeDismissKeyboardNow();
-            }
-
-            closeTopLayerForBack();
+        // 1. Один Back закрывает только текущий верхний слой.
+        if (rxdeTopLayer()) {
+            rxdeCloseTopLayerForBack();
 
             requestAnimationFrame(() => {
-                rxdeStabilizeHistory(window.location.href);
+                rxdeArmBack(window.location.href);
                 rxdeHistoryBusy = false;
             });
             return;
         }
 
-        // 2. Любой внутренний экран -> главная сверху.
+        // 2. Любой внутренний экран идёт на главную, а не наружу.
         if (rxdeCurrentScreen() !== 'root') {
             rxdeHistoryBusy = false;
-            forceHomeTop();
+            rxdeGoRootTop();
             return;
         }
 
-        // 3. Главная, но пользователь ниже верхней точки -> сначала наверх.
+        // 3. Если на главной прокручено вниз — сначала верх.
         if (window.scrollY > 80) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             requestAnimationFrame(() => {
-                rxdeStabilizeHistory(rxdeRootUrl());
+                rxdeArmBack(rxdeRootUrl());
                 rxdeHistoryBusy = false;
             });
             return;
         }
 
-        // 4. Только главная + самый верх = реальный запрос выхода.
+        // 4. Только главная + самый верх = запрос выхода.
         const leave = window.confirm('Выйти из RXDE?');
 
         if (!leave) {
-            rxdeStabilizeHistory(rxdeRootUrl());
+            rxdeArmBack(rxdeRootUrl());
             rxdeHistoryBusy = false;
             return;
         }
 
-        // После подтверждения разрешаем браузеру выйти за наш shield.
-        rxdeExitConfirmed = true;
         rxdeHistoryBusy = false;
         setTimeout(() => window.history.go(-2), 0);
     });
@@ -5730,7 +5399,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v62 · style v62 · база 08-20 23:32
+                index v63 · style v63 · база 08-20 23:48
             </div>
         </div>
     </footer>

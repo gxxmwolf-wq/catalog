@@ -9851,3 +9851,157 @@ body.rxde-mode-cart #modal .modal-footer-sticky {
         background: rgba(255,255,255,.98) !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V63 — SIMPLE PRODUCT ROWS + FLOATING ORDER TOTAL
+   ========================================================== */
+
+/* Эксперимент сортировки полностью выключен. */
+#modal .cart-sort-card,
+#modal .cart-reorder-card,
+#modal .cart-drag-handle,
+.cart-reorder-ghost {
+    cursor: default !important;
+    touch-action: pan-y !important;
+    box-shadow: none !important;
+}
+
+/* Выбранный товар снова выглядит как обычная карточка. */
+#list .catalog-product-card.selected {
+    margin-bottom: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Цена | количество | сумма по строке — как в корзине. */
+#list .catalog-product-card .card-bottom > div:last-child {
+    display: grid !important;
+    grid-template-columns: minmax(74px,.82fr) auto minmax(84px,.9fr) !important;
+    align-items: center !important;
+    gap: 7px !important;
+    width: 100% !important;
+    padding-right: 0 !important;
+}
+
+#list .catalog-product-card .sum-box {
+    position: static !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-self: end !important;
+
+    width: auto !important;
+    min-width: 80px !important;
+    max-width: none !important;
+    min-height: 0 !important;
+
+    padding: 0 2px 0 8px !important;
+    border: 0 !important;
+    border-left: 1px solid #dce4e8 !important;
+    border-radius: 0 !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    overflow: visible !important;
+    pointer-events: none !important;
+}
+
+#list .catalog-product-card .sum-box .s-eur {
+    color: #12212a !important;
+    font-size: clamp(15px,4.5vw,20px) !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+}
+
+#list .catalog-product-card .sum-box .s-rub {
+    margin-top: 4px !important;
+    color: #7b878f !important;
+    font-size: clamp(10px,3vw,13px) !important;
+    line-height: 1 !important;
+    font-weight: 560 !important;
+    white-space: nowrap !important;
+}
+
+/* Общий итог заказа: одна небольшая синяя стеклянная кнопка рядом с корзиной. */
+.quick-order-total {
+    position: fixed !important;
+    right: 82px !important;
+    bottom: 26px !important;
+    z-index: 12001 !important;
+
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+
+    min-width: 92px !important;
+    min-height: 52px !important;
+    padding: 7px 10px !important;
+
+    border: 1px solid rgba(55,105,142,.28) !important;
+    border-radius: 15px !important;
+
+    background:
+        linear-gradient(135deg, rgba(228,241,250,.91), rgba(255,255,255,.74)) !important;
+
+    color: #173a52 !important;
+    box-shadow:
+        0 8px 23px rgba(37,74,101,.13),
+        inset 0 1px 0 rgba(255,255,255,.84) !important;
+
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+.quick-order-total[hidden] {
+    display: none !important;
+}
+
+.quick-order-total > span {
+    font-size: 9.5px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+}
+
+.quick-order-total > strong {
+    margin-top: 4px !important;
+    font-size: 12.5px !important;
+    line-height: 1 !important;
+    font-weight: 850 !important;
+    white-space: nowrap !important;
+    font-variant-numeric: tabular-nums lining-nums !important;
+}
+
+body.rxde-mode-cart .quick-order-total {
+    background:
+        linear-gradient(135deg, rgba(224,242,232,.93), rgba(255,255,255,.76)) !important;
+    border-color: rgba(42,132,84,.28) !important;
+    color: #216445 !important;
+}
+
+@media (max-width: 720px) {
+    .quick-order-total {
+        right: 82px !important;
+        bottom: 24px !important;
+        min-width: 88px !important;
+        min-height: 50px !important;
+        padding: 6px 9px !important;
+        border-radius: 14px !important;
+    }
+
+    .quick-order-total > span {
+        font-size: 9px !important;
+    }
+
+    .quick-order-total > strong {
+        font-size: 12px !important;
+    }
+}
