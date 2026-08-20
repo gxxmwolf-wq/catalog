@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v65">
+    <link rel="stylesheet" href="style.css?build=v66">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -371,8 +371,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v65';
-    const RXDE_DB_BUILD = '08-21 00:15';
+    const RXDE_BUILD = 'v66';
+    const RXDE_DB_BUILD = '08-21 00:25';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -409,6 +409,11 @@
     let pendingDeletePzn = null;
     let deliveryAddress = "";     // <--- НОВАЯ ПЕРЕМЕННАЯ ДЛЯ АДРЕСА АДМИНА
     let addressBackup = "";
+    const ORDER_ACTION_TITLE = 'Передать заказ';
+    const ORDER_ACTION_HINT = 'Менеджер проверит и подтвердит';
+    let clearOrderUndoInterval = null;
+    let clearOrderUndoDeadline = 0;
+
 
     /* =========================================
     BLOCK 2: УМНАЯ ОЧИСТКА КОРЗИНЫ (UNDO)
@@ -2384,6 +2389,106 @@ function clearAdminPanel() {
             </div>`;
     }
 
+    function stopClearOrderUndoTimer() {
+        if (clearOrderUndoInterval) {
+            clearInterval(clearOrderUndoInterval);
+            clearOrderUndoInterval = null;
+        }
+        clearOrderUndoDeadline = 0;
+    }
+
+    function finalizeClearedOrder() {
+        stopClearOrderUndoTimer();
+
+        // После 3 секунд операция считается завершённой:
+        // старый заказ больше не держим в памяти.
+        cartBackup = null;
+        addressBackup = '';
+
+        const headerLinks = document.getElementById('modalHeaderLinks');
+        const items = document.getElementById('cartItems');
+        const footer = document.getElementById('footerTotalContent');
+
+        if (headerLinks) {
+            headerLinks.innerHTML = `
+                <button class="order-sheet-add" type="button" onclick="addMoreItems()">
+                    <span>+</span> Добавить товар
+                </button>`;
+        }
+
+        if (items) {
+            items.innerHTML = `
+                <div class="empty-cart-state confirmed-empty-cart clear-order-finished">
+                    <div class="empty-cart-icon">✓</div>
+                    <strong>Заказ очищен</strong>
+                    <span>Можно начать новый заказ.</span>
+                    <button type="button" onclick="addMoreItems()">Добавить товар</button>
+                </div>`;
+        }
+
+        if (footer) footer.innerHTML = '';
+    }
+
+    function updateClearOrderUndoButton() {
+        const button = document.getElementById('restoreClearedOrderButton');
+        if (!button || !clearOrderUndoDeadline) return;
+
+        const msLeft = clearOrderUndoDeadline - Date.now();
+        if (msLeft <= 0) {
+            finalizeClearedOrder();
+            return;
+        }
+
+        const seconds = Math.max(1, Math.ceil(msLeft / 1000));
+        button.innerHTML = `
+            <span class="restore-order-label">Восстановить заказ</span>
+            <span class="restore-order-countdown">${seconds}</span>`;
+        button.setAttribute(
+            'aria-label',
+            `Восстановить заказ. Осталось ${seconds} сек.`
+        );
+    }
+
+    function showClearedOrderUndoUI() {
+        const headerLinks = document.getElementById('modalHeaderLinks');
+        const items = document.getElementById('cartItems');
+        const footer = document.getElementById('footerTotalContent');
+
+        if (headerLinks) {
+            headerLinks.innerHTML = `
+                <button class="order-sheet-add" type="button" onclick="addMoreItems()">
+                    <span>+</span> Добавить товар
+                </button>
+                <button id="restoreClearedOrderButton"
+                        class="restore-order-button restore-order-timed"
+                        type="button"
+                        onclick="restoreClearedOrder(event)">
+                    <span class="restore-order-label">Восстановить заказ</span>
+                    <span class="restore-order-countdown">3</span>
+                </button>`;
+        }
+
+        if (items) {
+            items.innerHTML = `
+                <div class="empty-cart-state confirmed-empty-cart clear-order-pending">
+                    <div class="empty-cart-icon">✓</div>
+                    <strong>Заказ очищен</strong>
+                    <span>Отменить очистку можно в течение 3 секунд.</span>
+                </div>`;
+        }
+
+        if (footer) footer.innerHTML = '';
+
+        stopClearOrderUndoTimer();
+        clearOrderUndoDeadline = Date.now() + 3000;
+        updateClearOrderUndoButton();
+
+        clearOrderUndoInterval = setInterval(
+            updateClearOrderUndoButton,
+            120
+        );
+    }
+
     function confirmClearOrder(event) {
         if (event) {
             event.preventDefault();
@@ -2403,26 +2508,9 @@ function clearAdminPanel() {
         updateBar();
         render(false);
 
-        const headerLinks = document.getElementById('modalHeaderLinks');
-        const items = document.getElementById('cartItems');
-        const footer = document.getElementById('footerTotalContent');
-
-        if (headerLinks) {
-            headerLinks.innerHTML = `
-                <button class="order-sheet-add" type="button" onclick="addMoreItems()"><span>+</span> Добавить товар</button>
-                <button class="restore-order-button" type="button" onclick="restoreClearedOrder(event)">Восстановить заказ</button>`;
-        }
-
-        if (items) {
-            items.innerHTML = `
-                <div class="empty-cart-state confirmed-empty-cart">
-                    <div class="empty-cart-icon">▣</div>
-                    <strong>Лист заказа очищен</strong>
-                    <span>Все позиции удалены из текущего заказа.</span>
-                    <button type="button" onclick="restoreClearedOrder(event)">Восстановить заказ</button>
-                </div>`;
-        }
-        if (footer) footer.innerHTML = '';
+        // ВАЖНО: не вызываем renderCartItems() здесь.
+        // Рисуем одно стабильное состояние и меняем только цифру таймера.
+        showClearedOrderUndoUI();
     }
 
     function restoreClearedOrder(event) {
@@ -2432,18 +2520,25 @@ function clearAdminPanel() {
         }
         if (!cartBackup) return;
 
+        stopClearOrderUndoTimer();
+
         cart = JSON.parse(JSON.stringify(cartBackup));
         deliveryAddress = addressBackup || '';
         cartBackup = null;
         addressBackup = '';
 
         localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+
         if (deliveryAddress) {
             localStorage.setItem('de_cart_address_v2', deliveryAddress);
+        } else {
+            localStorage.removeItem('de_cart_address_v2');
         }
 
         updateBar();
         render(false);
+
+        // Единственная полноценная перерисовка — после восстановления.
         renderCartItems();
     }
 
@@ -2770,7 +2865,7 @@ function clearAdminPanel() {
                                 <line x1="12" y1="18.5" x2="16" y2="18.5"></line>
                             </svg>
                         </span>
-                        <span class="send-order-copy"><strong>Передать заказ менеджеру</strong><small>Завершить оформление и получить подтверждение</small></span>
+                        <span class="send-order-copy"><strong>${ORDER_ACTION_TITLE}</strong><small>${ORDER_ACTION_HINT}</small></span>
                         <span class="send-order-arrow" aria-hidden="true">→</span>
                     </button>
                 </div>
@@ -3737,6 +3832,8 @@ function handleOrderCopyAndOpen(btnElement) {
         document.body.style.width = '';
         window.scrollTo(0, scrollPos);
 
+        if (clearOrderUndoDeadline) finalizeClearedOrder();
+
         modal.classList.remove('open', 'active');
         modal.style.display = 'none';
 
@@ -4345,8 +4442,8 @@ function handleOrderCopyAndOpen(btnElement) {
             if (title) title.textContent = 'РАСШИРЕННЫЙ ПОИСК';
             if (contextBox) contextBox.textContent = 'Передадим специалисту то, что вы сейчас ищете.';
         } else if (type === 'order') {
-            if (title) title.textContent = 'ПЕРЕДАТЬ ЛИСТ ЗАКАЗА';
-            if (contextBox) contextBox.textContent = 'Проверьте контекст заказа и оставьте номер телефона.';
+            if (title) title.textContent = 'ПОДТВЕРЖДЕНИЕ ЗАКАЗА';
+            if (contextBox) contextBox.textContent = 'Оставьте номер — менеджер проверит заказ и подтвердит детали.';
         } else {
             if (title) title.textContent = 'СВЯЗАТЬСЯ С RXDE';
             if (contextBox) contextBox.textContent = 'Укажите номер телефона — специалист RXDE свяжется с вами.';
@@ -5362,7 +5459,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v65 · style v65 · база 08-21 00:15
+                index v66 · style v66 · база 08-21 00:25
             </div>
         </div>
     </footer>

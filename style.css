@@ -10250,3 +10250,142 @@ body.rxde-mode-cart #modal .modal-footer-sticky {
     contain: layout paint !important;
     isolation: isolate !important;
 }
+
+
+/* ==========================================================
+   RXDE V66 — CLEAN 3s UNDO + UNIVERSAL ORDER ACTION
+   ========================================================== */
+
+/* Восстановление очищенного заказа:
+   одна кнопка, один таймер, никаких toast/дубликатов. */
+#modal .restore-order-button.restore-order-timed {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 7px !important;
+
+    min-width: 142px !important;
+    min-height: 38px !important;
+    padding: 0 7px 0 11px !important;
+
+    border: 1px solid rgba(32,112,76,.24) !important;
+    border-radius: 11px !important;
+    background: rgba(236,248,241,.96) !important;
+    color: #27694a !important;
+
+    box-shadow: none !important;
+    overflow: hidden !important;
+}
+
+#modal .restore-order-label {
+    min-width: 0 !important;
+    font-size: 9.5px !important;
+    line-height: 1 !important;
+    font-weight: 790 !important;
+    white-space: nowrap !important;
+}
+
+#modal .restore-order-countdown {
+    display: grid !important;
+    place-items: center !important;
+    flex: 0 0 25px !important;
+
+    width: 25px !important;
+    height: 25px !important;
+    border-radius: 50% !important;
+
+    background: #31865e !important;
+    color: #fff !important;
+
+    font-size: 11px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+#modal .clear-order-pending,
+#modal .clear-order-finished {
+    animation: none !important;
+    transform: none !important;
+    filter: none !important;
+}
+
+/* Универсальное действие заказа:
+   везде одна формулировка:
+   Передать заказ / Менеджер проверит и подтвердит */
+#modal #copyActionBlock.final-order-action {
+    width: calc(100% - 96px) !important;
+    max-width: calc(100% - 96px) !important;
+    margin-right: 96px !important;
+
+    min-height: 62px !important;
+    padding: 9px 12px !important;
+
+    display: grid !important;
+    grid-template-columns: 34px minmax(0,1fr) 22px !important;
+    column-gap: 9px !important;
+    align-items: center !important;
+}
+
+#modal #copyActionBlock .send-order-copy {
+    min-width: 0 !important;
+    overflow: visible !important;
+    text-align: left !important;
+}
+
+#modal #copyActionBlock .send-order-copy strong {
+    display: block !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+
+    font-size: 13.5px !important;
+    line-height: 1.05 !important;
+    font-weight: 830 !important;
+}
+
+#modal #copyActionBlock .send-order-copy small {
+    display: block !important;
+    margin-top: 4px !important;
+
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+
+    font-size: 8.7px !important;
+    line-height: 1.12 !important;
+}
+
+#modal #copyActionBlock .send-order-icon {
+    width: 32px !important;
+    min-width: 32px !important;
+}
+
+#modal #copyActionBlock .send-order-arrow {
+    justify-self: end !important;
+    font-size: 20px !important;
+}
+
+@media (max-width: 390px) {
+    #modal #copyActionBlock.final-order-action {
+        width: calc(100% - 90px) !important;
+        max-width: calc(100% - 90px) !important;
+        margin-right: 90px !important;
+        grid-template-columns: 30px minmax(0,1fr) 18px !important;
+        column-gap: 7px !important;
+        padding-inline: 10px !important;
+    }
+
+    #modal #copyActionBlock .send-order-copy strong {
+        font-size: 12.3px !important;
+    }
+
+    #modal #copyActionBlock .send-order-copy small {
+        font-size: 8px !important;
+    }
+
+    #modal .restore-order-button.restore-order-timed {
+        min-width: 130px !important;
+    }
+}
