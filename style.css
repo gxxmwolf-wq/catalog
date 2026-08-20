@@ -6549,3 +6549,302 @@ body.mobile-search-open .mobile-quick-actions button {
         font-size: 9px;
     }
 }
+
+
+/* ==========================================================
+   RXDE V38 — CART RESTORE + LIQUID GLASS SEARCH
+   ========================================================== */
+
+/* Корзина физически существует снова и находится выше поиска. */
+#modal {
+    z-index: 7000 !important;
+}
+#modal.active {
+    display: flex !important;
+    pointer-events: auto !important;
+}
+#modal .m-box,
+#modal .m-box * {
+    pointer-events: auto;
+}
+
+.modal-footer-sticky {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap-reverse;
+    gap: 15px;
+}
+
+/* Поисковый фон: текущая страница заметна по краям. */
+.mobile-search-backdrop-snapshot {
+    background: transparent !important;
+}
+.mobile-search-snapshot-frame {
+    opacity: .96 !important;
+    filter: saturate(.82) brightness(.94) !important;
+}
+.mobile-search-backdrop-snapshot::after {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(239,246,249,.18),
+            rgba(255,255,255,.06)
+        ) !important;
+    backdrop-filter: blur(3px) saturate(1.05) !important;
+    -webkit-backdrop-filter: blur(3px) saturate(1.05) !important;
+}
+
+/* Сам белый лист — не глухой белый, а светлое стекло. */
+.mobile-search-sheet {
+    background: rgba(255,255,255,.88) !important;
+    border: 1px solid rgba(255,255,255,.72) !important;
+    box-shadow:
+        0 24px 72px rgba(10,29,41,.20),
+        inset 0 1px 0 rgba(255,255,255,.90) !important;
+    backdrop-filter: blur(18px) saturate(1.16) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(1.16) !important;
+
+    transform: translateY(14px) scale(.988) !important;
+    opacity: 0 !important;
+    transition:
+        transform .24s cubic-bezier(.22,.78,.24,1),
+        opacity .18s ease !important;
+}
+
+.mobile-search-overlay.active .mobile-search-sheet {
+    transform: translateY(0) scale(1) !important;
+    opacity: 1 !important;
+}
+
+.search-one-line,
+.search-field-shell {
+    background: rgba(255,255,255,.76) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+}
+
+@media (max-width: 720px) {
+    /* Оставляем заметный "кадр" исходной страницы вокруг листа. */
+    .mobile-search-sheet {
+        inset:
+            max(18px, env(safe-area-inset-top))
+            14px
+            max(26px, env(safe-area-inset-bottom)) !important;
+        border-radius: 22px !important;
+    }
+}
+
+@media (min-width: 721px) {
+    .mobile-search-sheet {
+        inset: 7vh 9vw 9vh !important;
+    }
+}
+
+/* Чуть живее календарный лист. */
+.flip-calendar-sheet.is-flipping {
+    animation-duration: .43s !important;
+}
+
+/* RXDE BUILD v38 */
+
+
+/* ==========================================================
+   RXDE V39 — поиск рядом с "Все" внутри категории
+   ========================================================== */
+.alphabet-search-button,
+.category-search-shortcut {
+    display: inline-grid !important;
+    place-items: center !important;
+    flex: 0 0 auto !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    margin-right: 2px !important;
+    border: 1px solid rgba(17,34,45,.24) !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    color: #17394d !important;
+    box-shadow: inset 0 1px 2px rgba(18,40,54,.06), 0 2px 6px rgba(18,40,54,.05) !important;
+    cursor: pointer !important;
+    vertical-align: middle !important;
+}
+
+.alphabet-search-button svg,
+.category-search-shortcut svg {
+    width: 16px !important;
+    height: 16px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+.alphabet-search-button:active,
+.category-search-shortcut:active {
+    transform: scale(.94) !important;
+}
+
+@media (max-width: 720px) {
+    .alphabet-search-button,
+    .category-search-shortcut {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        border-radius: 9px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V40 — back hierarchy + cart close + animation tuning
+   ========================================================== */
+
+/* Крестик корзины: компактный, не перекрывает шапку. */
+#modal .close-x {
+    flex: 0 0 auto !important;
+    width: 42px !important;
+    height: 42px !important;
+    min-width: 42px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(20,35,45,.16) !important;
+    border-radius: 12px !important;
+    background: #f7f9fa !important;
+    color: #17242d !important;
+    font-size: 25px !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 720px) {
+    #modal .close-x {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        border-radius: 11px !important;
+        font-size: 23px !important;
+    }
+
+    #modal .modal-head {
+        gap: 8px !important;
+        padding-right: 10px !important;
+    }
+}
+
+/* Летящий товар чуть спокойнее. */
+.fly-to-cart {
+    will-change: transform, opacity;
+}
+
+
+/* ==========================================================
+   RXDE V41 — безопасное удаление последней позиции
+   ========================================================== */
+.last-item-undo-state {
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    min-height: 44vh;
+    padding: 34px 20px;
+    text-align: center;
+    animation: lastItemUndoIn .28s ease both;
+}
+
+.last-item-undo-icon {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 17px;
+    background: #eef5f2;
+    color: #25865a;
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.last-item-undo-state strong {
+    color: #17232c;
+    font-size: 18px;
+}
+
+.last-item-undo-state > span {
+    color: #77838c;
+    font-size: 13px;
+}
+
+.last-item-undo-state > button {
+    min-height: 44px;
+    padding: 0 18px;
+    border: 1px solid #25865a;
+    border-radius: 12px;
+    background: #25865a;
+    color: #fff;
+    font: inherit;
+    font-weight: 800;
+}
+
+.last-item-undo-state > .last-item-secondary {
+    border-color: #d8e0e5;
+    background: #fff;
+    color: #51606b;
+    font-weight: 700;
+}
+
+.cart-undo-toast {
+    position: absolute;
+    z-index: 30;
+    left: 50%;
+    bottom: 92px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 42px;
+    padding: 0 12px 0 14px;
+    border: 1px solid rgba(23,44,58,.16);
+    border-radius: 14px;
+    background: rgba(24,43,55,.94);
+    color: #fff;
+    box-shadow: 0 10px 28px rgba(10,26,36,.22);
+    transform: translate(-50%, 12px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.cart-undo-toast.show {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.cart-undo-toast span {
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cart-undo-toast button {
+    min-height: 30px;
+    padding: 0 9px;
+    border: 0;
+    border-radius: 9px;
+    background: #fff;
+    color: #173441;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 850;
+}
+
+@keyframes lastItemUndoIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+    .cart-undo-toast {
+        bottom: 112px;
+        max-width: calc(100vw - 42px);
+    }
+}

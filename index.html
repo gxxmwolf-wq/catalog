@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v37">
+    <link rel="stylesheet" href="style.css?build=v41">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -190,6 +190,45 @@
         </button>
     </nav>
 
+
+    <div id="modal" class="modal" onclick="closeModal()">
+        <div class="m-box" onclick="event.stopPropagation()">
+            <div class="order-document-brand">
+                <div class="embedded-logo order-doc-logo" aria-label="RXDE">
+                    <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE">
+                </div>
+                <div class="order-doc-heading">
+                    <strong>Лист заказа</strong>
+                    <small>Аптека Германии · выкуп · отчёт · отправка</small>
+                </div>
+                <div class="order-doc-meta">
+                    <small id="modalOrderNumber">Заявка</small>
+                    <strong id="modalOrderDate">—</strong>
+                </div>
+            </div>
+
+            <div class="modal-head">
+                <div id="modalHeaderLinks" class="m-head-add-more"></div>
+
+                <div class="m-head-info">
+                    <div class="order-course">
+                        <span>Расчётный курс</span>
+                        <strong id="cartRate">0</strong>
+                        <small>₽ / €</small>
+                    </div>
+                </div>
+
+                <button type="button" onclick="closeModal()" class="close-x" aria-label="Закрыть корзину">✕</button>
+            </div>
+
+            <div class="m-scroll-area">
+                <div id="cartItems"></div>
+            </div>
+
+            <div class="modal-footer-sticky" id="footerTotalContent"></div>
+        </div>
+    </div>
+
     <div id="infoOverlay" class="info-overlay" onclick="closeInfo()">
         <div class="info-box" onclick="event.stopPropagation()" style="position: relative; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
             
@@ -323,7 +362,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v37';
+    const RXDE_BUILD = 'v41';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -355,6 +394,8 @@
     let currentPreparedText = ""; // Буфер для текста сообщения
     let restoredDate = "";        // Хранит дату восстановления заказа
     let cartBackup = null;        // Сюда будем сохранять корзину перед очисткой
+    let lastRemovedItem = null;
+    let lastRemovedTimer = null;
     let deliveryAddress = "";     // <--- НОВАЯ ПЕРЕМЕННАЯ ДЛЯ АДРЕСА АДМИНА
     let addressBackup = "";
 
@@ -1060,11 +1101,37 @@
             });
     }
 
+    function ensureCategorySearchShortcut() {
+        if (!filters.publicCategory && !filters.prescriptionMode) return;
+
+        const candidates = document.querySelectorAll(
+            '.alphabet-filter > div, .form-filter, .forms-filter, .dosage-filter, .category-filter-controls'
+        );
+
+        candidates.forEach(container => {
+            if (!container || container.querySelector('.category-search-shortcut')) return;
+
+            const firstAll = Array.from(container.querySelectorAll('button'))
+                .find(btn => btn.textContent.trim().toLocaleLowerCase('ru-RU') === 'все');
+
+            if (!firstAll) return;
+
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'category-search-shortcut alphabet-search-button';
+            btn.setAttribute('aria-label', 'Поиск в текущем разделе');
+            btn.setAttribute('title', 'Поиск в текущем разделе');
+            btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>';
+            btn.addEventListener('click', openMobileSearch);
+            firstAll.before(btn);
+        });
+    }
+
     function renderAlphabetBar(rows) {
         if (filters.search || !Array.isArray(rows) || rows.length < 25) return '';
         const letters = getAlphabetLetters(rows);
         if (letters.length < 4) return '';
-        return `<nav class="alphabet-filter" aria-label="Алфавитный фильтр"><span>По алфавиту</span><div><button class="${filters.alphabet ? '' : 'active'}" type="button" onclick="selectAlphabetLetter('')">Все</button>${letters.map(letter => `<button class="${filters.alphabet === letter ? 'active' : ''}" type="button" onclick="selectAlphabetLetter('${letter}')">${letter}</button>`).join('')}</div></nav>`;
+        return `<nav class="alphabet-filter" aria-label="Алфавитный фильтр"><span>По алфавиту</span><div><button class="alphabet-search-button" type="button" onclick="openMobileSearch()" aria-label="Поиск в текущем разделе" title="Поиск в текущем разделе"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg></button><button class="${filters.alphabet ? '' : 'active'}" type="button" onclick="selectAlphabetLetter('')">Все</button>${letters.map(letter => `<button class="${filters.alphabet === letter ? 'active' : ''}" type="button" onclick="selectAlphabetLetter('${letter}')">${letter}</button>`).join('')}</div></nav>`;
     }
 
     function selectAlphabetLetter(letter) {
@@ -1315,6 +1382,7 @@
             htmlBuffer += `<button class="prescription-manual-request" type="button" onclick="openContact('search')"><span>Не нашли назначенный препарат?</span><strong>Отправьте название или фотографию назначения →</strong></button>`;
         }
         list.innerHTML = htmlBuffer;
+        requestAnimationFrame(ensureCategorySearchShortcut);
     }
 
     function renderSuggestions(inputText) {
@@ -2109,6 +2177,91 @@ function clearAdminPanel() {
     BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
     ========================================= */
 
+    function rememberRemovedItem(item, index, wasLastItem) {
+        lastRemovedItem = {
+            item: JSON.parse(JSON.stringify(item)),
+            index,
+            wasLastItem
+        };
+
+        if (lastRemovedTimer) clearTimeout(lastRemovedTimer);
+        lastRemovedTimer = setTimeout(() => {
+            lastRemovedItem = null;
+            lastRemovedTimer = null;
+        }, 5000);
+    }
+
+    function restoreLastRemovedItem() {
+        if (!lastRemovedItem || !lastRemovedItem.item) return;
+
+        const restoreIndex = Math.min(
+            Math.max(Number(lastRemovedItem.index || 0), 0),
+            cart.length
+        );
+
+        cart.splice(restoreIndex, 0, lastRemovedItem.item);
+        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+
+        lastRemovedItem = null;
+        if (lastRemovedTimer) {
+            clearTimeout(lastRemovedTimer);
+            lastRemovedTimer = null;
+        }
+
+        updateBar();
+        render(false);
+
+        const modal = document.getElementById('modal');
+        if (modal && modal.classList.contains('active')) {
+            renderCartItems();
+        }
+
+        const quickCart = document.getElementById('quickCartButton');
+        if (quickCart) {
+            quickCart.classList.remove('order-bump');
+            void quickCart.offsetWidth;
+            quickCart.classList.add('order-bump');
+        }
+    }
+
+    function renderLastItemUndoState() {
+        const items = document.getElementById('cartItems');
+        const footer = document.getElementById('footerTotalContent');
+        if (!items || !footer) return;
+
+        footer.innerHTML = '';
+        items.innerHTML = `
+            <div class="last-item-undo-state">
+                <div class="last-item-undo-icon">↶</div>
+                <strong>Лист заказа пуст</strong>
+                <span>Последняя позиция удалена</span>
+                <button type="button" onclick="restoreLastRemovedItem()">Восстановить позицию</button>
+                <button type="button" class="last-item-secondary" onclick="closeModal()">Вернуться в каталог</button>
+            </div>`;
+    }
+
+    function showCartUndoToast() {
+        const modal = document.getElementById('modal');
+        if (!modal) return;
+
+        let toast = modal.querySelector('.cart-undo-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.className = 'cart-undo-toast';
+            modal.appendChild(toast);
+        }
+
+        toast.innerHTML = `
+            <span>Позиция удалена</span>
+            <button type="button" onclick="restoreLastRemovedItem()">Отменить</button>`;
+
+        toast.classList.remove('show');
+        void toast.offsetWidth;
+        toast.classList.add('show');
+
+        setTimeout(() => toast.classList.remove('show'), 4200);
+    }
+
     function modQty(pzn, d, event) {
         // 1. Сброс предохранителей: любое изменение убивает старый кэш и дату
         cartBackup = null; 
@@ -2144,9 +2297,14 @@ function clearAdminPanel() {
         } else { 
             let newQty = cart[index].qty + d; 
             if (newQty <= 0) {
-                cart.splice(index, 1); 
-                // Если удалили последний товар — закрываем большую корзину
-                if (cart.length === 0) closeModal();
+                const removedItem = JSON.parse(JSON.stringify(cart[index]));
+                const wasLastItem = cart.length === 1;
+
+                rememberRemovedItem(removedItem, index, wasLastItem);
+                cart.splice(index, 1);
+
+                // Последнюю позицию не "роняем" в пустоту:
+                // оставляем корзину открытой и предлагаем локальный Undo.
             } else {
                 cart[index].qty = newQty; 
             }
@@ -2161,8 +2319,14 @@ function clearAdminPanel() {
     // triggerTruckEffect();
 
         // Перерисовываем внутренности открытой модалки, если она сейчас на экране
-        if (document.getElementById('modal').classList.contains('active')) {
-            renderCartItems(); 
+        const modal = document.getElementById('modal');
+        if (modal && modal.classList.contains('active')) {
+            if (cart.length === 0 && lastRemovedItem && lastRemovedItem.wasLastItem) {
+                renderLastItemUndoState();
+            } else {
+                renderCartItems();
+                if (lastRemovedItem) showCartUndoToast();
+            }
         }
     }
 
@@ -2177,7 +2341,12 @@ function clearAdminPanel() {
         const previousQty = index >= 0 ? cart[index].qty : 0;
 
         if (nextQty <= 0) {
-            if (index >= 0) cart.splice(index, 1);
+            if (index >= 0) {
+                const removedItem = JSON.parse(JSON.stringify(cart[index]));
+                const wasLastItem = cart.length === 1;
+                rememberRemovedItem(removedItem, index, wasLastItem);
+                cart.splice(index, 1);
+            }
         } else if (index >= 0) {
             cart[index].qty = nextQty;
         } else {
@@ -2195,10 +2364,13 @@ function clearAdminPanel() {
         render(false);
 
         const modal = document.getElementById('modal');
-        if (cart.length === 0) {
-            if (modal && modal.classList.contains('active')) closeModal();
-        } else if (modal && modal.classList.contains('active')) {
-            renderCartItems();
+        if (modal && modal.classList.contains('active')) {
+            if (cart.length === 0 && lastRemovedItem && lastRemovedItem.wasLastItem) {
+                renderLastItemUndoState();
+            } else {
+                renderCartItems();
+                if (lastRemovedItem) showCartUndoToast();
+            }
         }
     }
     /* =========================================
@@ -2429,14 +2601,21 @@ function clearAdminPanel() {
         const principles = document.getElementById('headerPrinciples');
 
         if (principles) principles.classList.remove('is-ready');
-        if (monthEl) monthEl.textContent = now.toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '').toUpperCase();
+        if (monthEl) {
+            monthEl.textContent = now.toLocaleDateString('ru-RU', { month: 'short' })
+                .replace('.', '')
+                .toUpperCase();
+        }
         if (!dayEl) return;
 
         const currentPage = dayEl.querySelector('.flip-calendar-current');
         const turningPage = dayEl.querySelector('.flip-calendar-sheet');
         const targetDay = now.getDate();
         const formatDay = value => String(value).padStart(2, '0');
-        const fullDate = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+        const fullDate = now.toLocaleDateString('ru-RU', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
+
         dayEl.parentElement.setAttribute('aria-label', `Сегодня ${fullDate}`);
 
         if (!currentPage || !turningPage) {
@@ -2445,33 +2624,51 @@ function clearAdminPanel() {
             return;
         }
 
-        if (calendarAnimationTimer) {
-            clearTimeout(calendarAnimationTimer);
-            calendarAnimationTimer = null;
-        }
+        if (calendarAnimationTimer) clearTimeout(calendarAnimationTimer);
 
-        const previousShown = parseInt(currentPage.textContent, 10);
-        const hasPreviousDay = Number.isFinite(previousShown) && previousShown > 0 && previousShown !== targetDay;
-
-        if (!hasPreviousDay) {
+        const alreadyAnimated = dayEl.dataset.animatedDay === String(targetDay);
+        if (alreadyAnimated) {
             currentPage.textContent = formatDay(targetDay);
             turningPage.textContent = formatDay(targetDay);
-            turningPage.classList.remove('is-flipping');
             revealHeaderPrinciples();
             return;
         }
 
-        turningPage.textContent = formatDay(targetDay);
-        turningPage.classList.remove('is-flipping');
-        void turningPage.offsetWidth;
-        turningPage.classList.add('is-flipping');
+        const dates = [];
+        for (let offset = 3; offset >= 0; offset--) {
+            const d = new Date(now);
+            d.setDate(now.getDate() - offset);
+            dates.push(d.getDate());
+        }
 
-        calendarAnimationTimer = setTimeout(() => {
-            currentPage.textContent = formatDay(targetDay);
+        let idx = 0;
+        currentPage.textContent = formatDay(dates[0]);
+        turningPage.textContent = formatDay(dates[1]);
+        turningPage.classList.remove('is-flipping');
+
+        const flipNext = () => {
+            if (idx >= dates.length - 1) {
+                currentPage.textContent = formatDay(targetDay);
+                turningPage.classList.remove('is-flipping');
+                dayEl.dataset.animatedDay = String(targetDay);
+                revealHeaderPrinciples();
+                return;
+            }
+
+            turningPage.textContent = formatDay(dates[idx + 1]);
             turningPage.classList.remove('is-flipping');
-            revealHeaderPrinciples();
-            calendarAnimationTimer = null;
-        }, 430);
+            void turningPage.offsetWidth;
+            turningPage.classList.add('is-flipping');
+
+            calendarAnimationTimer = setTimeout(() => {
+                idx += 1;
+                currentPage.textContent = formatDay(dates[idx]);
+                turningPage.classList.remove('is-flipping');
+                calendarAnimationTimer = setTimeout(flipNext, 80);
+            }, 430);
+        };
+
+        calendarAnimationTimer = setTimeout(flipNext, 220);
     }
 
     async function refreshHeaderSnapshot() {
@@ -3045,9 +3242,14 @@ function handleOrderCopyAndOpen(btnElement) {
         const modal = document.getElementById('modal');
         const items = document.getElementById('cartItems');
         const footer = document.getElementById('footerTotalContent');
-        if (!modal || !items || !footer) return;
 
-        // Корзина — самостоятельный верхний слой. Поиск под ней сохраняется.
+        if (!modal || !items || !footer) {
+            console.error('[RXDE cart] Не найдена разметка корзины', {
+                modal: !!modal, items: !!items, footer: !!footer
+            });
+            return;
+        }
+
         const contact = document.getElementById('contactOverlay');
         const info = document.getElementById('infoOverlay');
         if (contact) contact.style.display = 'none';
@@ -3061,15 +3263,27 @@ function handleOrderCopyAndOpen(btnElement) {
             );
         }
 
+        if (!modal.classList.contains('active')) scrollPos = window.pageYOffset;
+
+        // Сначала показываем оболочку. Даже если внутри рендера ошибка,
+        // пользователь всё равно увидит корзину, а ошибка попадёт в console.
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollPos}px`;
+        document.body.style.width = '100%';
+        requestAnimationFrame(() => modal.classList.add('active', 'open'));
+
         const numberEl = document.getElementById('modalOrderNumber');
         const dateEl = document.getElementById('modalOrderDate');
+        if (dateEl) {
+            dateEl.innerText = new Date().toLocaleDateString('ru-RU', {
+                day: '2-digit', month: 'long', year: 'numeric'
+            });
+        }
 
         if (cart.length === 0) {
             if (numberEl) numberEl.innerText = 'Лист заказа';
-            if (dateEl) dateEl.innerText = new Date().toLocaleDateString('ru-RU', {
-                day: '2-digit', month: 'long', year: 'numeric'
-            });
-
             items.innerHTML = `
                 <div class="empty-cart-state">
                     <div class="empty-cart-icon">▣</div>
@@ -3078,64 +3292,57 @@ function handleOrderCopyAndOpen(btnElement) {
                     <button type="button" onclick="closeModal()">Вернуться в каталог</button>
                 </div>`;
             footer.innerHTML = '';
-        } else {
-            const newID = generateOrderID();
-            if (numberEl) numberEl.innerText = `№ ${newID}`;
-            if (dateEl) dateEl.innerText = new Date().toLocaleDateString('ru-RU', {
-                day: '2-digit', month: 'long', year: 'numeric'
-            });
+            return;
+        }
 
+        if (numberEl) numberEl.innerText = `№ ${generateOrderID()}`;
+
+        try {
             updateBar();
             renderCartItems();
+        } catch (error) {
+            console.error('[RXDE cart render]', error);
+            items.innerHTML = `
+                <div class="empty-cart-state">
+                    <div class="empty-cart-icon">!</div>
+                    <strong>Корзина открыта</strong>
+                    <span>Состав заказа временно не удалось отрисовать. Ошибка записана в консоль.</span>
+                </div>`;
         }
 
-        if (!modal.classList.contains('active')) {
-            scrollPos = window.pageYOffset;
-        }
+        ensureSortableLoaded().then(() => setTimeout(() => {
+            const container = document.getElementById('cartItems');
+            if (!container || !container.children.length || typeof Sortable === 'undefined') return;
 
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollPos}px`;
-        document.body.style.width = '100%';
+            try {
+                if (window.cartSortable) window.cartSortable.destroy();
 
-        requestAnimationFrame(() => modal.classList.add('active', 'open'));
+                window.cartSortable = new Sortable(container, {
+                    animation: 150,
+                    draggable: '.card',
+                    handle: '.card',
+                    forceFallback: true,
+                    fallbackOnBody: true,
+                    fallbackTolerance: 3,
+                    delay: 200,
+                    delayOnTouchOnly: true,
+                    ghostClass: 'sortable-ghost',
+                    onEnd: function(evt) {
+                        const oldIdx = evt.oldDraggableIndex ?? evt.oldIndex;
+                        const newIdx = evt.newDraggableIndex ?? evt.newIndex;
+                        if (oldIdx === undefined || newIdx === undefined || oldIdx === newIdx) return;
 
-        if (cart.length > 0) {
-            ensureSortableLoaded().then(() => setTimeout(() => {
-                const container = document.getElementById('cartItems');
-                if (!container || !container.children.length || typeof Sortable === 'undefined') return;
-
-                try {
-                    if (window.cartSortable) window.cartSortable.destroy();
-
-                    window.cartSortable = new Sortable(container, {
-                        animation: 150,
-                        draggable: '.card',
-                        handle: '.card',
-                        forceFallback: true,
-                        fallbackOnBody: true,
-                        fallbackTolerance: 3,
-                        delay: 200,
-                        delayOnTouchOnly: true,
-                        ghostClass: 'sortable-ghost',
-                        onEnd: function(evt) {
-                            const oldIdx = evt.oldDraggableIndex ?? evt.oldIndex;
-                            const newIdx = evt.newDraggableIndex ?? evt.newIndex;
-                            if (oldIdx === undefined || newIdx === undefined || oldIdx === newIdx) return;
-
-                            const movedItem = cart.splice(oldIdx, 1)[0];
-                            cart.splice(newIdx, 0, movedItem);
-                            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-                            renderCartItems();
-                            updateBar();
-                        }
-                    });
-                } catch (error) {
-                    console.error('Sortable init:', error);
-                }
-            }, 50));
-        }
+                        const movedItem = cart.splice(oldIdx, 1)[0];
+                        cart.splice(newIdx, 0, movedItem);
+                        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+                        renderCartItems();
+                        updateBar();
+                    }
+                });
+            } catch (error) {
+                console.error('[RXDE sortable]', error);
+            }
+        }, 50));
     }
 
     function ensureSortableLoaded() {
@@ -3161,13 +3368,6 @@ function handleOrderCopyAndOpen(btnElement) {
         const modal = document.getElementById('modal');
         if (!modal) return;
 
-        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'cart') {
-            window.history.back();
-            return;
-        }
-
-        if (navigator.vibrate) navigator.vibrate(10);
-
         document.body.style.overflow = '';
         document.body.style.position = '';
         document.body.style.top = '';
@@ -3177,6 +3377,12 @@ function handleOrderCopyAndOpen(btnElement) {
         modal.classList.remove('open', 'active');
         modal.style.display = 'none';
         updateBar();
+
+        // Крестик корзины — локальное закрытие, без browser Back.
+        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'cart') {
+            const cleanState = { ...(window.history.state || {}), rxdeModal: null };
+            window.history.replaceState(cleanState, '', window.location.href);
+        }
     }
 
     function addMoreItems() {
@@ -3360,9 +3566,13 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         mobileSearchIsOpen = true;
-        overlay.classList.add('active');
         overlay.setAttribute('aria-hidden', 'false');
         document.body.classList.add('mobile-search-open');
+
+        // Короткая задержка делает появление листа читаемым, но не тормозит.
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            setTimeout(() => overlay.classList.add('active'), 45);
+        }));
 
         moveProductListToMobileSearch();
 
@@ -3938,13 +4148,13 @@ function handleOrderCopyAndOpen(btnElement) {
             { transform: `translate3d(${startX}px, ${startY}px, 0) rotate(0deg) scale(.72)`, opacity: .2 },
             { transform: `translate3d(${(startX + endX) / 2}px, ${lift}px, 0) rotate(170deg) scale(1.05)`, opacity: 1, offset: .52 },
             { transform: `translate3d(${endX}px, ${endY}px, 0) rotate(350deg) scale(.38)`, opacity: .1 }
-        ], { duration: 390, easing: 'cubic-bezier(.2,.82,.28,1)' });
+        ], { duration: 470, easing: 'cubic-bezier(.2,.82,.28,1)' });
 
         animation.finished.finally(() => pill.remove());
         target.classList.remove('order-bump');
         void target.offsetWidth;
         target.classList.add('order-bump');
-        setTimeout(() => target.classList.remove('order-bump'), 430);
+        setTimeout(() => target.classList.remove('order-bump'), 510);
     }
 
         /* =========================================
@@ -4157,8 +4367,9 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: НАТИВНАЯ ИСТОРИЯ V35
-    Поиск = 1 шаг; корень внизу -> верх; затем выход
+    BLOCK 11: НАТИВНАЯ ИСТОРИЯ V40
+    Back/Swipe сначала закрывает текущий слой,
+    затем поднимает на верх главной, и только потом выход.
     ========================================= */
 
     window.history.replaceState(
@@ -4182,45 +4393,74 @@ function handleOrderCopyAndOpen(btnElement) {
                !mobileSearchIsOpen;
     }
 
-    window.addEventListener('popstate', function(event) {
-        const state = event.state || {};
+    function anyOverlayOpen() {
         const modal = document.getElementById('modal');
         const contact = document.getElementById('contactOverlay');
         const info = document.getElementById('infoOverlay');
-        const tgOver = document.getElementById('tgOverlay');
+        const tg = document.getElementById('tgOverlay');
+        return !!(
+            (modal && modal.classList.contains('active')) ||
+            (contact && contact.style.display === 'flex') ||
+            (info && info.style.display === 'flex') ||
+            (tg && tg.style.display === 'flex') ||
+            mobileSearchIsOpen
+        );
+    }
 
-        // 1. Поиск — ровно один уровень назад.
-        if (mobileSearchIsOpen && state.rxdeModal !== 'search') {
+    function closeTopOverlayLocally() {
+        const modal = document.getElementById('modal');
+        const contact = document.getElementById('contactOverlay');
+        const info = document.getElementById('infoOverlay');
+        const tg = document.getElementById('tgOverlay');
+
+        if (contact && contact.style.display === 'flex') {
+            closeContact(true);
+            return true;
+        }
+
+        if (modal && modal.classList.contains('active')) {
+            closeModal(true);
+            return true;
+        }
+
+        if (mobileSearchIsOpen) {
             closeMobileSearch(true);
-            return;
+            return true;
         }
 
-        // 2. Корзина и связь — самостоятельные верхние слои.
-        if (state.rxdeModal === 'cart') {
-            if (!(modal && modal.classList.contains('active'))) openCart(true);
-            return;
+        if (info && info.style.display === 'flex') {
+            closeInfo();
+            return true;
         }
 
-        if (state.rxdeModal === 'contact') {
-            if (modal && modal.classList.contains('active')) closeModal(true);
-            if (!(contact && contact.style.display === 'flex')) {
-                openContact(state.contactType || 'question', state.contactIndex ?? null, true);
+        if (tg && tg.style.display === 'flex' && typeof closeTgOverlay === 'function') {
+            closeTgOverlay();
+            return true;
+        }
+
+        return false;
+    }
+
+    window.addEventListener('popstate', function(event) {
+        // 1. Любой открытый верхний слой: один свайп только закрывает его.
+        //    Сайт при этом не покидаем.
+        if (anyOverlayOpen()) {
+            if (closeTopOverlayLocally()) {
+                window.history.pushState(
+                    { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
+                    '',
+                    window.location.href
+                );
+                return;
             }
-            return;
         }
 
-        if (state.rxdeModal === 'search') {
-            if (!mobileSearchIsOpen) openMobileSearch(true);
-            return;
-        }
+        const state = event.state || {};
 
-        if (modal && modal.classList.contains('active')) closeModal(true);
-        if (contact && contact.style.display === 'flex') closeContact(true);
-        if (info && info.style.display === 'flex') closeInfo();
-        if (tgOver && tgOver.style.display === 'flex' && typeof closeTgOverlay === 'function') closeTgOverlay();
+        // 2. Восстанавливаем экран каталога по URL.
+        if (db && db.length) restoreViewFromCurrentUrl();
 
-        // 3. На корневой странице из нижней части сайта Back сначала
-        //    возвращает пользователя на верх категорий и НЕ выходит.
+        // 3. На главной из нижней части сайта Back сначала возвращает наверх.
         if ((state.rxdeEntryBoundary || state.rxdeRootGuard) && rootCatalogNow() && window.scrollY > 80) {
             window.history.pushState(
                 { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
@@ -4231,10 +4471,7 @@ function handleOrderCopyAndOpen(btnElement) {
             return;
         }
 
-        // 4. Возвращаем состояние каталога по URL.
-        if (db && db.length) restoreViewFromCurrentUrl();
-
-        // 5. Дошли до границы приложения — сначала гарантируем главную сверху.
+        // 4. Если на границе, но ещё не главная — возвращаем на главную сверху.
         if (state.rxdeEntryBoundary || state.rxdeRootGuard) {
             if (!rootCatalogNow()) {
                 filters.search = '';
@@ -4255,16 +4492,6 @@ function handleOrderCopyAndOpen(btnElement) {
                     '',
                     window.location.pathname
                 );
-                return;
-            }
-
-            if (window.scrollY > 80) {
-                window.history.pushState(
-                    { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
-                    '',
-                    window.location.href
-                );
-                window.scrollTo({ top: 0, behavior: 'smooth' });
                 return;
             }
 
@@ -4593,7 +4820,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v37 · style v37
+                index v41 · style v41
             </div>
         </div>
     </footer>
