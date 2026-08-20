@@ -10389,3 +10389,221 @@ body.rxde-mode-cart #modal .modal-footer-sticky {
         min-width: 130px !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V67 — STABILITY FIRST
+   ========================================================== */
+
+/* Полностью отключён старый SortableJS/drag UI. */
+.sortable-ghost,
+.sortable-fallback,
+.sortable-chosen,
+.sortable-drag {
+    display: none !important;
+}
+
+/* Восстановление заказа: одна спокойная кнопка, без цифр и анимации. */
+#modal .restore-order-button.restore-order-timed {
+    min-width: 136px !important;
+    min-height: 36px !important;
+    padding: 0 11px !important;
+
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border: 1px solid rgba(32,112,76,.22) !important;
+    border-radius: 10px !important;
+    background: #eef8f2 !important;
+    color: #27694a !important;
+
+    box-shadow: none !important;
+    animation: none !important;
+    transform: none !important;
+
+    font-size: 9.5px !important;
+    line-height: 1 !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+}
+
+#modal .restore-order-countdown {
+    display: none !important;
+}
+
+#modal .clear-order-pending,
+#modal .clear-order-finished {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    filter: none !important;
+}
+
+/* Возврат на главную после корзины: никакого фиксированного body. */
+body:not(.rxde-mode-cart) {
+    position: static !important;
+    top: auto !important;
+    width: auto !important;
+}
+
+/* Поиск: исключаем визуальный переход старой карточки в новый результат. */
+.mobile-search-list-host {
+    contain: layout paint !important;
+}
+
+
+/* ==========================================================
+   RXDE V68 — GLOBAL SEARCH FIRST
+   ========================================================== */
+
+/* В шапке раздела вместо "Не нашли нужное?" — нормальная строка поиска. */
+.category-context-strip .category-search-field {
+    width: 100% !important;
+    min-height: 58px !important;
+
+    display: grid !important;
+    grid-template-columns: 38px minmax(0,1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+
+    padding: 9px 13px !important;
+
+    border: 1px solid #cbd9e2 !important;
+    border-radius: 15px !important;
+
+    background:
+        linear-gradient(135deg, rgba(255,255,255,.96), rgba(244,249,252,.92)) !important;
+    color: #173d57 !important;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.9),
+        0 5px 16px rgba(36,78,105,.055) !important;
+
+    text-align: left !important;
+    cursor: text !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+.category-context-strip .category-search-field:active {
+    transform: translateY(1px) !important;
+}
+
+.category-search-field-icon {
+    display: grid !important;
+    place-items: center !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background: #edf5fa !important;
+}
+
+.category-search-field-icon svg {
+    width: 20px !important;
+    height: 20px !important;
+    fill: none !important;
+    stroke: #285f83 !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+}
+
+.category-search-field-copy {
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+}
+
+.category-search-field-copy strong {
+    font-size: 13px !important;
+    line-height: 1.05 !important;
+    font-weight: 800 !important;
+    color: #1b4967 !important;
+}
+
+.category-search-field-copy small {
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+    font-weight: 520 !important;
+    color: #7b8b96 !important;
+}
+
+/* Алфавит — только буквы. Никаких луп внутри этого блока. */
+.alphabet-filter .alphabet-search-button,
+.category-search-shortcut {
+    display: none !important;
+}
+
+.alphabet-filter > div {
+    gap: 7px !important;
+}
+
+/* Scope-row теперь объясняет, что глобальный поиск — стандарт. */
+.mobile-search-scope-row {
+    align-items: center !important;
+}
+
+.mobile-search-scope-row > span {
+    font-weight: 700 !important;
+    color: #496b80 !important;
+}
+
+.mobile-search-scope-row > button {
+    white-space: normal !important;
+    text-align: right !important;
+}
+
+@media (max-width: 720px) {
+    .category-context-strip .category-search-field {
+        min-height: 54px !important;
+        grid-template-columns: 34px minmax(0,1fr) !important;
+        padding: 8px 11px !important;
+        border-radius: 14px !important;
+    }
+
+    .category-search-field-icon {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .category-search-field-icon svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .category-search-field-copy strong {
+        font-size: 12px !important;
+    }
+
+    .category-search-field-copy small {
+        font-size: 8.5px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V69 — ATOMIC CART PAINT
+   ========================================================== */
+
+/* Корзина появляется уже полностью собранной. */
+#modal,
+#modal .m-box,
+#modal .modal-footer-sticky,
+#modal .order-sheet-footer,
+#modal #copyActionBlock {
+    transition: none !important;
+    animation: none !important;
+}
+
+#modal .m-box,
+#modal .modal-footer-sticky {
+    transform: none !important;
+    filter: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+}
+
+#modal .modal-footer-sticky {
+    contain: layout paint !important;
+    isolation: isolate !important;
+}

@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v66">
+    <link rel="stylesheet" href="style.css?build=v69">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -169,7 +169,7 @@
 
             <div id="mobileSearchScopeRow" class="mobile-search-scope-row" hidden>
                 <span id="mobileSearchScope"></span>
-                <button id="mobileSearchEverywhereBtn" type="button" onclick="searchEverywhereFromMobile()">Искать везде</button>
+                <button id="mobileSearchEverywhereBtn" type="button" onclick="searchCurrentSectionFromMobile()">Искать в этом разделе</button>
             </div>
 
             <div id="mobileSearchSuggestionsHost" class="mobile-search-suggestions-host"></div>
@@ -371,8 +371,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v66';
-    const RXDE_DB_BUILD = '08-21 00:25';
+    const RXDE_BUILD = 'v69';
+    const RXDE_DB_BUILD = '08-21 01:32';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -411,8 +411,8 @@
     let addressBackup = "";
     const ORDER_ACTION_TITLE = 'Передать заказ';
     const ORDER_ACTION_HINT = 'Менеджер проверит и подтвердит';
-    let clearOrderUndoInterval = null;
-    let clearOrderUndoDeadline = 0;
+    let clearOrderUndoTimer = null;
+    let cartOpenInProgress = false;
 
 
     /* =========================================
@@ -707,9 +707,14 @@
                         <span class="category-context-title"><strong>${category}</strong><small>${shownCount} из ${totalCount} товаров</small></span>
                     </span>
                 </button>
-                <button class="category-request-cta" type="button" onclick="openContact('question')">
-                    <span><strong>Не нашли нужное?</strong><small>Подберём в Германии индивидуально</small></span>
-                    <i aria-hidden="true">→</i>
+                <button class="category-search-field" type="button" onclick="openMobileSearch()" aria-label="Поиск по всему каталогу">
+                    <span class="category-search-field-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
+                    </span>
+                    <span class="category-search-field-copy">
+                        <strong>Поиск по всему каталогу</strong>
+                        <small>Название, действующее вещество или PZN</small>
+                    </span>
                 </button>
             </section>
             ${subcategories.length ? `<div class="subcategory-row"><button class="subcategory-chip ${!filters.publicSubcategory ? 'active' : ''}" type="button" onclick="selectPublicSubcategory('')">Все · ${totalCount}</button>${subcategories.map(item => `<button class="subcategory-chip ${filters.publicSubcategory === item.id ? 'active' : ''}" type="button" onclick="selectPublicSubcategory('${item.id}')">${item.label} · ${item.count}</button>`).join('')}</div>` : ''}`;
@@ -1118,37 +1123,34 @@
     }
 
     function ensureCategorySearchShortcut() {
-        if (!filters.publicCategory && !filters.prescriptionMode) return;
-
-        const candidates = document.querySelectorAll(
-            '.alphabet-filter > div, .form-filter, .forms-filter, .dosage-filter, .category-filter-controls'
-        );
-
-        candidates.forEach(container => {
-            if (!container || container.querySelector('.category-search-shortcut')) return;
-
-            const firstAll = Array.from(container.querySelectorAll('button'))
-                .find(btn => btn.textContent.trim().toLocaleLowerCase('ru-RU') === 'все');
-
-            if (!firstAll) return;
-
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = 'category-search-shortcut alphabet-search-button';
-            btn.setAttribute('aria-label', 'Поиск в текущем разделе');
-            btn.setAttribute('title', 'Поиск в текущем разделе');
-            btn.innerHTML = '<svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>';
-            btn.addEventListener('click', openMobileSearch);
-            firstAll.before(btn);
-        });
+        // V68: поиск вынесен отдельной явной строкой в шапку раздела.
+        // Алфавитный фильтр больше не содержит луп.
+        return;
     }
+
 
     function renderAlphabetBar(rows) {
         if (filters.search || !Array.isArray(rows) || rows.length < 25) return '';
+
         const letters = getAlphabetLetters(rows);
         if (letters.length < 4) return '';
-        return `<nav class="alphabet-filter" aria-label="Алфавитный фильтр"><span>По алфавиту</span><div><button class="alphabet-search-button" type="button" onclick="openMobileSearch()" aria-label="Поиск в текущем разделе" title="Поиск в текущем разделе"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg></button><button class="${filters.alphabet ? '' : 'active'}" type="button" onclick="selectAlphabetLetter('')">Все</button>${letters.map(letter => `<button class="${filters.alphabet === letter ? 'active' : ''}" type="button" onclick="selectAlphabetLetter('${letter}')">${letter}</button>`).join('')}</div></nav>`;
+
+        return `
+            <nav class="alphabet-filter" aria-label="Алфавитный фильтр">
+                <span>По алфавиту</span>
+                <div>
+                    <button class="${filters.alphabet ? '' : 'active'}"
+                            type="button"
+                            onclick="selectAlphabetLetter('')">Все</button>
+                    ${letters.map(letter => `
+                        <button class="${filters.alphabet === letter ? 'active' : ''}"
+                                type="button"
+                                onclick="selectAlphabetLetter('${letter}')">${letter}</button>
+                    `).join('')}
+                </div>
+            </nav>`;
     }
+
 
     function selectAlphabetLetter(letter) {
         filters.alphabet = String(letter || '').toLocaleUpperCase('ru-RU');
@@ -1401,7 +1403,6 @@
             htmlBuffer += `<button class="prescription-manual-request" type="button" onclick="openContact('search')"><span>Не нашли назначенный препарат?</span><strong>Отправьте название или фотографию назначения →</strong></button>`;
         }
         list.innerHTML = htmlBuffer;
-        requestAnimationFrame(ensureCategorySearchShortcut);
     }
 
     function renderSuggestions(inputText) {
@@ -1755,7 +1756,6 @@
             event.stopPropagation();
         }
 
-        // Схлопываем ВСЕ рабочие слои без промежуточных history-переходов.
         rxdeDismissKeyboardNow?.();
 
         const contact = document.getElementById('contactOverlay');
@@ -1777,6 +1777,14 @@
             modal.style.display = 'none';
         }
 
+        // Корзина фиксирует body через position:fixed.
+        // Сначала полностью снимаем этот lock, иначе главная визуально
+        // выглядит как "замороженный снимок".
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+
         document.body.classList.remove(
             'mobile-search-open',
             'rxde-search-front',
@@ -1786,7 +1794,6 @@
             'rxde-mode-cart',
             'rxde-mode-contact'
         );
-        document.body.style.overflow = '';
 
         filters.search = '';
         filters.publicCategory = '';
@@ -1804,6 +1811,10 @@
         const suggestions = document.getElementById('suggestRow');
         if (suggestions) suggestions.innerHTML = '';
 
+        // Если список товаров был временно перенесён в поиск — возвращаем DOM.
+        try { restoreProductListHome(); } catch (_) {}
+        try { clearSearchBackdrop(); } catch (_) {}
+
         render(true);
 
         const rootUrl = window.location.origin + window.location.pathname;
@@ -1814,13 +1825,14 @@
             rxdeModal: null,
             rxdeGuard: false
         };
+
         try {
             window.history.replaceState(base, '', rootUrl);
             window.history.pushState({ ...base, rxdeGuard: true }, '', rootUrl);
         } catch (_) {}
 
         requestAnimationFrame(() => {
-            window.scrollTo({ top: 0, behavior: 'instant' });
+            window.scrollTo(0, 0);
         });
     }
 
@@ -2390,18 +2402,15 @@ function clearAdminPanel() {
     }
 
     function stopClearOrderUndoTimer() {
-        if (clearOrderUndoInterval) {
-            clearInterval(clearOrderUndoInterval);
-            clearOrderUndoInterval = null;
+        if (clearOrderUndoTimer) {
+            clearTimeout(clearOrderUndoTimer);
+            clearOrderUndoTimer = null;
         }
-        clearOrderUndoDeadline = 0;
     }
 
     function finalizeClearedOrder() {
         stopClearOrderUndoTimer();
 
-        // После 3 секунд операция считается завершённой:
-        // старый заказ больше не держим в памяти.
         cartBackup = null;
         addressBackup = '';
 
@@ -2429,26 +2438,6 @@ function clearAdminPanel() {
         if (footer) footer.innerHTML = '';
     }
 
-    function updateClearOrderUndoButton() {
-        const button = document.getElementById('restoreClearedOrderButton');
-        if (!button || !clearOrderUndoDeadline) return;
-
-        const msLeft = clearOrderUndoDeadline - Date.now();
-        if (msLeft <= 0) {
-            finalizeClearedOrder();
-            return;
-        }
-
-        const seconds = Math.max(1, Math.ceil(msLeft / 1000));
-        button.innerHTML = `
-            <span class="restore-order-label">Восстановить заказ</span>
-            <span class="restore-order-countdown">${seconds}</span>`;
-        button.setAttribute(
-            'aria-label',
-            `Восстановить заказ. Осталось ${seconds} сек.`
-        );
-    }
-
     function showClearedOrderUndoUI() {
         const headerLinks = document.getElementById('modalHeaderLinks');
         const items = document.getElementById('cartItems');
@@ -2463,8 +2452,7 @@ function clearAdminPanel() {
                         class="restore-order-button restore-order-timed"
                         type="button"
                         onclick="restoreClearedOrder(event)">
-                    <span class="restore-order-label">Восстановить заказ</span>
-                    <span class="restore-order-countdown">3</span>
+                    Восстановить заказ
                 </button>`;
         }
 
@@ -2473,20 +2461,14 @@ function clearAdminPanel() {
                 <div class="empty-cart-state confirmed-empty-cart clear-order-pending">
                     <div class="empty-cart-icon">✓</div>
                     <strong>Заказ очищен</strong>
-                    <span>Отменить очистку можно в течение 3 секунд.</span>
+                    <span>При необходимости его можно сразу восстановить.</span>
                 </div>`;
         }
 
         if (footer) footer.innerHTML = '';
 
         stopClearOrderUndoTimer();
-        clearOrderUndoDeadline = Date.now() + 3000;
-        updateClearOrderUndoButton();
-
-        clearOrderUndoInterval = setInterval(
-            updateClearOrderUndoButton,
-            120
-        );
+        clearOrderUndoTimer = setTimeout(finalizeClearedOrder, 3000);
     }
 
     function confirmClearOrder(event) {
@@ -2508,8 +2490,8 @@ function clearAdminPanel() {
         updateBar();
         render(false);
 
-        // ВАЖНО: не вызываем renderCartItems() здесь.
-        // Рисуем одно стабильное состояние и меняем только цифру таймера.
+        // Один стабильный экран на 3 секунды. Никаких 3→2→1,
+        // интервалов, анимаций и повторных перерисовок.
         showClearedOrderUndoUI();
     }
 
@@ -2537,8 +2519,6 @@ function clearAdminPanel() {
 
         updateBar();
         render(false);
-
-        // Единственная полноценная перерисовка — после восстановления.
         renderCartItems();
     }
 
@@ -2799,7 +2779,7 @@ function clearAdminPanel() {
         }, 300);
     }
 
-    function updateBar() {
+    function updateBar(forceCartFooter = false) {
         const headerOrderButton = document.getElementById('headerOrderButton');
         const headerOrderCount = document.getElementById('headerOrderCount');
         const headerOrderMeta = document.getElementById('headerOrderMeta');
@@ -2841,7 +2821,13 @@ function clearAdminPanel() {
         if (headerOrderButton) headerOrderButton.classList.toggle('has-items', totalPacks > 0);
 
         const footerTotalContent = document.getElementById('footerTotalContent');
-        if (footerTotalContent) {
+        const cartModalForFooter = document.getElementById('modal');
+        const shouldRenderCartFooter = !!(
+            forceCartFooter ||
+            (cartModalForFooter && cartModalForFooter.classList.contains('active'))
+        );
+
+        if (footerTotalContent && shouldRenderCartFooter) {
             footerTotalContent.innerHTML = `
                 <div class="order-sheet-footer">
                     <div class="order-sheet-total">
@@ -3602,8 +3588,6 @@ function handleOrderCopyAndOpen(btnElement) {
         const cleanName = String(fullName || '').trim();
         if (!cleanName) return;
 
-        // Бренд/семейство — первое слово названия:
-        // "Ospolot 200Mg 50St" -> "Ospolot".
         const brand = cleanName
             .replace(/^\[[^\]]+\]\s*/, '')
             .split(/\s+/)[0]
@@ -3611,40 +3595,14 @@ function handleOrderCopyAndOpen(btnElement) {
 
         if (!brand) return;
 
-        // Запоминаем запрос ДО открытия поискового слоя.
-        mobileSearchSavedQuery = brand;
-
-        // Корзину закрываем как внутренний слой, не уходим на главную.
+        // Закрываем корзину, но сохраняем её родительский экран.
         closeModal(true);
 
-        // Поиск должен показать ВСЕ варианты бренда во всём каталоге,
-        // но после закрытия поиска пользователь вернётся в исходный раздел:
-        // openMobileSearch сначала сохранит текущую категорию как parent.
         requestAnimationFrame(() => {
-            openMobileSearch();
-
-            requestAnimationFrame(() => {
-                filters.publicCategory = '';
-                filters.publicSubcategory = '';
-                filters.prescriptionMode = false;
-                filters.alphabet = '';
-
-                const mobileInput = document.getElementById('mobileSearchInput');
-                const desktopInput = document.getElementById('search');
-
-                if (mobileInput) mobileInput.value = brand;
-                if (desktopInput) desktopInput.value = brand;
-
-                mobileSearchSavedQuery = brand;
-                syncMobileSearchClearButton();
-                handleMobileSearchInput(true);
-
-                if (mobileInput) {
-                    try {
-                        mobileInput.focus({ preventScroll: true });
-                        mobileInput.setSelectionRange(brand.length, brand.length);
-                    } catch (_) {}
-                }
+            openMobileSearch(false, {
+                query: brand,
+                everywhere: true,
+                clearCurrentList: true
             });
         });
     }
@@ -3689,6 +3647,9 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function openCart(fromHistory = false) {
+        if (cartOpenInProgress) return;
+        cartOpenInProgress = true;
+
         isQuestionMode = false;
 
         const modal = document.getElementById('modal');
@@ -3699,6 +3660,7 @@ function handleOrderCopyAndOpen(btnElement) {
             console.error('[RXDE cart] Не найдена разметка корзины', {
                 modal: !!modal, items: !!items, footer: !!footer
             });
+            cartOpenInProgress = false;
             return;
         }
 
@@ -3717,21 +3679,19 @@ function handleOrderCopyAndOpen(btnElement) {
 
         if (!modal.classList.contains('active')) scrollPos = window.pageYOffset;
 
-        // Сначала показываем оболочку. Даже если внутри рендера ошибка,
-        // пользователь всё равно увидит корзину, а ошибка попадёт в console.
         document.body.classList.remove('rxde-search-front', 'rxde-contact-front');
         document.body.classList.remove('rxde-mode-search', 'rxde-mode-contact');
         document.body.classList.add('rxde-cart-front', 'rxde-mode-cart');
 
-        modal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${scrollPos}px`;
-        document.body.style.width = '100%';
-        requestAnimationFrame(() => modal.classList.add('active', 'open'));
+        // V69: сначала собираем корзину полностью ВНЕ ЭКРАНА.
+        modal.classList.remove('active', 'open');
+        modal.style.display = 'none';
+        items.innerHTML = '';
+        footer.innerHTML = '';
 
         const numberEl = document.getElementById('modalOrderNumber');
         const dateEl = document.getElementById('modalOrderDate');
+
         if (dateEl) {
             dateEl.innerText = new Date().toLocaleDateString('ru-RU', {
                 day: '2-digit', month: 'long', year: 'numeric'
@@ -3740,6 +3700,7 @@ function handleOrderCopyAndOpen(btnElement) {
 
         if (cart.length === 0) {
             if (numberEl) numberEl.innerText = 'Лист заказа';
+
             items.innerHTML = `
                 <div class="empty-cart-state">
                     <div class="empty-cart-icon">▣</div>
@@ -3747,80 +3708,39 @@ function handleOrderCopyAndOpen(btnElement) {
                     <span>Добавляйте товары из каталога — они появятся здесь.</span>
                     <button type="button" onclick="closeModal()">Вернуться в каталог</button>
                 </div>`;
+
             footer.innerHTML = '';
-            return;
-        }
-
-        if (numberEl) numberEl.innerText = `№ ${generateOrderID()}`;
-
-        try {
-            updateBar();
-            renderCartItems();
-        } catch (error) {
-            console.error('[RXDE cart render]', error);
-            items.innerHTML = `
-                <div class="empty-cart-state">
-                    <div class="empty-cart-icon">!</div>
-                    <strong>Корзина открыта</strong>
-                    <span>Состав заказа временно не удалось отрисовать. Ошибка записана в консоль.</span>
-                </div>`;
-        }
-
-        ensureSortableLoaded().then(() => setTimeout(() => {
-            const container = document.getElementById('cartItems');
-            if (!container || !container.children.length || typeof Sortable === 'undefined') return;
+        } else {
+            if (numberEl) numberEl.innerText = `№ ${generateOrderID()}`;
 
             try {
-                if (window.cartSortable) window.cartSortable.destroy();
-
-                window.cartSortable = new Sortable(container, {
-                    animation: 150,
-                    draggable: '.card',
-                    handle: '.card',
-                    filter: 'button,input,textarea,select,a,.qty-capsule,.position-delete-bar,.order-line-delete,.order-variant-search',
-                    preventOnFilter: false,
-                    forceFallback: true,
-                    fallbackOnBody: true,
-                    fallbackTolerance: 3,
-                    delay: 200,
-                    delayOnTouchOnly: true,
-                    ghostClass: 'sortable-ghost',
-                    onEnd: function(evt) {
-                        const oldIdx = evt.oldDraggableIndex ?? evt.oldIndex;
-                        const newIdx = evt.newDraggableIndex ?? evt.newIndex;
-                        if (oldIdx === undefined || newIdx === undefined || oldIdx === newIdx) return;
-
-                        const movedItem = cart.splice(oldIdx, 1)[0];
-                        cart.splice(newIdx, 0, movedItem);
-                        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-                        renderCartItems();
-                        updateBar();
-                    }
-                });
+                // Один актуальный render: сначала строки, потом итог.
+                renderCartItems();
+                updateBar(true);
             } catch (error) {
-                console.error('[RXDE sortable]', error);
+                console.error('[RXDE cart render]', error);
+                items.innerHTML = `
+                    <div class="empty-cart-state">
+                        <div class="empty-cart-icon">!</div>
+                        <strong>Корзина открыта</strong>
+                        <span>Состав заказа временно не удалось отрисовать. Ошибка записана в консоль.</span>
+                    </div>`;
+                footer.innerHTML = '';
             }
-        }, 50));
+        }
+
+        // Только теперь показываем готовую корзину.
+        modal.style.display = 'flex';
+        modal.classList.add('active', 'open');
+
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.top = `-${scrollPos}px`;
+        document.body.style.width = '100%';
+
+        cartOpenInProgress = false;
     }
 
-    function ensureSortableLoaded() {
-        if (typeof Sortable !== 'undefined') return Promise.resolve();
-        if (sortableLoadPromise) return sortableLoadPromise;
-
-        sortableLoadPromise = new Promise(resolve => {
-            const script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js';
-            script.async = true;
-            script.onload = resolve;
-            script.onerror = () => {
-                console.warn('Перетаскивание товаров недоступно; остальные функции корзины работают.');
-                resolve();
-            };
-            document.head.appendChild(script);
-        });
-
-        return sortableLoadPromise;
-    }
 
     function closeModal(fromHistory = false) {
         const modal = document.getElementById('modal');
@@ -3832,7 +3752,7 @@ function handleOrderCopyAndOpen(btnElement) {
         document.body.style.width = '';
         window.scrollTo(0, scrollPos);
 
-        if (clearOrderUndoDeadline) finalizeClearedOrder();
+        if (clearOrderUndoTimer) finalizeClearedOrder();
 
         modal.classList.remove('open', 'active');
         modal.style.display = 'none';
@@ -3941,23 +3861,35 @@ function handleOrderCopyAndOpen(btnElement) {
     function updateMobileSearchScope() {
         const row = document.getElementById('mobileSearchScopeRow');
         const scope = document.getElementById('mobileSearchScope');
-        const everywhere = document.getElementById('mobileSearchEverywhereBtn');
-        if (!row || !scope || !everywhere) return;
+        const sectionBtn = document.getElementById('mobileSearchEverywhereBtn');
+        if (!row || !scope || !sectionBtn) return;
 
-        if (filters.publicCategory) {
-            scope.textContent = filters.publicCategory;
-            row.hidden = false;
-            everywhere.hidden = false;
-        } else if (filters.prescriptionMode) {
-            scope.textContent = 'Индивидуальный каталог';
-            row.hidden = false;
-            everywhere.hidden = false;
-        } else {
+        const hasOriginalSection = !!mobileSearchOriginalCategory || !!mobileSearchOriginalPrescriptionMode;
+        if (!hasOriginalSection) {
             scope.textContent = '';
             row.hidden = true;
-            everywhere.hidden = true;
+            sectionBtn.hidden = true;
+            return;
         }
+
+        const currentlyGlobal = !filters.publicCategory && !filters.prescriptionMode;
+
+        if (currentlyGlobal) {
+            scope.textContent = 'По всему каталогу';
+            sectionBtn.textContent = mobileSearchOriginalPrescriptionMode
+                ? 'Только индивидуальный каталог'
+                : `Только раздел «${mobileSearchOriginalCategory}»`;
+        } else {
+            scope.textContent = filters.prescriptionMode
+                ? 'Индивидуальный каталог'
+                : filters.publicCategory;
+            sectionBtn.textContent = 'Искать по всему каталогу';
+        }
+
+        row.hidden = false;
+        sectionBtn.hidden = false;
     }
+
 
     function moveProductListToMobileSearch() {
         const list = document.getElementById('list');
@@ -3998,7 +3930,7 @@ function handleOrderCopyAndOpen(btnElement) {
         hint.hidden = hasQuery || hasContent || !!filters.publicCategory || !!filters.prescriptionMode;
     }
 
-    function openMobileSearch(fromHistory = false) {
+    function openMobileSearch(fromHistory = false, options = {}) {
         const overlay = document.getElementById('mobileSearchOverlay');
         const mobileInput = document.getElementById('mobileSearchInput');
         const desktopInput = document.getElementById('search');
@@ -4014,7 +3946,27 @@ function handleOrderCopyAndOpen(btnElement) {
         mobileSearchOriginalPrescriptionMode = !!filters.prescriptionMode;
         mobileSearchParentScrollY = window.scrollY;
 
+        const requestedQuery = typeof options.query === 'string'
+            ? options.query.trim()
+            : mobileSearchSavedQuery;
+
+        if (options.clearCurrentList) {
+            const currentList = document.getElementById('list');
+            const currentSuggestions = document.getElementById('suggestRow');
+            if (currentList) currentList.innerHTML = '';
+            if (currentSuggestions) currentSuggestions.innerHTML = '';
+        }
+
         captureSearchBackdrop();
+
+        // V68: поиск по умолчанию ВСЕГДА глобальный.
+        // Ограничение текущим разделом включается только явным выбором пользователя.
+        if (!options.scopeCurrent) {
+            filters.publicCategory = '';
+            filters.publicSubcategory = '';
+            filters.prescriptionMode = false;
+            filters.alphabet = '';
+        }
 
         if (!fromHistory) {
             window.history.replaceState(
@@ -4045,7 +3997,8 @@ function handleOrderCopyAndOpen(btnElement) {
 
         moveProductListToMobileSearch();
 
-        const query = mobileSearchSavedQuery || '';
+        const query = requestedQuery || '';
+        mobileSearchSavedQuery = query;
         mobileInput.value = query;
         syncMobileSearchClearButton();
         if (desktopInput) desktopInput.value = query;
@@ -4197,20 +4150,45 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
 
-    function searchEverywhereFromMobile() {
-        filters.publicCategory = '';
-        filters.publicSubcategory = '';
-        filters.prescriptionMode = false;
-        filters.alphabet = '';
-
+    function searchCurrentSectionFromMobile() {
         const mobileInput = document.getElementById('mobileSearchInput');
         const desktopInput = document.getElementById('search');
-        if (desktopInput && mobileInput) desktopInput.value = mobileInput.value;
+        const query = mobileInput ? mobileInput.value : '';
 
-        handleMobileSearchInput();
+        const currentlyGlobal = !filters.publicCategory && !filters.prescriptionMode;
+
+        if (currentlyGlobal) {
+            // Пользователь ЯВНО выбрал ограничение разделом.
+            filters.publicCategory = mobileSearchOriginalCategory || '';
+            filters.publicSubcategory = mobileSearchOriginalSubcategory || '';
+            filters.prescriptionMode = !!mobileSearchOriginalPrescriptionMode;
+        } else {
+            // Возврат к стандартному глобальному поиску.
+            filters.publicCategory = '';
+            filters.publicSubcategory = '';
+            filters.prescriptionMode = false;
+        }
+
+        filters.alphabet = '';
+        filters.search = query;
+
+        if (desktopInput) desktopInput.value = query;
+
+        render(false);
         moveProductListToMobileSearch();
         updateMobileSearchScope();
         syncMobileSearchHint();
+
+        if (mobileInput) {
+            try { mobileInput.focus({ preventScroll: true }); } catch (_) {}
+        }
+    }
+
+    // Старое имя оставляем как совместимый alias.
+    function searchEverywhereFromMobile() {
+        if (filters.publicCategory || filters.prescriptionMode) {
+            searchCurrentSectionFromMobile();
+        }
     }
 
 
@@ -5459,7 +5437,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v66 · style v66 · база 08-21 00:25
+                index v69 · style v69 · база 08-21 01:32
             </div>
         </div>
     </footer>
