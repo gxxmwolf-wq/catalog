@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v51">
+    <link rel="stylesheet" href="style.css?build=v52">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -362,7 +362,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v51';
+    const RXDE_BUILD = 'v52';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -2780,82 +2780,101 @@ function clearAdminPanel() {
         const principles = document.getElementById('headerPrinciples');
 
         if (principles) principles.classList.remove('is-ready');
+
         if (monthEl) {
             monthEl.textContent = now.toLocaleDateString('ru-RU', { month: 'short' })
                 .replace('.', '')
                 .toUpperCase();
         }
+
         if (!dayEl) return;
 
         const currentPage = dayEl.querySelector('.flip-calendar-current');
         const turningPage = dayEl.querySelector('.flip-calendar-sheet');
-        const targetDay = now.getDate();
+        const actualDay = now.getDate();
         const formatDay = value => String(value).padStart(2, '0');
+
         const fullDate = now.toLocaleDateString('ru-RU', {
-            day: 'numeric', month: 'long', year: 'numeric'
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
         });
 
         dayEl.parentElement.setAttribute('aria-label', `Сегодня ${fullDate}`);
 
         if (!currentPage || !turningPage) {
-            dayEl.textContent = formatDay(targetDay);
+            dayEl.textContent = formatDay(actualDay);
             revealHeaderPrinciples();
             return;
         }
 
-        if (calendarAnimationTimer) clearTimeout(calendarAnimationTimer);
+        if (calendarAnimationTimer) {
+            clearTimeout(calendarAnimationTimer);
+            calendarAnimationTimer = null;
+        }
 
-        const alreadyAnimated = dayEl.dataset.animatedDay === String(targetDay);
-        if (alreadyAnimated) {
-            currentPage.textContent = formatDay(targetDay);
-            turningPage.textContent = formatDay(targetDay);
+        if (dayEl.dataset.animatedDay === String(actualDay)) {
+            currentPage.textContent = formatDay(actualDay);
+            turningPage.textContent = formatDay(actualDay);
             revealHeaderPrinciples();
             return;
         }
 
-        // Три даты ВСЕГО: позавчера -> вчера -> сегодня.
-        const dates = [];
-        for (let offset = 2; offset >= 0; offset--) {
-            const d = new Date(now);
-            d.setDate(now.getDate() - offset);
-            dates.push(d.getDate());
-        }
+        /*
+         * Строго заданная последовательность:
+         * текущее число - 3 → +1 → +1 → +1 → текущее число.
+         *
+         * Для декоративного перелистывания используем диапазон 1..28.
+         * До 28-го числа последовательность полностью буквальная.
+         */
+        const targetDay = Math.min(Math.max(actualDay, 1), 28);
+        const sequence = [
+            targetDay - 3,
+            targetDay - 2,
+            targetDay - 1,
+            targetDay
+        ].map(value => {
+            while (value < 1) value += 28;
+            while (value > 28) value -= 28;
+            return value;
+        });
 
-        let idx = 0;
-        currentPage.textContent = formatDay(dates[0]);
-        turningPage.textContent = formatDay(dates[1]);
+        let index = 0;
+
+        currentPage.textContent = formatDay(sequence[0]);
+        turningPage.textContent = formatDay(sequence[1]);
         turningPage.classList.remove('is-flipping');
 
         const flipNext = () => {
-            if (idx >= dates.length - 1) {
-                dayEl.dataset.animatedDay = String(targetDay);
+            if (index >= sequence.length - 1) {
+                dayEl.dataset.animatedDay = String(actualDay);
                 revealHeaderPrinciples();
+                calendarAnimationTimer = null;
                 return;
             }
 
-            turningPage.textContent = formatDay(dates[idx + 1]);
+            turningPage.textContent = formatDay(sequence[index + 1]);
             turningPage.classList.remove('is-flipping');
             void turningPage.offsetWidth;
             turningPage.classList.add('is-flipping');
 
             calendarAnimationTimer = setTimeout(() => {
-                idx += 1;
-                currentPage.textContent = formatDay(dates[idx]);
+                index += 1;
+                currentPage.textContent = formatDay(sequence[index]);
                 turningPage.classList.remove('is-flipping');
 
-                // Сегодня уже показано — не запускаем ещё один "пустой" цикл.
-                if (idx >= dates.length - 1) {
-                    dayEl.dataset.animatedDay = String(targetDay);
+                if (index >= sequence.length - 1) {
+                    dayEl.dataset.animatedDay = String(actualDay);
                     revealHeaderPrinciples();
                     calendarAnimationTimer = null;
                     return;
                 }
 
-                calendarAnimationTimer = setTimeout(flipNext, 70);
-            }, 390);
+                calendarAnimationTimer = setTimeout(flipNext, 65);
+            }, 380);
         };
 
-        calendarAnimationTimer = setTimeout(flipNext, 180);
+        calendarAnimationTimer = setTimeout(flipNext, 160);
     }
 
     async function refreshHeaderSnapshot() {
@@ -5018,7 +5037,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v51 · style v51
+                index v52 · style v52
             </div>
         </div>
     </footer>
