@@ -5759,3 +5759,283 @@ button { letter-spacing: 0; }
         line-height: 14px !important;
     }
 }
+
+
+/* =========================================
+   RXDE V33 — единая навигация и лёгкий поиск
+   ========================================= */
+
+/* Поиск в шапке теперь одинаковый на всех платформах. */
+.mobile-search-entry {
+    display: inline-flex !important;
+}
+
+.desktop-contact-entry {
+    display: inline-flex !important;
+}
+
+/* Плавающие действия — везде, не только mobile, и всегда поверх поиска. */
+.mobile-quick-actions {
+    position: fixed !important;
+    z-index: 4000 !important;
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: calc(22px + env(safe-area-inset-bottom)) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 9px !important;
+    pointer-events: none !important;
+}
+
+.mobile-quick-actions button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+.mobile-search-overlay {
+    z-index: 3000 !important;
+    background: rgba(229,235,239,.16) !important;
+    backdrop-filter: blur(3px) saturate(.95) !important;
+    -webkit-backdrop-filter: blur(3px) saturate(.95) !important;
+}
+
+.mobile-search-sheet {
+    background: rgba(255,255,255,.975) !important;
+}
+
+.mobile-search-inline-logo {
+    width: 58px;
+    height: auto;
+    display: block;
+}
+
+.mobile-search-close-inline {
+    height: 30px;
+    padding: 0 9px;
+    border: 1px solid rgba(18,37,49,.16);
+    border-radius: 10px;
+    background: #f7f9fa;
+    color: #46545e;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 760;
+    white-space: nowrap;
+}
+
+.mobile-search-input-wrap {
+    grid-template-columns: auto 30px minmax(0,1fr) 30px auto !important;
+    gap: 6px !important;
+}
+
+/* Кнопки не исчезают в режиме поиска. */
+body.mobile-search-open .mobile-quick-actions {
+    opacity: 1 !important;
+    pointer-events: none !important;
+}
+
+body.mobile-search-open .mobile-quick-actions button {
+    pointer-events: auto !important;
+}
+
+/* Корзина должна оставаться кликабельной при любых слоях интерфейса. */
+.header-order-button,
+.mobile-cart-action {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    position: relative;
+    z-index: 1;
+}
+
+@media (min-width: 721px) {
+    /* Десктоп получает тот же вход в поиск и те же плавающие действия. */
+    .header-search-btn {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 7px;
+        min-height: 31px;
+        padding: 0 10px 0 6px;
+        margin-left: 6px;
+        border: 1px solid rgba(16,29,38,.32);
+        border-radius: 999px;
+        background: linear-gradient(180deg,#fff,#f4f7f8);
+        color: #17232c;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 2px 7px rgba(18,36,48,.07);
+        font: inherit;
+        font-size: 11px;
+        font-weight: 780;
+        cursor: pointer;
+    }
+
+    .header-search-lens {
+        display: grid;
+        place-items: center;
+        width: 21px;
+        height: 21px;
+        border: 1px solid rgba(17,37,49,.18);
+        border-radius: 50%;
+        background: #eef3f6;
+    }
+
+    .header-search-lens svg {
+        width: 13px;
+        height: 13px;
+        fill: none;
+        stroke: #18394d;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+    }
+
+    .mobile-search-sheet {
+        inset: 7vh 8vw !important;
+        border-radius: 24px !important;
+    }
+
+    .mobile-quick-actions button {
+        width: 44px !important;
+        height: 44px !important;
+    }
+}
+
+@media (max-width: 720px) {
+    .header-contact-btn {
+        display: inline-flex !important;
+        min-height: 31px;
+        padding: 0 9px;
+        font-size: 10px;
+    }
+
+    .mobile-search-sheet {
+        inset: max(7px, env(safe-area-inset-top)) 7px max(7px, env(safe-area-inset-bottom)) !important;
+    }
+}
+
+/* V34: единый поиск для телефона и ноутбука — старый встроенный блок не показываем. */
+#searchHub { display: none !important; }
+
+
+/* =========================================
+   RXDE V34 — три постоянных действия + frozen backdrop поиска
+   ========================================= */
+
+.mobile-search-overlay {
+    z-index: 10000020 !important;
+    background: rgba(222, 229, 233, .10) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.mobile-search-backdrop-snapshot {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    background: #eef2f4;
+    pointer-events: none;
+}
+
+.mobile-search-backdrop-snapshot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(231, 236, 239, .28);
+    backdrop-filter: blur(3px) saturate(.88);
+    -webkit-backdrop-filter: blur(3px) saturate(.88);
+}
+
+.mobile-search-snapshot-frame {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    min-height: 100vh;
+    pointer-events: none;
+    opacity: .88;
+}
+
+.mobile-search-sheet {
+    z-index: 1 !important;
+}
+
+/* Кнопки поиска / связи / корзины всегда выше любого пользовательского слоя. */
+.mobile-quick-actions {
+    z-index: 10000080 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+}
+
+.mobile-quick-actions button {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body.mobile-search-open .mobile-quick-actions,
+#modal.active ~ .mobile-quick-actions,
+.info-overlay[style*="display: flex"] ~ .mobile-quick-actions {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Микро-анимация корзины — точка назначения летящей таблетки. */
+#quickCartButton.order-bump {
+    animation: quickCartBump .40s cubic-bezier(.2,.8,.2,1) !important;
+}
+@keyframes quickCartBump {
+    0%,100% { transform: scale(1); }
+    42% { transform: scale(.88) translateY(2px); }
+    72% { transform: scale(1.10) translateY(-2px); }
+}
+
+/* Плавающие кнопки небольшие, но визуально заметные. */
+.mobile-quick-search {
+    background: rgba(255,255,255,.98) !important;
+    color: #102b3b !important;
+    border-color: rgba(12,32,45,.55) !important;
+}
+.mobile-quick-chat {
+    background: #152f3e !important;
+    color: #fff !important;
+    border-color: #152f3e !important;
+}
+.mobile-quick-cart {
+    background: #0a6da8 !important;
+    color: #fff !important;
+    border-color: #0a6da8 !important;
+}
+
+.header-order-button,
+#quickCartButton {
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Search is the only visible search UI on every platform. */
+#searchHub { display: none !important; }
+
+@media (min-width: 721px) {
+    .mobile-quick-actions {
+        right: 18px !important;
+        bottom: 24px !important;
+    }
+
+    .mobile-search-sheet {
+        inset: 7vh 9vw !important;
+        max-width: 1180px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 720px) {
+    .mobile-quick-actions {
+        right: max(10px, env(safe-area-inset-right)) !important;
+        bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+    }
+
+    .mobile-search-sheet {
+        inset: max(7px, env(safe-area-inset-top)) 7px max(7px, env(safe-area-inset-bottom)) !important;
+    }
+}

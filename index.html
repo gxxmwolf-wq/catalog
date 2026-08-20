@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=32">
+    <link rel="stylesheet" href="style.css?v=34">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -48,7 +48,7 @@
                         <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE">
                     </div>
                     <button class="header-catalog-btn" type="button" onclick="goHome()">Каталог</button>
-                    <button class="header-contact-btn desktop-contact-entry" type="button" onclick="openContact('question')">Написать нам</button>
+                    <button class="header-contact-btn" type="button" onclick="openSmartContact()">Написать нам</button>
                     <button class="header-search-btn mobile-search-entry" type="button" onclick="openMobileSearch()" aria-label="Открыть поиск">
                         <span class="header-search-lens" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
@@ -74,7 +74,7 @@
                     <div class="cbr-rate-line">ЦБ: <span id="cbrRate">0</span><span id="cbrTrend" class="rate-trend" aria-label="Изменение курса"></span></div>
                     <div style="white-space: nowrap;">Расчетный: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
                 </div>
-                <button id="headerOrderButton" class="header-order-button" type="button" onclick="openCart()" aria-label="Открыть лист заказа">
+                <button id="headerOrderButton" class="header-order-button js-cart-trigger" type="button" onclick="openCart()" aria-label="Открыть лист заказа">
                     <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
                     <span class="header-order-copy"><strong>Лист заказа</strong><small id="headerOrderMeta">Пока пуст</small></span>
                     <span id="headerOrderCount" class="header-order-count">0</span>
@@ -141,19 +141,10 @@
     <div id="serviceNotes" class="service-notes-bottom"></div>
 
     <div id="mobileSearchOverlay" class="mobile-search-overlay" aria-hidden="true">
+        <div id="mobileSearchBackdropSnapshot" class="mobile-search-backdrop-snapshot" aria-hidden="true"></div>
         <div class="mobile-search-sheet">
-            <div class="mobile-search-brandbar">
-                <button type="button" class="mobile-search-back" onclick="closeMobileSearch()" aria-label="Назад">
-                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
-                </button>
-
-                <img src="assets/rxde-logo.svg" class="mobile-search-logo" alt="RXDE">
-                <span class="mobile-search-title">Поиск</span>
-
-                <button type="button" class="mobile-search-close" onclick="closeMobileSearch()" aria-label="Закрыть">✕</button>
-            </div>
-
             <div class="mobile-search-input-wrap">
+                <img src="assets/rxde-logo.svg" class="mobile-search-inline-logo" alt="RXDE">
                 <span class="mobile-search-lens" aria-hidden="true">
                     <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
                 </span>
@@ -163,6 +154,7 @@
                        oninput="handleMobileSearchInput()"
                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
                 <button type="button" class="mobile-search-clear" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
+                <button type="button" class="mobile-search-close-inline" onclick="closeMobileSearch()" aria-label="Закрыть поиск">Закрыть</button>
             </div>
 
             <div id="mobileSearchScopeRow" class="mobile-search-scope-row" hidden>
@@ -181,13 +173,13 @@
     </div>
 
     <nav id="mobileQuickActions" class="mobile-quick-actions" aria-label="Быстрые действия">
-        <button type="button" onclick="openMobileSearch()" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
+        <button id="quickSearchButton" type="button" onclick="openMobileSearch()" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 4.6 4.6"/></svg>
         </button>
-        <button type="button" onclick="openSmartContact()" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
+        <button id="quickContactButton" type="button" onclick="openSmartContact()" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
             <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
         </button>
-        <button type="button" onclick="openCart()" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
+        <button id="quickCartButton" type="button" onclick="openCart()" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
             <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
             <span id="mobileCartCount" class="mobile-cart-count">0</span>
         </button>
@@ -1520,7 +1512,6 @@
             chip.innerText = word;
             
             chip.onclick = () => {
-                if (navigator.vibrate) navigator.vibrate(15); 
                 const input = document.getElementById('search');
                 let words = input.value.trim().split(/\s+/);
                 
@@ -3040,11 +3031,6 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function openCart(fromHistory = false) { 
-        // 1. Добавляем виброотклик (20 мс - плотный, но короткий щелчок)
-        if (navigator.vibrate) {
-            navigator.vibrate(20); 
-        }
-
         isQuestionMode = false; // Жестко включаем режим "ЗАКАЗ"
         
         // Пустая корзина остаётся корзиной — никаких неожиданных переходов в поиск.
@@ -3247,6 +3233,49 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
 
+    let mobileSearchSavedQuery = '';
+    let mobileSearchParentScrollY = 0;
+    let mobileSearchParentUrl = '';
+    let mobileSearchParentState = null;
+
+    function stripSnapshotIds(root) {
+        if (!root) return;
+        if (root.id) root.removeAttribute('id');
+        root.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+        root.querySelectorAll('script, .mobile-quick-actions, #mobileSearchOverlay').forEach(el => el.remove());
+        root.querySelectorAll('button, input, textarea, select, a').forEach(el => {
+            el.setAttribute('tabindex', '-1');
+            el.style.pointerEvents = 'none';
+        });
+    }
+
+    function captureSearchBackdrop() {
+        const host = document.getElementById('mobileSearchBackdropSnapshot');
+        if (!host) return;
+
+        host.innerHTML = '';
+        const frame = document.createElement('div');
+        frame.className = 'mobile-search-snapshot-frame';
+        frame.style.transform = `translateY(${-window.scrollY}px)`;
+
+        Array.from(document.body.children).forEach(node => {
+            if (!(node instanceof HTMLElement)) return;
+            if (node.id === 'mobileSearchOverlay' || node.id === 'mobileQuickActions') return;
+            if (node.tagName === 'SCRIPT') return;
+
+            const clone = node.cloneNode(true);
+            stripSnapshotIds(clone);
+            frame.appendChild(clone);
+        });
+
+        host.appendChild(frame);
+    }
+
+    function clearSearchBackdrop() {
+        const host = document.getElementById('mobileSearchBackdropSnapshot');
+        if (host) host.innerHTML = '';
+    }
+
     let mobileSearchIsOpen = false;
     let mobileSearchOriginalCategory = '';
     let mobileSearchOriginalSubcategory = '';
@@ -3322,22 +3351,35 @@ function handleOrderCopyAndOpen(btnElement) {
         const desktopInput = document.getElementById('search');
         if (!overlay || !mobileInput) return;
 
+        if (mobileSearchIsOpen) {
+            mobileInput.focus({ preventScroll: true });
+            return;
+        }
+
+        mobileSearchOriginalCategory = filters.publicCategory || '';
+        mobileSearchOriginalSubcategory = filters.publicSubcategory || '';
+        mobileSearchOriginalPrescriptionMode = !!filters.prescriptionMode;
+        mobileSearchParentScrollY = window.scrollY;
+        mobileSearchParentUrl = window.location.href;
+        mobileSearchParentState = { ...(window.history.state || {}) };
+
+        captureSearchBackdrop();
+
         if (!fromHistory) {
-            mobileSearchOriginalCategory = filters.publicCategory || '';
-            mobileSearchOriginalSubcategory = filters.publicSubcategory || '';
-            mobileSearchOriginalPrescriptionMode = !!filters.prescriptionMode;
+            const searchUrl = new URL(window.location.href);
+            if (mobileSearchSavedQuery) searchUrl.searchParams.set('q', mobileSearchSavedQuery);
+            else searchUrl.searchParams.delete('q');
 
             window.history.pushState(
                 {
                     ...(window.history.state || {}),
                     rxdeView: true,
                     rxdeModal: 'search',
-                    searchParentCategory: mobileSearchOriginalCategory,
-                    searchParentSubcategory: mobileSearchOriginalSubcategory,
-                    searchParentPrescription: mobileSearchOriginalPrescriptionMode
+                    searchParentUrl: mobileSearchParentUrl,
+                    searchParentScrollY: mobileSearchParentScrollY
                 },
                 '',
-                window.location.href
+                searchUrl
             );
         }
 
@@ -3348,30 +3390,26 @@ function handleOrderCopyAndOpen(btnElement) {
 
         moveProductListToMobileSearch();
 
-        mobileInput.value = desktopInput?.value || filters.search || '';
+        const query = mobileSearchSavedQuery || desktopInput?.value || '';
+        mobileInput.value = query;
+        if (desktopInput) desktopInput.value = query;
+
         updateMobileSearchScope();
 
-        // Под поиском остаётся текущий экран сайта — ничего не пересобираем.
-        // В самом листе показываем только подсказки и результаты.
-        if (!mobileInput.value.trim()) {
-            const list = document.getElementById('list');
-            if (list) list.innerHTML = '';
-            const suggestions = document.getElementById('suggestRow');
-            if (suggestions) suggestions.innerHTML = '';
+        if (query.trim()) {
+            handleMobileSearchInput(false);
         } else {
-            handleMobileSearchInput();
+            const list = document.getElementById('list');
+            const suggestions = document.getElementById('suggestRow');
+            if (list) list.innerHTML = '';
+            if (suggestions) suggestions.innerHTML = '';
+            syncMobileSearchHint();
         }
-
-        syncMobileSearchHint();
-        setTimeout(() => {
-            mobileInput.focus({ preventScroll: true });
-            mobileInput.setSelectionRange(mobileInput.value.length, mobileInput.value.length);
-        }, 100);
     }
 
     function closeMobileSearch(fromHistory = false) {
         const overlay = document.getElementById('mobileSearchOverlay');
-        if (!overlay) return;
+        if (!overlay || !mobileSearchIsOpen) return;
 
         if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'search') {
             window.history.back();
@@ -3383,35 +3421,79 @@ function handleOrderCopyAndOpen(btnElement) {
         overlay.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('mobile-search-open');
         restoreProductListHome();
+        clearSearchBackdrop();
+
+        // Возвращаем именно тот экран, поверх которого был открыт поиск.
+        filters.search = '';
+        filters.publicCategory = mobileSearchOriginalCategory || '';
+        filters.publicSubcategory = mobileSearchOriginalSubcategory || '';
+        filters.prescriptionMode = !!mobileSearchOriginalPrescriptionMode;
+        filters.prescriptionVisible = 24;
+        filters.alphabet = '';
+
+        const desktopInput = document.getElementById('search');
+        if (desktopInput) desktopInput.value = '';
+
+        render(false);
+        requestAnimationFrame(() => window.scrollTo({ top: mobileSearchParentScrollY, behavior: 'instant' }));
     }
 
-    function handleMobileSearchInput() {
+
+    function handleMobileSearchInput(updateUrl = true) {
         const mobileInput = document.getElementById('mobileSearchInput');
         const desktopInput = document.getElementById('search');
         if (!mobileInput || !desktopInput) return;
 
+        mobileSearchSavedQuery = mobileInput.value;
         desktopInput.value = mobileInput.value;
+
         handleInput(false);
+
+        if (updateUrl) {
+            const url = new URL(window.location.href);
+            const q = mobileSearchSavedQuery.trim();
+            if (q) url.searchParams.set('q', q);
+            else url.searchParams.delete('q');
+
+            window.history.replaceState(
+                { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'search' },
+                '',
+                url
+            );
+        }
+
         moveProductListToMobileSearch();
         updateMobileSearchScope();
         syncMobileSearchHint();
     }
+
 
     function clearMobileSearchInput() {
         const mobileInput = document.getElementById('mobileSearchInput');
         const desktopInput = document.getElementById('search');
         if (!mobileInput || !desktopInput) return;
 
+        mobileSearchSavedQuery = '';
         mobileInput.value = '';
         desktopInput.value = '';
         filters.search = '';
         filters.alphabet = '';
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete('q');
+        window.history.replaceState(
+            { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'search' },
+            '',
+            url
+        );
+
         render(false);
         moveProductListToMobileSearch();
         updateMobileSearchScope();
         syncMobileSearchHint();
         mobileInput.focus({ preventScroll: true });
     }
+
 
     function searchEverywhereFromMobile() {
         filters.publicCategory = '';
@@ -3423,11 +3505,12 @@ function handleOrderCopyAndOpen(btnElement) {
         const desktopInput = document.getElementById('search');
         if (desktopInput && mobileInput) desktopInput.value = mobileInput.value;
 
-        handleInput(false);
+        handleMobileSearchInput();
         moveProductListToMobileSearch();
         updateMobileSearchScope();
         syncMobileSearchHint();
     }
+
 
     function openSmartContact() {
         const cartModal = document.getElementById('modal');
@@ -3853,7 +3936,7 @@ function handleOrderCopyAndOpen(btnElement) {
     function animateFly(sourceRect, isRemoving = false) {
         playCartTone(isRemoving);
         if (!sourceRect || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        const target = document.getElementById('headerOrderButton');
+        const target = document.getElementById('quickCartButton') || document.getElementById('headerOrderButton');
         if (!target) return;
 
         const targetRect = target.getBoundingClientRect();
@@ -3874,13 +3957,13 @@ function handleOrderCopyAndOpen(btnElement) {
             { transform: `translate3d(${startX}px, ${startY}px, 0) rotate(0deg) scale(.72)`, opacity: .2 },
             { transform: `translate3d(${(startX + endX) / 2}px, ${lift}px, 0) rotate(170deg) scale(1.05)`, opacity: 1, offset: .52 },
             { transform: `translate3d(${endX}px, ${endY}px, 0) rotate(350deg) scale(.38)`, opacity: .1 }
-        ], { duration: 520, easing: 'cubic-bezier(.22,.8,.28,1)' });
+        ], { duration: 390, easing: 'cubic-bezier(.2,.82,.28,1)' });
 
         animation.finished.finally(() => pill.remove());
         target.classList.remove('order-bump');
         void target.offsetWidth;
         target.classList.add('order-bump');
-        setTimeout(() => target.classList.remove('order-bump'), 560);
+        setTimeout(() => target.classList.remove('order-bump'), 430);
     }
 
         /* =========================================
@@ -4093,8 +4176,8 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: НАТИВНАЯ ИСТОРИЯ БРАУЗЕРА V29
-    Back/Forward + корзина + подтверждение выхода
+    BLOCK 11: НАТИВНАЯ ИСТОРИЯ БРАУЗЕРА V33
+    Строгая иерархия + финальный фокус вверх + выход
     ========================================= */
 
     window.history.replaceState(
@@ -4109,6 +4192,15 @@ function handleOrderCopyAndOpen(btnElement) {
     );
 
     let rxdeExitConfirmed = false;
+    let rxdeRootTopArmed = false;
+
+    function isRootCatalogState() {
+        return !filters.publicCategory &&
+               !filters.publicSubcategory &&
+               !filters.prescriptionMode &&
+               !filters.search &&
+               !mobileSearchIsOpen;
+    }
 
     window.addEventListener('popstate', function(event) {
         const state = event.state || {};
@@ -4117,40 +4209,33 @@ function handleOrderCopyAndOpen(btnElement) {
         const info = document.getElementById('infoOverlay');
         const tgOver = document.getElementById('tgOverlay');
 
-        if (state.rxdeEntryBoundary && !rxdeExitConfirmed) {
-            const leave = window.confirm('Выйти из RXDE?');
-            if (!leave) {
-                window.history.forward();
-                return;
-            }
-            rxdeExitConfirmed = true;
-            setTimeout(() => window.history.back(), 0);
-            return;
-        }
-
-        rxdeExitConfirmed = false;
-
-        if (state.rxdeModal === 'search') {
-            if (modal && modal.classList.contains('active')) closeModal(true);
-            if (contact && contact.style.display === 'flex') closeContact(true);
-
-            // Восстанавливаем родительский экран из текущего URL, затем открываем поиск.
-            if (db && db.length) restoreViewFromCurrentUrl();
-            openMobileSearch(true);
-            return;
-        }
-
+        // Корзина и связь — полноценные слои истории.
         if (state.rxdeModal === 'cart') {
             if (contact && contact.style.display === 'flex') closeContact(true);
+            if (mobileSearchIsOpen) closeMobileSearch(true);
             if (!(modal && modal.classList.contains('active'))) openCart(true);
             return;
         }
 
         if (state.rxdeModal === 'contact') {
             if (modal && modal.classList.contains('active')) closeModal(true);
+            if (mobileSearchIsOpen) closeMobileSearch(true);
             if (!(contact && contact.style.display === 'flex')) {
                 openContact(state.contactType || 'question', state.contactIndex ?? null, true);
             }
+            return;
+        }
+
+        // Search is exactly one history level: one swipe returns to its parent.
+        if (mobileSearchIsOpen && state.rxdeModal !== 'search') {
+            closeMobileSearch(true);
+            return;
+        }
+
+        if (state.rxdeModal === 'search') {
+            if (modal && modal.classList.contains('active')) closeModal(true);
+            if (contact && contact.style.display === 'flex') closeContact(true);
+            if (!mobileSearchIsOpen) openMobileSearch(true);
             return;
         }
 
@@ -4161,6 +4246,44 @@ function handleOrderCopyAndOpen(btnElement) {
         if (tgOver && tgOver.style.display === 'flex' && typeof closeTgOverlay === 'function') closeTgOverlay();
 
         if (db && db.length) restoreViewFromCurrentUrl();
+
+        // Последний уровень всегда приводит на верх общей страницы категорий.
+        if (state.rxdeRootGuard || state.rxdeEntryBoundary) {
+            if (!isRootCatalogState()) {
+                goHome();
+                return;
+            }
+
+            if (window.scrollY > 80 && !rxdeRootTopArmed) {
+                rxdeRootTopArmed = true;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                window.history.pushState(
+                    { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
+                    '',
+                    window.location.href
+                );
+                return;
+            }
+
+            if (!rxdeExitConfirmed) {
+                const leave = window.confirm('Выйти из RXDE?');
+                if (!leave) {
+                    rxdeRootTopArmed = false;
+                    window.history.pushState(
+                        { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
+                        '',
+                        window.location.href
+                    );
+                    return;
+                }
+                rxdeExitConfirmed = true;
+                setTimeout(() => window.history.back(), 0);
+                return;
+            }
+        }
+
+        rxdeRootTopArmed = false;
+        rxdeExitConfirmed = false;
     });
 
     /* =========================================
