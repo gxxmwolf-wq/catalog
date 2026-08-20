@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v41">
+    <link rel="stylesheet" href="style.css?build=v50">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -178,13 +178,13 @@
     </div>
 
     <nav id="mobileQuickActions" class="mobile-quick-actions" aria-label="Быстрые действия">
-        <button id="quickSearchButton" type="button" onclick="openMobileSearch()" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
+        <button id="quickSearchButton" type="button" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 4.6 4.6"/></svg>
         </button>
         <button id="quickContactButton" type="button" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
             <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
         </button>
-        <button id="quickCartButton" type="button" onclick="openCart()" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
+        <button id="quickCartButton" type="button" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
             <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
             <span id="mobileCartCount" class="mobile-cart-count">0</span>
         </button>
@@ -194,12 +194,12 @@
     <div id="modal" class="modal" onclick="closeModal()">
         <div class="m-box" onclick="event.stopPropagation()">
             <div class="order-document-brand">
-                <div class="embedded-logo order-doc-logo" aria-label="RXDE">
-                    <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE">
+                <div class="order-brand-wordmark" aria-label="RXDE">
+                    <span>RX</span><b>DE</b>
                 </div>
                 <div class="order-doc-heading">
                     <strong>Лист заказа</strong>
-                    <small>Аптека Германии · выкуп · отчёт · отправка</small>
+                    <small>Аптека Германии · выкуп · отправка</small>
                 </div>
                 <div class="order-doc-meta">
                     <small id="modalOrderNumber">Заявка</small>
@@ -362,7 +362,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v41';
+    const RXDE_BUILD = 'v50';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -396,6 +396,7 @@
     let cartBackup = null;        // Сюда будем сохранять корзину перед очисткой
     let lastRemovedItem = null;
     let lastRemovedTimer = null;
+    let pendingDeletePzn = null;
     let deliveryAddress = "";     // <--- НОВАЯ ПЕРЕМЕННАЯ ДЛЯ АДРЕСА АДМИНА
     let addressBackup = "";
 
@@ -1364,7 +1365,7 @@
                                         <button class="q-btn" onclick="modQty('${cleanPZN}',1, event)">+</button>
                                     </div>
                                 ` : `
-                                    <button class="btn-add" onclick="modQty('${cleanPZN}',1, event)">
+                                    <button class="btn-add" type="button" onclick="modQty('${cleanPZN}',1, event)">
                                         <span style="font-size: 18px; line-height: 1;">+</span> Добавить
                                     </button>
                                 `)}
@@ -2177,6 +2178,177 @@ function clearAdminPanel() {
     BLOCK 5: ЛОГИКА КОРЗИНЫ (ИСПРАВЛЕНА АНИМАЦИЯ)
     ========================================= */
 
+    function cancelPositionDelete() {
+        pendingDeletePzn = null;
+        const pending = document.querySelector('#cartItems .card.is-delete-pending');
+        if (!pending) return;
+
+        pending.classList.remove('is-delete-pending');
+        const bar = pending.querySelector('.position-delete-bar');
+        if (bar) bar.remove();
+    }
+
+    function requestPositionDelete(pzn, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const index = cart.findIndex(item => item.pzn === pzn);
+        if (index < 0) return;
+
+        cancelPositionDelete();
+        pendingDeletePzn = pzn;
+
+        const cards = Array.from(document.querySelectorAll('#cartItems .card'));
+        const card = cards[index];
+        if (!card) return;
+
+        card.classList.add('is-delete-pending');
+
+        const bar = document.createElement('div');
+        bar.className = 'position-delete-bar';
+        bar.innerHTML = `
+            <span>Удалить позицию?</span>
+            <div>
+                <button type="button" class="position-delete-confirm-no" onclick="cancelPositionDelete()">Нет</button>
+                <button type="button" class="position-delete-confirm-yes" onclick="confirmPositionDelete(event)">Да</button>
+            </div>`;
+        card.appendChild(bar);
+    }
+
+    function confirmPositionDelete(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (!pendingDeletePzn) return;
+
+        const pzn = pendingDeletePzn;
+        const index = cart.findIndex(item => item.pzn === pzn);
+        if (index < 0) {
+            cancelPositionDelete();
+            return;
+        }
+
+        const cards = Array.from(document.querySelectorAll('#cartItems .card'));
+        const card = cards[index];
+        pendingDeletePzn = null;
+
+        if (card) card.classList.add('is-delete-confirmed');
+
+        setTimeout(() => {
+            const actualIndex = cart.findIndex(item => item.pzn === pzn);
+            if (actualIndex >= 0) cart.splice(actualIndex, 1);
+
+            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+            updateBar();
+            render(false);
+
+            const modal = document.getElementById('modal');
+            if (modal && modal.classList.contains('active')) {
+                if (cart.length === 0) renderEmptyCartAfterDelete();
+                else renderCartItems();
+            }
+        }, 330);
+    }
+
+    function renderEmptyCartAfterDelete() {
+        const items = document.getElementById('cartItems');
+        const footer = document.getElementById('footerTotalContent');
+        if (!items || !footer) return;
+
+        footer.innerHTML = '';
+        items.innerHTML = `
+            <div class="empty-cart-state confirmed-empty-cart">
+                <div class="empty-cart-icon">▣</div>
+                <strong>Лист заказа пуст</strong>
+                <span>Все позиции удалены.</span>
+                <button type="button" onclick="addMoreItems()">Добавить товар</button>
+            </div>`;
+    }
+
+    function requestClearOrder(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (!cart.length) return;
+
+        const headerLinks = document.getElementById('modalHeaderLinks');
+        if (!headerLinks) return;
+
+        headerLinks.innerHTML = `
+            <div class="clear-order-confirm">
+                <span>Очистить весь заказ?</span>
+                <button type="button" class="clear-order-no" onclick="renderCartItems()">Нет</button>
+                <button type="button" class="clear-order-yes" onclick="confirmClearOrder(event)">Да</button>
+            </div>`;
+    }
+
+    function confirmClearOrder(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (!cart.length) return;
+
+        cartBackup = JSON.parse(JSON.stringify(cart));
+        addressBackup = deliveryAddress || '';
+
+        cart = [];
+        deliveryAddress = '';
+
+        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+        localStorage.removeItem('de_cart_address_v2');
+
+        updateBar();
+        render(false);
+
+        const headerLinks = document.getElementById('modalHeaderLinks');
+        const items = document.getElementById('cartItems');
+        const footer = document.getElementById('footerTotalContent');
+
+        if (headerLinks) {
+            headerLinks.innerHTML = `
+                <button class="order-sheet-add" type="button" onclick="addMoreItems()"><span>+</span> Добавить товар</button>
+                <button class="restore-order-button" type="button" onclick="restoreClearedOrder(event)">Восстановить заказ</button>`;
+        }
+
+        if (items) {
+            items.innerHTML = `
+                <div class="empty-cart-state confirmed-empty-cart">
+                    <div class="empty-cart-icon">▣</div>
+                    <strong>Лист заказа очищен</strong>
+                    <span>Все позиции удалены из текущего заказа.</span>
+                    <button type="button" onclick="restoreClearedOrder(event)">Восстановить заказ</button>
+                </div>`;
+        }
+        if (footer) footer.innerHTML = '';
+    }
+
+    function restoreClearedOrder(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (!cartBackup) return;
+
+        cart = JSON.parse(JSON.stringify(cartBackup));
+        deliveryAddress = addressBackup || '';
+        cartBackup = null;
+        addressBackup = '';
+
+        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+        if (deliveryAddress) {
+            localStorage.setItem('de_cart_address_v2', deliveryAddress);
+        }
+
+        updateBar();
+        render(false);
+        renderCartItems();
+    }
+
     function rememberRemovedItem(item, index, wasLastItem) {
         lastRemovedItem = {
             item: JSON.parse(JSON.stringify(item)),
@@ -2263,70 +2435,72 @@ function clearAdminPanel() {
     }
 
     function modQty(pzn, d, event) {
-        // 1. Сброс предохранителей: любое изменение убивает старый кэш и дату
-        cartBackup = null; 
-        restoredDate = ""; 
+        if (event) event.stopPropagation();
+        cartBackup = null;
+        restoredDate = '';
 
-        // 2. Тактильный отклик (Haptic Feedback)
-        if (navigator.vibrate) {
-            if (d > 0) {
-                // Одиночный четкий "тик" при добавлении (+)
-                navigator.vibrate(10); 
+        let index = cart.findIndex(item => item.pzn === pzn);
+
+        // Товар ещё не в корзине:
+        // +1 = нормальное первое добавление.
+        if (index < 0) {
+            if (d <= 0) return;
+
+            cart.push({ pzn, qty: 1 });
+            index = cart.length - 1;
+
+            const source = event && event.currentTarget
+                ? event.currentTarget
+                : (event && event.target ? event.target : null);
+
+            if (source && source.getBoundingClientRect) {
+                animateFly(source.getBoundingClientRect(), false);
             } else {
-                // Двойной микро-отклик при удалении (-)
-                navigator.vibrate([7, 30, 7]); 
+                playCartTone(false);
             }
+
+            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+            updateBar();
+            render(false);
+
+            const modal = document.getElementById('modal');
+            if (modal && modal.classList.contains('active')) {
+                renderCartItems();
+            }
+            return;
         }
 
-        // 3. Запуск визуальной анимации (Пилюля летит в корзину)
-        if (event) {
-            event.stopPropagation();
-            const btn = event.target.closest('button') || event.currentTarget;
-            if (btn) {
-                const rect = btn.getBoundingClientRect();
-                const product = db.find(r => r.PZN === pzn);
-                animateFly(rect, d < 0, product ? product.Size : 0);
-            }
+        const previousQty = Number(cart[index].qty || 1);
+        const requestedQty = previousQty + d;
+
+        // При попытке уйти ниже 1 — отдельное подтверждение удаления.
+        if (requestedQty < 1) {
+            requestPositionDelete(pzn, event);
+            return;
         }
 
-        // 4. Математика корзины
-        const index = cart.findIndex(i => i.pzn === pzn);
-        
-        if (index === -1) { 
-            if (d > 0) cart.push({ pzn: pzn, qty: 1 }); 
-        } else { 
-            let newQty = cart[index].qty + d; 
-            if (newQty <= 0) {
-                const removedItem = JSON.parse(JSON.stringify(cart[index]));
-                const wasLastItem = cart.length === 1;
+        const nextQty = Math.min(999, requestedQty);
+        cart[index].qty = nextQty;
 
-                rememberRemovedItem(removedItem, index, wasLastItem);
-                cart.splice(index, 1);
+        if (nextQty !== previousQty) {
+            const source = event && event.currentTarget
+                ? event.currentTarget
+                : (event && event.target ? event.target : null);
 
-                // Последнюю позицию не "роняем" в пустоту:
-                // оставляем корзину открытой и предлагаем локальный Undo.
+            if (source && source.getBoundingClientRect) {
+                animateFly(source.getBoundingClientRect(), nextQty < previousQty);
             } else {
-                cart[index].qty = newQty; 
+                playCartTone(nextQty < previousQty);
             }
         }
-        
-        // 5. Сохранение и перерисовка
+
         localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-        updateBar(); 
-        render(false); 
-        
-        // [ДОБАВЛЕНО АККУРАТНО]: Эффект проседания грузовика (тяжелый вес)
-    // triggerTruckEffect();
+        updateBar();
+        render(false);
 
-        // Перерисовываем внутренности открытой модалки, если она сейчас на экране
         const modal = document.getElementById('modal');
         if (modal && modal.classList.contains('active')) {
-            if (cart.length === 0 && lastRemovedItem && lastRemovedItem.wasLastItem) {
-                renderLastItemUndoState();
-            } else {
-                renderCartItems();
-                if (lastRemovedItem) showCartUndoToast();
-            }
+            renderCartItems();
         }
     }
 
@@ -2336,18 +2510,17 @@ function clearAdminPanel() {
         restoredDate = '';
 
         const parsed = Number.parseInt(String(rawValue).replace(/\D/g, ''), 10);
-        const nextQty = Math.min(999, Math.max(0, Number.isFinite(parsed) ? parsed : 0));
         const index = cart.findIndex(item => item.pzn === pzn);
         const previousQty = index >= 0 ? cart[index].qty : 0;
 
-        if (nextQty <= 0) {
-            if (index >= 0) {
-                const removedItem = JSON.parse(JSON.stringify(cart[index]));
-                const wasLastItem = cart.length === 1;
-                rememberRemovedItem(removedItem, index, wasLastItem);
-                cart.splice(index, 1);
-            }
-        } else if (index >= 0) {
+        if (Number.isFinite(parsed) && parsed <= 0 && index >= 0) {
+            requestPositionDelete(pzn, event);
+            return;
+        }
+
+        const nextQty = Math.min(999, Math.max(1, Number.isFinite(parsed) ? parsed : 1));
+
+        if (index >= 0) {
             cart[index].qty = nextQty;
         } else {
             cart.push({ pzn, qty: nextQty });
@@ -2355,8 +2528,11 @@ function clearAdminPanel() {
 
         if (nextQty !== previousQty) {
             const field = event && event.target;
-            if (field && field.getBoundingClientRect) animateFly(field.getBoundingClientRect(), nextQty < previousQty);
-            else playCartTone(nextQty < previousQty);
+            if (field && field.getBoundingClientRect) {
+                animateFly(field.getBoundingClientRect(), nextQty < previousQty);
+            } else {
+                playCartTone(nextQty < previousQty);
+            }
         }
 
         localStorage.setItem('de_cart_v2', JSON.stringify(cart));
@@ -2365,14 +2541,10 @@ function clearAdminPanel() {
 
         const modal = document.getElementById('modal');
         if (modal && modal.classList.contains('active')) {
-            if (cart.length === 0 && lastRemovedItem && lastRemovedItem.wasLastItem) {
-                renderLastItemUndoState();
-            } else {
-                renderCartItems();
-                if (lastRemovedItem) showCartUndoToast();
-            }
+            renderCartItems();
         }
     }
+
     /* =========================================
         BLOCK 6: МИНИ-ЧЕК (ИСПРАВЛЕННЫЙ)
         ======================================//=== */
@@ -3011,18 +3183,17 @@ function handleOrderCopyAndOpen(btnElement) {
         const headerLinks = document.getElementById('modalHeaderLinks'); 
         if (!div || !headerLinks) return;
 
-        const clearLabel = cartBackup ? "ВЕРНУТЬ" : "ОЧИСТИТЬ";
-        const clearColor = cartBackup ? "#00e676" : "#bbb"; 
-
-        // ОБНОВЛЕННАЯ ШАПКА КОРЗИНЫ
         headerLinks.style.display = 'flex';
         headerLinks.style.alignItems = 'center';
-        headerLinks.style.gap = '15px';
+        headerLinks.style.gap = '10px';
         headerLinks.style.width = 'auto';
 
         headerLinks.innerHTML = `
             <button class="order-sheet-add" type="button" onclick="addMoreItems()"><span>+</span> Добавить товар</button>
-            <button class="order-sheet-clear" type="button" onclick="event.stopPropagation(); handleCartToggle();" style="color:${clearColor}">${clearLabel}</button>
+            <button class="order-sheet-clear" type="button" onclick="requestClearOrder(event)" aria-label="Очистить весь заказ">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
+                <span>Очистить</span>
+            </button>
         `;
 
         div.innerHTML = '';
@@ -3087,6 +3258,9 @@ function handleOrderCopyAndOpen(btnElement) {
                 </div>
                     <img src="img/${cleanPZN}.jpg" class="product-thumb" loading="lazy" decoding="async" onerror="handleImgError(this)" onclick="openPhoto(this.src)">
                     <div class="card-body">
+                    <button class="order-line-delete" type="button" onclick="requestPositionDelete('${cleanPZN}', event)" aria-label="Удалить позицию" title="Удалить позицию">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
+                    </button>
                     <div class="c-title" style="${titleStyle}">
                         ${r.Name_DE}
                         <span class="order-variant-search" onclick="searchVariantFromCart('${r.Name_DE}', event)" 
@@ -3125,7 +3299,7 @@ function handleOrderCopyAndOpen(btnElement) {
                                 <div class="qty-capsule-wrap">
                                     ${isZero ? `
                                         <div style="font-size: 10px; color: #d32f2f; font-weight: 800; text-align: center; line-height: 1;">НЕТ В<br>АПТЕКАХ</div>
-                                        <button onclick="modQty('${cleanPZN}', -${item.qty}, event)" style="margin-left: 8px; background: none; border: none; font-size: 16px; color: #bbb; cursor: pointer;">✕</button>
+                                        
                                     ` : `
                                         <div class="qty-capsule">
                                             <button class="q-btn" onclick="modQty('${cleanPZN}',-1, event)">−</button>
@@ -3380,23 +3554,17 @@ function handleOrderCopyAndOpen(btnElement) {
 
         // Крестик корзины — локальное закрытие, без browser Back.
         if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'cart') {
-            const cleanState = { ...(window.history.state || {}), rxdeModal: null };
+            const cleanState = { ...(window.history.state || {}), rxdeView: true, rxdeRootGuard: true, rxdeModal: null };
             window.history.replaceState(cleanState, '', window.location.href);
         }
     }
 
     function addMoreItems() {
-        closeModal(); 
-        
+        closeModal();
+
         setTimeout(() => {
-            const input = document.getElementById('search');
-            if (input) {
-                input.value = ''; 
-                input.focus(); 
-                filters.search = ''; 
-                render(); 
-            }
-        }, 100);
+            openMobileSearch();
+        }, 70);
     }
     /* =========================================
     BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ
@@ -3619,7 +3787,7 @@ function handleOrderCopyAndOpen(btnElement) {
         render(false);
 
         if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'search') {
-            const cleanState = { ...(window.history.state || {}), rxdeModal: null };
+            const cleanState = { ...(window.history.state || {}), rxdeView: true, rxdeRootGuard: true, rxdeModal: null };
             window.history.replaceState(cleanState, '', mobileSearchParentUrl || window.location.href);
         }
 
@@ -3998,7 +4166,7 @@ function handleOrderCopyAndOpen(btnElement) {
         // Крестик связи — локальное закрытие слоя. Никакого Back и,
         // следовательно, никакого случайного "Выйти из RXDE?".
         if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'contact') {
-            const cleanState = { ...(window.history.state || {}), rxdeModal: null };
+            const cleanState = { ...(window.history.state || {}), rxdeView: true, rxdeRootGuard: true, rxdeModal: null };
             delete cleanState.contactType;
             delete cleanState.contactIndex;
             window.history.replaceState(cleanState, '', window.location.href);
@@ -4367,9 +4535,10 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: НАТИВНАЯ ИСТОРИЯ V40
-    Back/Swipe сначала закрывает текущий слой,
-    затем поднимает на верх главной, и только потом выход.
+    BLOCK 11: НАТИВНАЯ ИСТОРИЯ V46
+    1) закрыть верхний слой
+    2) вернуть на главную / вверх к категориям
+    3) только затем спрашивать о выходе
     ========================================= */
 
     window.history.replaceState(
@@ -4398,6 +4567,7 @@ function handleOrderCopyAndOpen(btnElement) {
         const contact = document.getElementById('contactOverlay');
         const info = document.getElementById('infoOverlay');
         const tg = document.getElementById('tgOverlay');
+
         return !!(
             (modal && modal.classList.contains('active')) ||
             (contact && contact.style.display === 'flex') ||
@@ -4417,99 +4587,93 @@ function handleOrderCopyAndOpen(btnElement) {
             closeContact(true);
             return true;
         }
-
         if (modal && modal.classList.contains('active')) {
             closeModal(true);
             return true;
         }
-
         if (mobileSearchIsOpen) {
             closeMobileSearch(true);
             return true;
         }
-
         if (info && info.style.display === 'flex') {
             closeInfo();
             return true;
         }
-
         if (tg && tg.style.display === 'flex' && typeof closeTgOverlay === 'function') {
             closeTgOverlay();
             return true;
         }
-
         return false;
     }
 
+    function pushRootGuard(url = window.location.href) {
+        window.history.pushState(
+            { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
+            '',
+            url
+        );
+    }
+
+    function forceHomeTop() {
+        filters.search = '';
+        filters.publicCategory = '';
+        filters.publicSubcategory = '';
+        filters.prescriptionMode = false;
+        filters.prescriptionVisible = 24;
+        filters.alphabet = '';
+
+        const input = document.getElementById('search');
+        if (input) input.value = '';
+
+        render(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        pushRootGuard(window.location.pathname);
+    }
+
     window.addEventListener('popstate', function(event) {
-        // 1. Любой открытый верхний слой: один свайп только закрывает его.
-        //    Сайт при этом не покидаем.
+        const state = event.state || {};
+
+        // Любой overlay съедает один Back сам.
         if (anyOverlayOpen()) {
             if (closeTopOverlayLocally()) {
-                window.history.pushState(
-                    { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
-                    '',
-                    window.location.href
-                );
+                pushRootGuard();
                 return;
             }
         }
 
-        const state = event.state || {};
-
-        // 2. Восстанавливаем экран каталога по URL.
-        if (db && db.length) restoreViewFromCurrentUrl();
-
-        // 3. На главной из нижней части сайта Back сначала возвращает наверх.
-        if ((state.rxdeEntryBoundary || state.rxdeRootGuard) && rootCatalogNow() && window.scrollY > 80) {
-            window.history.pushState(
-                { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
-                '',
-                window.location.href
-            );
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Если пришли с неизвестной/внешней записи истории —
+        // сначала удерживаем пользователя внутри RXDE на главной.
+        if (!state.rxdeView) {
+            forceHomeTop();
             return;
         }
 
-        // 4. Если на границе, но ещё не главная — возвращаем на главную сверху.
-        if (state.rxdeEntryBoundary || state.rxdeRootGuard) {
-            if (!rootCatalogNow()) {
-                filters.search = '';
-                filters.publicCategory = '';
-                filters.publicSubcategory = '';
-                filters.prescriptionMode = false;
-                filters.prescriptionVisible = 24;
-                filters.alphabet = '';
+        if (db && db.length) restoreViewFromCurrentUrl();
 
-                const input = document.getElementById('search');
-                if (input) input.value = '';
+        // Из категории / поиска / внутреннего режима — сначала главная сверху.
+        if (!rootCatalogNow()) {
+            forceHomeTop();
+            return;
+        }
 
-                render(true);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+        // На главной, но пользователь внизу — сначала наверх.
+        if (window.scrollY > 80) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            pushRootGuard();
+            return;
+        }
 
-                window.history.pushState(
-                    { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
-                    '',
-                    window.location.pathname
-                );
+        // Только главная + верх страницы = граница выхода.
+        if (!rxdeExitConfirmed) {
+            const leave = window.confirm('Выйти из RXDE?');
+            if (!leave) {
+                pushRootGuard();
                 return;
             }
 
-            if (!rxdeExitConfirmed) {
-                const leave = window.confirm('Выйти из RXDE?');
-                if (!leave) {
-                    window.history.pushState(
-                        { rxdeView: true, rxdeRootGuard: true, rxdeModal: null },
-                        '',
-                        window.location.href
-                    );
-                    return;
-                }
-
-                rxdeExitConfirmed = true;
-                setTimeout(() => window.history.back(), 0);
-                return;
-            }
+            rxdeExitConfirmed = true;
+            setTimeout(() => window.history.back(), 0);
+            return;
         }
 
         rxdeExitConfirmed = false;
@@ -4776,23 +4940,31 @@ function handleOrderCopyAndOpen(btnElement) {
     // Три постоянные кнопки — независимый верхний слой интерфейса.
     // pointerdown в capture-фазе: быстро и без конфликтов с overlay/drag/click.
     document.addEventListener('pointerdown', function(event) {
-        const quick = event.target.closest && event.target.closest(
-            '#quickSearchButton, #quickContactButton, #quickCartButton'
+        const action = event.target.closest && event.target.closest(
+            '.header-search-btn, #quickSearchButton, #quickContactButton, #quickCartButton'
         );
-        if (!quick) return;
+        if (!action) return;
 
         event.preventDefault();
         event.stopPropagation();
 
-        if (quick.id === 'quickSearchButton') {
+        if (action.matches('.header-search-btn') || action.id === 'quickSearchButton') {
             openMobileSearch();
-        } else if (quick.id === 'quickContactButton') {
+        } else if (action.id === 'quickContactButton') {
             openSmartContact();
-        } else if (quick.id === 'quickCartButton') {
+        } else if (action.id === 'quickCartButton') {
             openCart();
         }
     }, true);
 
+
+    document.addEventListener('click', function(event) {
+        const headerSearch = event.target.closest && event.target.closest('.header-search-btn');
+        if (!headerSearch) return;
+        event.preventDefault();
+        event.stopPropagation();
+        openMobileSearch();
+    });
 
     document.addEventListener('pointerdown', function(event) {
         const headerCart = event.target.closest && event.target.closest('#headerOrderButton');
@@ -4820,7 +4992,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v41 · style v41
+                index v50 · style v50
             </div>
         </div>
     </footer>
