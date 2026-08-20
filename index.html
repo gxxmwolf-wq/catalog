@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v61">
+    <link rel="stylesheet" href="style.css?build=v62">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -141,7 +141,7 @@
 
         <div class="mobile-search-sheet">
             <div class="search-one-line">
-                <img src="assets/rxde-logo.svg" class="search-inline-logo rxde-home-logo" alt="RXDE" role="button" tabindex="0" aria-label="На главную">
+                <img src="assets/rxde-logo.svg" class="search-inline-logo rxde-home-logo" alt="RXDE" role="button" onclick="goHomeFromAnyLogo(event)" tabindex="0" aria-label="На главную">
 
                 <div class="search-field-shell">
                     <span class="search-field-lens" aria-hidden="true">
@@ -199,12 +199,12 @@
     <div id="modal" class="modal" onclick="closeModal()">
         <div class="m-box" onclick="event.stopPropagation()">
             <div class="order-document-brand">
-                <div class="order-brand-wordmark rxde-home-logo" aria-label="RXDE" role="button" tabindex="0">
+                <div class="order-brand-wordmark rxde-home-logo" aria-label="RXDE" role="button" tabindex="0" onclick="goHomeFromAnyLogo(event)">
                     <span>RX</span><b>DE</b>
                 </div>
                 <div class="order-doc-heading">
                     <strong>Лист заказа</strong>
-                    <small>Аптека Германии · выкуп · отправка</small>
+                    <small>Ваш запрос · поиск в Германии · передача на почту</small>
                 </div>
                 <div class="order-doc-meta">
                     <small id="modalOrderNumber">Заявка</small>
@@ -367,8 +367,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v61';
-    const RXDE_DB_BUILD = '08-20 23:07';
+    const RXDE_BUILD = 'v62';
+    const RXDE_DB_BUILD = '08-20 23:32';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -1755,13 +1755,74 @@
             event.preventDefault();
             event.stopPropagation();
         }
+
+        // Схлопываем ВСЕ рабочие слои без промежуточных history-переходов.
+        rxdeDismissKeyboardNow?.();
+
         const contact = document.getElementById('contactOverlay');
-        if (contact && contact.style.display === 'flex') closeContact(true);
-        if (mobileSearchIsOpen) closeMobileSearch(true);
+        if (contact) {
+            contact.style.display = 'none';
+            contact.classList.remove('order-finalize-overlay', 'contact-top-overlay');
+        }
+
+        const searchOverlay = document.getElementById('mobileSearchOverlay');
+        if (searchOverlay) {
+            searchOverlay.classList.remove('active');
+            searchOverlay.setAttribute('aria-hidden', 'true');
+        }
+        mobileSearchIsOpen = false;
+
         const modal = document.getElementById('modal');
-        if (modal && modal.classList.contains('active')) closeModal(true);
-        goHome();
-        setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 0);
+        if (modal) {
+            modal.classList.remove('active', 'open', 'is-handing-off');
+            modal.style.display = 'none';
+        }
+
+        document.body.classList.remove(
+            'mobile-search-open',
+            'rxde-search-front',
+            'rxde-cart-front',
+            'rxde-contact-front',
+            'rxde-mode-search',
+            'rxde-mode-cart',
+            'rxde-mode-contact'
+        );
+        document.body.style.overflow = '';
+
+        filters.search = '';
+        filters.publicCategory = '';
+        filters.publicSubcategory = '';
+        filters.prescriptionMode = false;
+        filters.prescriptionVisible = 24;
+        filters.alphabet = '';
+
+        const search = document.getElementById('search');
+        if (search) {
+            search.value = '';
+            search.blur();
+        }
+
+        const suggestions = document.getElementById('suggestRow');
+        if (suggestions) suggestions.innerHTML = '';
+
+        render(true);
+
+        const rootUrl = window.location.origin + window.location.pathname;
+        const base = {
+            rxdeView: true,
+            rxdeScreen: 'root',
+            rxdeLayer: null,
+            rxdeModal: null,
+            rxdeGuard: false
+        };
+        try {
+            window.history.replaceState(base, '', rootUrl);
+            window.history.pushState({ ...base, rxdeGuard: true }, '', rootUrl);
+        } catch (_) {}
+
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, behavior: 'instant' });
+        });
     }
 
     document.addEventListener('click', event => {
@@ -2827,41 +2888,71 @@ function clearAdminPanel() {
         const principles = document.getElementById('headerPrinciples');
 
         if (principles) principles.classList.remove('is-ready');
+
         if (monthEl) {
             monthEl.textContent = now.toLocaleDateString('ru-RU', { month: 'short' })
-                .replace('.', '').toUpperCase();
+                .replace('.', '')
+                .toUpperCase();
         }
+
         if (!dayEl) return;
 
         const currentPage = dayEl.querySelector('.flip-calendar-current');
         const turningPage = dayEl.querySelector('.flip-calendar-sheet');
         const actualDay = now.getDate();
-        const target = Math.min(Math.max(actualDay, 1), 28);
-        const wrap28 = value => ((value - 1 + 28) % 28) + 1;
         const formatDay = value => String(value).padStart(2, '0');
-        const sequence = [5,4,3,2,1,0].map(offset => wrap28(target - offset));
 
-        dayEl.parentElement.setAttribute('aria-label', `Сегодня ${now.toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' })}`);
+        const fullDate = now.toLocaleDateString('ru-RU', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+        dayEl.parentElement?.setAttribute('aria-label', `Сегодня ${fullDate}`);
 
         if (!currentPage || !turningPage) {
-            dayEl.textContent = formatDay(target);
+            dayEl.textContent = formatDay(actualDay);
             revealHeaderPrinciples();
             return;
         }
 
-        if (calendarAnimationTimer) clearTimeout(calendarAnimationTimer);
-        dayEl.dataset.animatedDay = '';
-        currentPage.textContent = formatDay(sequence[0]);
-        turningPage.textContent = '';
-        turningPage.classList.remove('is-flipping');
-        turningPage.style.visibility = 'hidden';
+        if (calendarAnimationTimer) {
+            clearTimeout(calendarAnimationTimer);
+            calendarAnimationTimer = null;
+        }
+
+        // Повторный вызов в тот же день: просто текущее число, БЕЗ новой анимации.
+        if (dayEl.dataset.animatedDay === String(actualDay)) {
+            currentPage.textContent = formatDay(actualDay);
+            turningPage.textContent = '';
+            turningPage.classList.remove('is-flipping', 'is-visible');
+            revealHeaderPrinciples();
+            return;
+        }
+
+        // Декоративный диапазон 1..28.
+        const target = Math.min(Math.max(actualDay, 1), 28);
+        const wrap28 = value => ((value - 1 + 28) % 28) + 1;
+
+        // РОВНО: -5, -4, -3, -2, -1, сегодня.
+        const sequence = [
+            wrap28(target - 5),
+            wrap28(target - 4),
+            wrap28(target - 3),
+            wrap28(target - 2),
+            wrap28(target - 1),
+            target
+        ];
 
         let index = 0;
-        const step = () => {
+        currentPage.textContent = formatDay(sequence[0]);
+        turningPage.textContent = '';
+        turningPage.classList.remove('is-flipping', 'is-visible');
+
+        const flipNext = () => {
             if (index >= sequence.length - 1) {
                 currentPage.textContent = formatDay(target);
                 turningPage.textContent = '';
-                turningPage.style.visibility = 'hidden';
+                turningPage.classList.remove('is-flipping', 'is-visible');
                 dayEl.dataset.animatedDay = String(actualDay);
                 revealHeaderPrinciples();
                 calendarAnimationTimer = null;
@@ -2869,27 +2960,34 @@ function clearAdminPanel() {
             }
 
             const nextValue = sequence[index + 1];
+
+            // Лист показывает только СЛЕДУЮЩЕЕ число во время переворота.
             turningPage.textContent = formatDay(nextValue);
-            turningPage.style.visibility = 'visible';
-            turningPage.classList.remove('is-flipping');
+            turningPage.classList.remove('is-flipping', 'is-visible');
             void turningPage.offsetWidth;
-            turningPage.classList.add('is-flipping');
+            turningPage.classList.add('is-visible', 'is-flipping');
 
             calendarAnimationTimer = setTimeout(() => {
                 index += 1;
                 currentPage.textContent = formatDay(sequence[index]);
-                turningPage.classList.remove('is-flipping');
-                turningPage.style.visibility = 'hidden';
+
+                // Сразу убираем лист после фиксации числа:
+                // текущее число никогда не висит одновременно в двух слоях.
+                turningPage.classList.remove('is-flipping', 'is-visible');
                 turningPage.textContent = '';
-                if (index < sequence.length - 1) calendarAnimationTimer = setTimeout(step, 45);
-                else {
+
+                if (index >= sequence.length - 1) {
                     dayEl.dataset.animatedDay = String(actualDay);
                     revealHeaderPrinciples();
                     calendarAnimationTimer = null;
+                    return;
                 }
-            }, 300);
+
+                calendarAnimationTimer = setTimeout(flipNext, 28);
+            }, 235);
         };
-        calendarAnimationTimer = setTimeout(step, 100);
+
+        calendarAnimationTimer = setTimeout(flipNext, 80);
     }
 
     async function refreshHeaderSnapshot() {
@@ -3369,7 +3467,7 @@ function handleOrderCopyAndOpen(btnElement) {
                 const titleStyle = isZero ? 'text-decoration: line-through; color: #888;' : '';
 
                 div.innerHTML += `
-                <div class="card cart-reorder-card" data-cart-pzn="${cleanPZN}" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
+                <div class="card cart-sort-card" data-cart-pzn="${cleanPZN}" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
                 ${renderPriceCheckIndicator(cleanPZN)}
                 <div class="order-line-number" style="background: ${badgeBg};">
                     ${displayNum}
@@ -3459,7 +3557,182 @@ function handleOrderCopyAndOpen(btnElement) {
         <div style="height: 15px;"></div>`;
     
         requestAnimationFrame(initOrderPullGesture);
+
+        requestAnimationFrame(initWholeCardSort);
 } // <-- Конец функции renderCartItems 
+
+    let wholeCardSortCleanup = null;
+
+    function initWholeCardSort() {
+        if (wholeCardSortCleanup) {
+            wholeCardSortCleanup();
+            wholeCardSortCleanup = null;
+        }
+
+        const container = document.getElementById('cartItems');
+        if (!container) return;
+
+        const cards = Array.from(container.querySelectorAll('.cart-sort-card'));
+        if (cards.length < 2) return;
+
+        let activeCard = null;
+        let pointerId = null;
+        let startY = 0;
+        let longPressTimer = null;
+        let sorting = false;
+        let moved = false;
+        const listeners = [];
+
+        const isInteractive = target => !!target.closest(
+            'button, input, textarea, select, a, .order-variant-search, .product-thumb, .position-delete-bar'
+        );
+
+        const clearTimer = () => {
+            if (longPressTimer) clearTimeout(longPressTimer);
+            longPressTimer = null;
+        };
+
+        const clearMarkers = () => {
+            container.querySelectorAll('.cart-sort-card')
+                .forEach(card => card.classList.remove('is-sort-active', 'is-sort-near'));
+        };
+
+        const stop = () => {
+            clearTimer();
+            clearMarkers();
+            activeCard = null;
+            pointerId = null;
+            sorting = false;
+            moved = false;
+        };
+
+        const saveDomOrder = () => {
+            const orderedPzns = Array.from(container.querySelectorAll('.cart-sort-card'))
+                .map(card => card.dataset.cartPzn)
+                .filter(Boolean);
+
+            if (!orderedPzns.length) return;
+
+            const byPzn = new Map(cart.map(item => [String(item.pzn), item]));
+            const reordered = orderedPzns
+                .map(pzn => byPzn.get(String(pzn)))
+                .filter(Boolean);
+
+            // На случай служебных строк/неожиданного PZN ничего не теряем.
+            for (const item of cart) {
+                if (!reordered.includes(item)) reordered.push(item);
+            }
+
+            cart = reordered;
+            localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+            updateBar();
+        };
+
+        const onMove = event => {
+            if (!activeCard || event.pointerId !== pointerId) return;
+
+            const dy = event.clientY - startY;
+
+            // До long-press обычный вертикальный жест остаётся скроллом.
+            if (!sorting) {
+                if (Math.abs(dy) > 10) {
+                    clearTimer();
+                    activeCard = null;
+                    pointerId = null;
+                }
+                return;
+            }
+
+            event.preventDefault();
+            moved = true;
+
+            const candidates = Array.from(container.querySelectorAll('.cart-sort-card'))
+                .filter(card => card !== activeCard);
+
+            let nearest = null;
+            let nearestDistance = Infinity;
+
+            for (const card of candidates) {
+                const rect = card.getBoundingClientRect();
+                const center = rect.top + rect.height / 2;
+                const distance = Math.abs(event.clientY - center);
+                if (distance < nearestDistance) {
+                    nearest = card;
+                    nearestDistance = distance;
+                }
+            }
+
+            clearMarkers();
+            activeCard.classList.add('is-sort-active');
+
+            if (!nearest) return;
+
+            nearest.classList.add('is-sort-near');
+            const rect = nearest.getBoundingClientRect();
+            const after = event.clientY > rect.top + rect.height / 2;
+
+            // Меняем только порядок DOM. Никаких clone/ghost/render во время движения.
+            if (after) {
+                if (nearest.nextSibling !== activeCard) {
+                    nearest.after(activeCard);
+                }
+            } else {
+                if (nearest.previousSibling !== activeCard) {
+                    nearest.before(activeCard);
+                }
+            }
+        };
+
+        const onUp = event => {
+            if (event.pointerId !== pointerId) return;
+            clearTimer();
+
+            if (sorting && moved) {
+                saveDomOrder();
+
+                // Единственная перерисовка ПОСЛЕ отпускания.
+                // Номера 01/02/03 пересчитаются здесь.
+                requestAnimationFrame(() => renderCartItems());
+            }
+
+            stop();
+        };
+
+        cards.forEach(card => {
+            const onDown = event => {
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+                if (isInteractive(event.target)) return;
+
+                activeCard = card;
+                pointerId = event.pointerId;
+                startY = event.clientY;
+                moved = false;
+
+                longPressTimer = setTimeout(() => {
+                    if (!activeCard || pointerId !== event.pointerId) return;
+                    sorting = true;
+                    activeCard.classList.add('is-sort-active');
+                    try { activeCard.setPointerCapture(pointerId); } catch (_) {}
+                }, 260);
+            };
+
+            card.addEventListener('pointerdown', onDown, { passive: true });
+            listeners.push([card, onDown]);
+        });
+
+        window.addEventListener('pointermove', onMove, { passive: false });
+        window.addEventListener('pointerup', onUp, { passive: true });
+        window.addEventListener('pointercancel', stop, { passive: true });
+
+        wholeCardSortCleanup = () => {
+            clearTimer();
+            listeners.forEach(([card, fn]) => card.removeEventListener('pointerdown', fn));
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', stop);
+            clearMarkers();
+        };
+    }
 
     function toggleLogisticsInfo(event) {
         if (event) event.stopPropagation();
@@ -4265,6 +4538,38 @@ function handleOrderCopyAndOpen(btnElement) {
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', rxdeContactKeyboardMonitor, { passive: true });
     }
+
+    function rxdeCloseContactAfterKeyboardBack(event) {
+        const overlay = document.getElementById('contactOverlay');
+        if (!overlay || overlay.style.display !== 'flex') return;
+
+        const target = event.target;
+        if (!target || !target.matches('input, textarea')) return;
+
+        // Даём браузеру один кадр закончить скрытие клавиатуры.
+        setTimeout(() => {
+            const currentOverlay = document.getElementById('contactOverlay');
+            if (!currentOverlay || currentOverlay.style.display !== 'flex') return;
+
+            const vv = window.visualViewport;
+            const keyboardNowClosed = !vv || (window.innerHeight - vv.height) < 90;
+            const nothingElseFocused = !document.activeElement ||
+                document.activeElement === document.body ||
+                !document.activeElement.matches?.('input, textarea, select');
+
+            if (keyboardNowClosed && nothingElseFocused) {
+                rxdeKeyboardBackConsumedUntil = Date.now() + 700;
+                closeContact(true);
+                setTimeout(() => {
+                    if (typeof rxdeStabilizeHistory === 'function') {
+                        rxdeStabilizeHistory(window.location.href);
+                    }
+                }, 0);
+            }
+        }, 40);
+    }
+
+    document.addEventListener('focusout', rxdeCloseContactAfterKeyboardBack, true);
 
     function openContact(type = 'question', index = null, fromHistory = false) {
         const cartModal = document.getElementById('modal');
@@ -5425,7 +5730,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v61 · style v61 · база 08-20 23:07
+                index v62 · style v62 · база 08-20 23:32
             </div>
         </div>
     </footer>
