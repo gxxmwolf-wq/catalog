@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v52">
+    <link rel="stylesheet" href="style.css?build=v53">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -148,7 +148,7 @@
                         <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
                     </span>
 
-                    <input id="mobileSearchInput" type="text" inputmode="search"
+                    <input id="mobileSearchInput" type="text" inputmode="search" enterkeyhint="search"
                            placeholder="Название, вещество или PZN"
                            autocomplete="off" autocorrect="off" spellcheck="false"
                            oninput="handleMobileSearchInput()"
@@ -157,9 +157,14 @@
                     <button type="button" class="search-clear-btn" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
                 </div>
 
-                <button type="button" class="search-close-btn" onclick="closeMobileSearch()" aria-label="Закрыть поиск">
-                    <span class="search-close-wide">Закрыть</span>
+                <button type="button" class="search-close-btn" onclick="closeMobileSearch()" aria-label="Вернуться из поиска"><span class="search-back-arrow">←</span>
+                    <span class="search-close-wide">Назад</span>
                 </button>
+            </div>
+
+            <div id="mobileSearchSwipeHint" class="mobile-search-swipe-hint" aria-hidden="true">
+                <span class="mobile-search-swipe-chevron">‹</span>
+                <span>Свайп назад — вернуться в каталог</span>
             </div>
 
             <div id="mobileSearchScopeRow" class="mobile-search-scope-row" hidden>
@@ -362,7 +367,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v52';
+    const RXDE_BUILD = 'v53';
+    const RXDE_DB_BUILD = '08-20 19:33';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -3780,6 +3786,7 @@ function handleOrderCopyAndOpen(btnElement) {
 
         const query = mobileSearchSavedQuery || '';
         mobileInput.value = query;
+        syncMobileSearchClearButton();
         if (desktopInput) desktopInput.value = query;
 
         updateMobileSearchScope();
@@ -3793,6 +3800,27 @@ function handleOrderCopyAndOpen(btnElement) {
             if (suggestions) suggestions.innerHTML = '';
             syncMobileSearchHint();
         }
+        // Нажатие на лупу сразу активирует поле поиска.
+        setTimeout(() => {
+            try {
+                mobileInput.focus({ preventScroll: true });
+                const len = mobileInput.value.length;
+                mobileInput.setSelectionRange(len, len);
+            } catch (_) {}
+        }, 120);
+
+        const swipeHint = document.getElementById('mobileSearchSwipeHint');
+        if (swipeHint) {
+            const seen = localStorage.getItem('rxde_search_swipe_hint_seen') === '1';
+            swipeHint.classList.toggle('show', !seen);
+            if (!seen) {
+                setTimeout(() => {
+                    swipeHint.classList.remove('show');
+                    localStorage.setItem('rxde_search_swipe_hint_seen', '1');
+                }, 3200);
+            }
+        }
+
     }
 
     function closeMobileSearch(fromHistory = false) {
@@ -3832,11 +3860,15 @@ function handleOrderCopyAndOpen(btnElement) {
 
 
     function handleMobileSearchInput(updateUrl = true) {
+        const swipeHint = document.getElementById('mobileSearchSwipeHint');
+        if (swipeHint) swipeHint.classList.remove('show');
+
         const mobileInput = document.getElementById('mobileSearchInput');
         const desktopInput = document.getElementById('search');
         if (!mobileInput || !desktopInput) return;
 
         mobileSearchSavedQuery = mobileInput.value;
+        syncMobileSearchClearButton();
         desktopInput.value = mobileInput.value;
 
         handleInput(false);
@@ -3860,12 +3892,20 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
 
+    function syncMobileSearchClearButton() {
+        const input = document.getElementById('mobileSearchInput');
+        const clear = document.querySelector('.search-clear-btn');
+        if (!input || !clear) return;
+        clear.classList.toggle('is-visible', input.value.length > 0);
+    }
+
     function clearMobileSearchInput() {
         const mobileInput = document.getElementById('mobileSearchInput');
         const desktopInput = document.getElementById('search');
         if (!mobileInput || !desktopInput) return;
 
         mobileSearchSavedQuery = '';
+        syncMobileSearchClearButton();
         mobileInput.value = '';
         desktopInput.value = '';
         filters.search = '';
@@ -5037,7 +5077,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v52 · style v52
+                index v53 · style v53 · база 08-20 19:33
             </div>
         </div>
     </footer>

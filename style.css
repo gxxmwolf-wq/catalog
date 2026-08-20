@@ -8711,3 +8711,86 @@ body.mobile-search-open .mobile-quick-actions button {
    ========================================================== */
 
 /* RXDE V52 — calendar sequence: current-3 → current */
+
+
+/* ==========================================================
+   RXDE V53 — SEARCH UX: FOCUS / BACK / PERSISTENT QUERY
+   ========================================================== */
+
+.search-close-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    min-width: auto !important;
+    padding: 0 5px !important;
+    color: #43545f !important;
+}
+
+.search-back-arrow {
+    display: inline-block !important;
+    color: #1b3443 !important;
+    font-size: 17px !important;
+    line-height: 1 !important;
+    font-weight: 650 !important;
+}
+
+.search-clear-btn {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity .12s ease !important;
+}
+
+.search-clear-btn.is-visible {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.mobile-search-swipe-hint {
+    display: none;
+}
+
+@media (max-width: 720px) {
+    .mobile-search-swipe-hint {
+        align-items: center;
+        gap: 5px;
+        align-self: flex-start;
+        margin: -2px 10px 5px;
+        color: #78858d;
+        font-size: 9px;
+        line-height: 1;
+        opacity: 0;
+        transform: translateX(-4px);
+        pointer-events: none;
+        transition: opacity .18s ease, transform .18s ease;
+    }
+
+    .mobile-search-swipe-hint.show {
+        display: inline-flex;
+        opacity: .82;
+        transform: translateX(0);
+    }
+
+    .mobile-search-swipe-chevron {
+        color: #245f84;
+        font-size: 20px;
+        line-height: .8;
+        animation: searchSwipeHint 1.15s ease-in-out 2;
+    }
+
+    @keyframes searchSwipeHint {
+        0%,100% { transform: translateX(0); opacity: .45; }
+        50% { transform: translateX(-4px); opacity: 1; }
+    }
+
+    .search-close-btn {
+        min-width: 46px !important;
+        padding: 0 2px !important;
+        font-size: 9.5px !important;
+    }
+
+    .search-back-arrow {
+        font-size: 16px !important;
+    }
+}
