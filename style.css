@@ -5121,3 +5121,348 @@ button { letter-spacing: 0; }
         overscroll-behavior: contain;
     }
 }
+
+
+/* =========================================
+   RXDE MOBILE V31 — полноэкранный поиск и быстрые действия
+   ========================================= */
+.mobile-search-entry,
+.mobile-quick-actions,
+.mobile-search-overlay {
+    display: none;
+}
+
+.rxde-contact-context-card {
+    margin: -2px 0 14px;
+    padding: 12px 13px;
+    border: 1px solid #dce8ee;
+    border-radius: 13px;
+    background: #f7fafb;
+    color: #253641;
+    font-size: 12px;
+    font-weight: 750;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.rxde-contact-optional-message {
+    margin-bottom: 14px;
+}
+
+.rxde-contact-optional-message label {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+    color: #36434f;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rxde-contact-optional-message label span {
+    color: #98a3ab;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.rxde-contact-optional-message textarea {
+    width: 100%;
+    min-height: 82px;
+    box-sizing: border-box;
+    resize: vertical;
+    padding: 11px 12px;
+    border: 1px solid #d6e0e7;
+    border-radius: 13px;
+    outline: none;
+    background: #fff;
+    color: #18232c;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.empty-cart-state {
+    display: grid;
+    place-items: center;
+    gap: 10px;
+    min-height: 46vh;
+    padding: 36px 20px;
+    text-align: center;
+    color: #687783;
+}
+
+.empty-cart-state .empty-cart-icon {
+    display: grid;
+    place-items: center;
+    width: 58px;
+    height: 58px;
+    border-radius: 18px;
+    background: #eef5f8;
+    color: var(--p);
+    font-size: 27px;
+}
+
+.empty-cart-state strong {
+    color: #17232d;
+    font-size: 18px;
+}
+
+.empty-cart-state span {
+    max-width: 280px;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.empty-cart-state button {
+    margin-top: 8px;
+    min-height: 44px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--p);
+    color: #fff;
+    font: inherit;
+    font-weight: 800;
+}
+
+@media (max-width: 720px) {
+    .desktop-contact-entry { display: none !important; }
+
+    .mobile-search-entry {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        margin-left: 6px;
+        min-height: 31px;
+        padding: 0 11px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--p);
+        color: #fff;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    /* Старый поиск на мобильном больше не занимает ценное место между блоками. */
+    #searchHub {
+        display: none !important;
+    }
+
+    .mobile-quick-actions {
+        position: fixed;
+        z-index: 1800;
+        right: max(9px, env(safe-area-inset-right));
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        pointer-events: none;
+    }
+
+    .mobile-quick-actions button {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 46px;
+        height: 46px;
+        padding: 0;
+        border: 1px solid rgba(28, 67, 91, .12);
+        border-radius: 50%;
+        background: rgba(255,255,255,.88);
+        color: #16577f;
+        box-shadow: 0 7px 22px rgba(15, 38, 52, .16);
+        backdrop-filter: blur(14px) saturate(1.2);
+        -webkit-backdrop-filter: blur(14px) saturate(1.2);
+        pointer-events: auto;
+    }
+
+    .mobile-quick-icon {
+        font-size: 21px;
+        line-height: 1;
+        font-weight: 700;
+    }
+
+    .mobile-cart-count {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        min-width: 17px;
+        height: 17px;
+        box-sizing: border-box;
+        padding: 0 4px;
+        border: 2px solid #fff;
+        border-radius: 999px;
+        background: #d32f2f;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 900;
+        line-height: 13px;
+        text-align: center;
+    }
+
+    .mobile-search-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 2500;
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        background: rgba(229, 238, 244, .72);
+        backdrop-filter: blur(16px) saturate(.9);
+        -webkit-backdrop-filter: blur(16px) saturate(.9);
+        transition: opacity .18s ease, visibility .18s ease;
+    }
+
+    .mobile-search-overlay.active {
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .mobile-search-sheet {
+        position: absolute;
+        inset: max(7px, env(safe-area-inset-top)) 7px max(7px, env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid rgba(28, 67, 91, .08);
+        border-radius: 22px;
+        background: rgba(255,255,255,.96);
+        box-shadow: 0 24px 70px rgba(18, 41, 55, .20);
+    }
+
+    .mobile-search-topbar {
+        display: grid;
+        grid-template-columns: 38px minmax(0,1fr) auto;
+        align-items: center;
+        gap: 7px;
+        min-height: 51px;
+        padding: 6px 9px;
+        border-bottom: 1px solid #edf1f4;
+    }
+
+    .mobile-search-back {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border: 0;
+        border-radius: 11px;
+        background: #f1f5f7;
+        color: #34434f;
+        font-size: 30px;
+        line-height: 1;
+    }
+
+    .mobile-search-heading {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .mobile-search-heading strong {
+        color: #17232d;
+        font-size: 15px;
+        line-height: 1.1;
+    }
+
+    .mobile-search-heading small {
+        margin-top: 2px;
+        overflow: hidden;
+        color: #7f8c96;
+        font-size: 10px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mobile-search-everywhere {
+        min-height: 32px;
+        padding: 0 9px;
+        border: 0;
+        border-radius: 10px;
+        background: #edf6fa;
+        color: var(--p);
+        font: inherit;
+        font-size: 10px;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .mobile-search-input-wrap {
+        display: grid;
+        grid-template-columns: 24px minmax(0,1fr) 32px;
+        align-items: center;
+        gap: 4px;
+        margin: 9px 9px 6px;
+        min-height: 48px;
+        padding: 0 8px 0 12px;
+        border: 1px solid #d9e3e9;
+        border-radius: 15px;
+        background: #fff;
+        box-shadow: 0 5px 16px rgba(29, 53, 69, .06);
+    }
+
+    .mobile-search-input-wrap > span {
+        color: #6a8799;
+        font-size: 20px;
+    }
+
+    .mobile-search-input-wrap input {
+        width: 100%;
+        min-width: 0;
+        height: 44px;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: #17232d;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 650;
+    }
+
+    .mobile-search-input-wrap button {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 0;
+        border-radius: 9px;
+        background: #f1f4f6;
+        color: #8b979f;
+    }
+
+    .mobile-search-empty-hint {
+        padding: 27px 20px 8px;
+        color: #87949e;
+        font-size: 12px;
+        line-height: 1.5;
+        text-align: center;
+    }
+
+    .mobile-search-list-host {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 0 4px 80px;
+    }
+
+    .mobile-search-list-host #list {
+        width: 100% !important;
+        box-sizing: border-box;
+        margin: 0 !important;
+        padding: 0 8px !important;
+    }
+
+    body.mobile-search-open {
+        overflow: hidden !important;
+    }
+
+    body.mobile-search-open .mobile-quick-actions {
+        opacity: .16;
+        pointer-events: none;
+    }
+}

@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=30">
+    <link rel="stylesheet" href="style.css?v=31">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -48,7 +48,8 @@
                         <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE">
                     </div>
                     <button class="header-catalog-btn" type="button" onclick="goHome()">Каталог</button>
-                    <button class="header-contact-btn" type="button" onclick="openContact('question')">Написать нам</button>
+                    <button class="header-contact-btn desktop-contact-entry" type="button" onclick="openContact('question')">Написать нам</button>
+                    <button class="header-search-btn mobile-search-entry" type="button" onclick="openMobileSearch()" aria-label="Открыть поиск">⌕ Поиск</button>
                 </div>
 
                 <div class="header-utilities">
@@ -130,8 +131,51 @@
         <div id="suggestRow" class="suggestions-row"></div>
     </section>
 
+    <div id="listAnchor"></div>
     <div id="list"></div>
     <div id="serviceNotes" class="service-notes-bottom"></div>
+
+    <div id="mobileSearchOverlay" class="mobile-search-overlay" aria-hidden="true">
+        <div class="mobile-search-sheet">
+            <div class="mobile-search-topbar">
+                <button type="button" class="mobile-search-back" onclick="closeMobileSearch()" aria-label="Назад">‹</button>
+                <div class="mobile-search-heading">
+                    <strong>Поиск</strong>
+                    <small id="mobileSearchScope">По всему каталогу</small>
+                </div>
+                <button id="mobileSearchEverywhereBtn" type="button" class="mobile-search-everywhere" onclick="searchEverywhereFromMobile()" hidden>Искать везде</button>
+            </div>
+
+            <div class="mobile-search-input-wrap">
+                <span aria-hidden="true">⌕</span>
+                <input id="mobileSearchInput" type="search" inputmode="search"
+                       placeholder="Название, действующее вещество или PZN"
+                       autocomplete="off" autocorrect="off" spellcheck="false"
+                       oninput="handleMobileSearchInput()"
+                       onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
+                <button type="button" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
+            </div>
+
+            <div id="mobileSearchEmptyHint" class="mobile-search-empty-hint">
+                Начните вводить название, действующее вещество или PZN.
+            </div>
+
+            <div id="mobileSearchListHost" class="mobile-search-list-host"></div>
+        </div>
+    </div>
+
+    <nav id="mobileQuickActions" class="mobile-quick-actions" aria-label="Быстрые действия">
+        <button type="button" onclick="openMobileSearch()" aria-label="Поиск" title="Поиск">
+            <span class="mobile-quick-icon">⌕</span>
+        </button>
+        <button type="button" onclick="openSmartContact()" aria-label="Написать нам" title="Написать нам">
+            <span class="mobile-quick-icon">✉</span>
+        </button>
+        <button type="button" onclick="openCart()" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action">
+            <span class="mobile-quick-icon">▣</span>
+            <span id="mobileCartCount" class="mobile-cart-count">0</span>
+        </button>
+    </nav>
 
  
     <div id="modal" class="modal" onclick="closeModal()">
@@ -184,6 +228,13 @@
 
             <div id="contactPhoneStep">
                 <div id="contactContext" class="rxde-contact-context"></div>
+
+                <div id="contactContextCard" class="rxde-contact-context-card" hidden></div>
+
+                <div id="contactOptionalMessageWrap" class="rxde-contact-optional-message" hidden>
+                    <label for="contactOptionalMessage">Что хотите уточнить? <span>необязательно</span></label>
+                    <textarea id="contactOptionalMessage" maxlength="600" placeholder="Коротко опишите вопрос"></textarea>
+                </div>
 
                 <label class="rxde-phone-label" for="clientPhone">Номер телефона</label>
                 <input
@@ -2251,6 +2302,8 @@ function clearAdminPanel() {
         const grandTotalRub = getRubPrice(grandTotalEur);
 
         if (headerOrderCount) headerOrderCount.textContent = totalPacks;
+        const mobileCartCount = document.getElementById('mobileCartCount');
+        if (mobileCartCount) { mobileCartCount.textContent = totalPacks; mobileCartCount.hidden = totalPacks <= 0; }
         if (headerOrderMeta) headerOrderMeta.textContent = totalPacks > 0
             ? `${activeItems.length} поз. · ${grandTotalRub.toLocaleString('ru-RU')} ₽`
             : 'Пока пуст';
@@ -2444,6 +2497,10 @@ function clearAdminPanel() {
 
     async function refreshHeaderSnapshot() {
         renderHeaderDate();
+    try {
+        localStorage.removeItem('rxde_recent_categories');
+        localStorage.removeItem('rxde_recent_category');
+    } catch (_) {}
         if (headerRefreshInFlight) return;
         headerRefreshInFlight = true;
         try {
@@ -3011,31 +3068,43 @@ function handleOrderCopyAndOpen(btnElement) {
 
         isQuestionMode = false; // Жестко включаем режим "ЗАКАЗ"
         
-        // 1. ЕСЛИ ПУСТО — ВЕДЕМ К ПОИСКУ
+        // Пустая корзина остаётся корзиной — никаких неожиданных переходов в поиск.
         if (cart.length === 0) {
-            // Плавный скролл наверх
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            const searchWrap = document.querySelector('.inp-wrap');
-            const searchInp = document.getElementById('search');
-
-            if (searchWrap && searchInp) {
-                // Задержка 300мс нужна, чтобы скролл успел доехать до верха,
-                // иначе появление клавиатуры на Android дернет экран
-                setTimeout(() => {
-                    searchInp.focus(); // Ставим курсор и вызываем клавиатуру
-                    
-                    // Запускаем анимацию встряски "смотри сюда"
-                    searchWrap.classList.remove('attention-please');
-                    void searchWrap.offsetWidth; // Магия перезапуска CSS анимации
-                    searchWrap.classList.add('attention-please');
-                    
-                    // Убираем класс после завершения
-                    setTimeout(() => searchWrap.classList.remove('attention-please'), 600);
-                }, 300);
+            if (!fromHistory && (!window.history.state || window.history.state.rxdeModal !== 'cart')) {
+                window.history.pushState(
+                    { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'cart' },
+                    '',
+                    window.location.href
+                );
             }
-            
-            return; // ПРЕРЫВАЕМ ФУНКЦИЮ (Модалку не открываем)
+
+            const modal = document.getElementById('modal');
+            const items = document.getElementById('cartItems');
+            const footer = document.getElementById('footerTotalContent');
+            if (!modal || !items || !footer) return;
+
+            items.innerHTML = `
+                <div class="empty-cart-state">
+                    <div class="empty-cart-icon">▣</div>
+                    <strong>Лист заказа пока пуст</strong>
+                    <span>Добавляйте товары из каталога — они появятся здесь.</span>
+                    <button type="button" onclick="closeModal()">Вернуться в каталог</button>
+                </div>`;
+            footer.innerHTML = '';
+
+            const numberEl = document.getElementById('modalOrderNumber');
+            const dateEl = document.getElementById('modalOrderDate');
+            if (numberEl) numberEl.innerText = 'Лист заказа';
+            if (dateEl) dateEl.innerText = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
+
+            modal.style.display = 'flex';
+            scrollPos = window.pageYOffset;
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollPos}px`;
+            document.body.style.width = '100%';
+            setTimeout(() => modal.classList.add('active', 'open'), 10);
+            return;
         }
 
         // 2. ЕСЛИ ЕСТЬ ТОВАРЫ — ОТКРЫВАЕМ МОДАЛКУ
@@ -3198,6 +3267,186 @@ function handleOrderCopyAndOpen(btnElement) {
         box.style.display = message ? 'block' : 'none';
     }
 
+
+    let mobileSearchIsOpen = false;
+    let mobileSearchOriginalCategory = '';
+    let mobileSearchOriginalSubcategory = '';
+    let mobileSearchOriginalPrescriptionMode = false;
+
+    function isMobileViewport() {
+        return window.matchMedia && window.matchMedia('(max-width: 720px)').matches;
+    }
+
+    function updateMobileSearchScope() {
+        const scope = document.getElementById('mobileSearchScope');
+        const everywhere = document.getElementById('mobileSearchEverywhereBtn');
+        if (!scope || !everywhere) return;
+
+        if (filters.publicCategory) {
+            scope.textContent = filters.publicSubcategory
+                ? `${filters.publicCategory} · выбранный раздел`
+                : filters.publicCategory;
+            everywhere.hidden = false;
+        } else if (filters.prescriptionMode) {
+            scope.textContent = 'Индивидуальный каталог';
+            everywhere.hidden = false;
+        } else {
+            scope.textContent = 'По всему каталогу';
+            everywhere.hidden = true;
+        }
+    }
+
+    function moveProductListToMobileSearch() {
+        const list = document.getElementById('list');
+        const host = document.getElementById('mobileSearchListHost');
+        if (list && host && list.parentElement !== host) host.appendChild(list);
+    }
+
+    function restoreProductListHome() {
+        const list = document.getElementById('list');
+        const anchor = document.getElementById('listAnchor');
+        if (list && anchor && list.previousElementSibling !== anchor) anchor.after(list);
+    }
+
+    function syncMobileSearchHint() {
+        const hint = document.getElementById('mobileSearchEmptyHint');
+        const input = document.getElementById('mobileSearchInput');
+        const list = document.getElementById('list');
+        if (!hint || !input || !list) return;
+
+        const hasQuery = !!input.value.trim();
+        const hasContent = !!list.innerHTML.trim();
+        hint.hidden = hasQuery || hasContent || !!filters.publicCategory || !!filters.prescriptionMode;
+    }
+
+    function openMobileSearch(fromHistory = false) {
+        const overlay = document.getElementById('mobileSearchOverlay');
+        const mobileInput = document.getElementById('mobileSearchInput');
+        const desktopInput = document.getElementById('search');
+        if (!overlay || !mobileInput) return;
+
+        if (!fromHistory) {
+            mobileSearchOriginalCategory = filters.publicCategory || '';
+            mobileSearchOriginalSubcategory = filters.publicSubcategory || '';
+            mobileSearchOriginalPrescriptionMode = !!filters.prescriptionMode;
+
+            window.history.pushState(
+                {
+                    ...(window.history.state || {}),
+                    rxdeView: true,
+                    rxdeModal: 'search',
+                    searchParentCategory: mobileSearchOriginalCategory,
+                    searchParentSubcategory: mobileSearchOriginalSubcategory,
+                    searchParentPrescription: mobileSearchOriginalPrescriptionMode
+                },
+                '',
+                window.location.href
+            );
+        }
+
+        mobileSearchIsOpen = true;
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('mobile-search-open');
+
+        moveProductListToMobileSearch();
+
+        mobileInput.value = desktopInput?.value || filters.search || '';
+        updateMobileSearchScope();
+
+        // Поиск с главной начинается с чистого рабочего листа.
+        if (!mobileInput.value.trim() && !filters.publicCategory && !filters.prescriptionMode) {
+            const list = document.getElementById('list');
+            if (list) list.innerHTML = '';
+        } else {
+            render(false);
+        }
+
+        syncMobileSearchHint();
+        setTimeout(() => {
+            mobileInput.focus({ preventScroll: true });
+            mobileInput.setSelectionRange(mobileInput.value.length, mobileInput.value.length);
+        }, 100);
+    }
+
+    function closeMobileSearch(fromHistory = false) {
+        const overlay = document.getElementById('mobileSearchOverlay');
+        if (!overlay) return;
+
+        if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'search') {
+            window.history.back();
+            return;
+        }
+
+        mobileSearchIsOpen = false;
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('mobile-search-open');
+        restoreProductListHome();
+    }
+
+    function handleMobileSearchInput() {
+        const mobileInput = document.getElementById('mobileSearchInput');
+        const desktopInput = document.getElementById('search');
+        if (!mobileInput || !desktopInput) return;
+
+        desktopInput.value = mobileInput.value;
+        handleInput(false);
+        moveProductListToMobileSearch();
+        updateMobileSearchScope();
+        syncMobileSearchHint();
+    }
+
+    function clearMobileSearchInput() {
+        const mobileInput = document.getElementById('mobileSearchInput');
+        const desktopInput = document.getElementById('search');
+        if (!mobileInput || !desktopInput) return;
+
+        mobileInput.value = '';
+        desktopInput.value = '';
+        filters.search = '';
+        filters.alphabet = '';
+        render(false);
+        moveProductListToMobileSearch();
+        updateMobileSearchScope();
+        syncMobileSearchHint();
+        mobileInput.focus({ preventScroll: true });
+    }
+
+    function searchEverywhereFromMobile() {
+        filters.publicCategory = '';
+        filters.publicSubcategory = '';
+        filters.prescriptionMode = false;
+        filters.alphabet = '';
+
+        const mobileInput = document.getElementById('mobileSearchInput');
+        const desktopInput = document.getElementById('search');
+        if (desktopInput && mobileInput) desktopInput.value = mobileInput.value;
+
+        handleInput(false);
+        moveProductListToMobileSearch();
+        updateMobileSearchScope();
+        syncMobileSearchHint();
+    }
+
+    function openSmartContact() {
+        const cartModal = document.getElementById('modal');
+        if (cartModal && cartModal.classList.contains('active') && cart.length) {
+            openContact('order');
+            return;
+        }
+
+        const q = (document.getElementById('mobileSearchInput')?.value ||
+                   document.getElementById('search')?.value || '').trim();
+
+        if (mobileSearchIsOpen && q) {
+            openContact('search');
+            return;
+        }
+
+        openContact('question');
+    }
+
     function normalizeContactPhone(value) {
         const phone = String(value || '').trim();
         if (!phone) throw new Error('Укажите номер телефона.');
@@ -3225,33 +3474,88 @@ function handleOrderCopyAndOpen(btnElement) {
         return '+' + digits;
     }
 
+    function getCartContactSummary() {
+        let totalEur = 0;
+        let totalPacks = 0;
+        let positions = 0;
+
+        cart.forEach(item => {
+            const qty = Number(item.qty || 0);
+            if (qty <= 0) return;
+            const row = db.find(r => String(r.PZN).trim().padStart(8, '0') === String(item.pzn).trim().padStart(8, '0'));
+            if (!row) return;
+            const price = parseFloat(String(row.Price || '').replace(',', '.')) || 0;
+            positions += 1;
+            totalPacks += qty;
+            totalEur += price * qty;
+        });
+
+        const grandEur = totalEur + (totalPacks > 0 ? shipEur : 0);
+        return {
+            positions,
+            packs: totalPacks,
+            rub: getRubPrice(grandEur),
+            eur: Math.round(grandEur)
+        };
+    }
+
+    function getCurrentSearchText() {
+        return (document.getElementById('mobileSearchInput')?.value ||
+                document.getElementById('search')?.value ||
+                filters.search || '').trim();
+    }
+
     function buildContactContext(type, index = null) {
         if (type === 'order') {
             const data = getOrderTextAndLink();
-            if (!data) return '';
-            return `Лист заказа: ${data.link}`;
+            const summary = getCartContactSummary();
+            if (!data || !summary.positions) return '';
+            return `Лист заказа · ${summary.positions} поз. · ${summary.packs} уп. · ${summary.rub.toLocaleString('ru-RU')} ₽ · ${data.link}`;
         }
 
         if (type === 'search') {
-            const q = document.getElementById('search')?.value.trim();
-            return q ? `Поиск препарата: ${q}` : 'Запрос с каталога RXDE.online';
+            const q = getCurrentSearchText();
+            return q ? `Расширенный поиск: ${q}` : 'Расширенный поиск по каталогу';
         }
 
         if (type === 'news' && index !== null && newsDB[index]) {
-            return `Вопрос по заметке от ${newsDB[index].Date}`;
+            return `Вопрос по новости от ${newsDB[index].Date}`;
         }
 
         if (filters.prescriptionMode) {
-            const q = document.getElementById('search')?.value.trim();
+            const q = getCurrentSearchText();
             return q ? `Индивидуальный запрос: ${q}` : 'Индивидуальный запрос по препарату';
         }
 
         if (filters.publicCategory) {
-            return `Запрос из раздела: ${filters.publicCategory}`;
+            return `Раздел: ${filters.publicCategory}${filters.publicSubcategory ? ` · ${filters.publicSubcategory}` : ''}`;
         }
 
-        return 'Общий запрос с RXDE.online';
+        return 'Общий запрос';
     }
+
+    function getContactVisibleContext(type) {
+        if (type === 'order') {
+            const s = getCartContactSummary();
+            return s.positions
+                ? `Лист заказа · ${s.positions} поз. · ${s.packs} уп. · ${s.rub.toLocaleString('ru-RU')} ₽`
+                : 'Лист заказа';
+        }
+
+        if (type === 'search') {
+            const q = getCurrentSearchText();
+            return q ? `Расширенный поиск · ${q}` : 'Расширенный поиск';
+        }
+
+        if (filters.prescriptionMode) {
+            const q = getCurrentSearchText();
+            return q ? `Индивидуальный запрос · ${q}` : 'Индивидуальный запрос';
+        }
+
+        if (filters.publicCategory) return `Раздел · ${filters.publicCategory}`;
+        return '';
+    }
+
 
     function openContact(type = 'question', index = null, fromHistory = false) {
         const cartModal = document.getElementById('modal');
@@ -3275,7 +3579,12 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!overlay || !phoneInput) return;
 
         isQuestionMode = (type !== 'order');
-        pendingContactSource = isQuestionMode ? 'rxde.online/question' : 'rxde.online/order';
+        if (type === 'order') pendingContactSource = 'rxde.online/order';
+        else if (type === 'search') pendingContactSource = 'rxde.online/search';
+        else if (filters.publicCategory) pendingContactSource = 'rxde.online/category';
+        else if (filters.prescriptionMode) pendingContactSource = 'rxde.online/prescription';
+        else pendingContactSource = 'rxde.online/question';
+
         pendingContactContext = buildContactContext(type, index);
 
         if (type === 'order' && !pendingContactContext) {
@@ -3286,12 +3595,30 @@ function handleOrderCopyAndOpen(btnElement) {
         contactFormOpenedAt = Date.now();
         normalizedPhoneForSubmit = '';
 
-        if (title) title.textContent = isQuestionMode ? 'СВЯЗАТЬСЯ С RXDE' : 'ПЕРЕДАТЬ ЛИСТ ЗАКАЗА';
-        if (contextBox) {
-            contextBox.textContent = isQuestionMode
-                ? 'Укажите номер телефона — специалист RXDE свяжется с вами.'
-                : 'Укажите номер телефона — специалист проверит ваш лист заказа и свяжется с вами.';
+        const visibleContext = getContactVisibleContext(type);
+        const contextCard = document.getElementById('contactContextCard');
+        const optionalWrap = document.getElementById('contactOptionalMessageWrap');
+        const optionalMessage = document.getElementById('contactOptionalMessage');
+
+        if (type === 'search') {
+            if (title) title.textContent = 'РАСШИРЕННЫЙ ПОИСК';
+            if (contextBox) contextBox.textContent = 'Передадим специалисту то, что вы сейчас ищете.';
+        } else if (type === 'order') {
+            if (title) title.textContent = 'ПЕРЕДАТЬ ЛИСТ ЗАКАЗА';
+            if (contextBox) contextBox.textContent = 'Проверьте контекст заказа и оставьте номер телефона.';
+        } else {
+            if (title) title.textContent = 'СВЯЗАТЬСЯ С RXDE';
+            if (contextBox) contextBox.textContent = 'Укажите номер телефона — специалист RXDE свяжется с вами.';
         }
+
+        if (contextCard) {
+            contextCard.textContent = visibleContext;
+            contextCard.hidden = !visibleContext;
+        }
+
+        const allowOptionalText = type === 'question' && !filters.publicCategory && !filters.prescriptionMode;
+        if (optionalWrap) optionalWrap.hidden = !allowOptionalText;
+        if (optionalMessage) optionalMessage.value = '';
 
         phoneInput.value = '';
         const website = document.getElementById('contactWebsite');
@@ -3346,13 +3673,18 @@ function handleOrderCopyAndOpen(btnElement) {
         button.textContent = 'Отправка...';
 
         try {
+            const optionalMessage = document.getElementById('contactOptionalMessage')?.value.trim() || '';
+            const finalContext = optionalMessage
+                ? `${pendingContactContext}${pendingContactContext ? ' · ' : ''}Комментарий: ${optionalMessage}`
+                : pendingContactContext;
+
             const response = await fetch(CONTACT_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     source: pendingContactSource,
                     contact: normalizedPhoneForSubmit,
-                    context: pendingContactContext,
+                    context: finalContext,
                     page_url: window.location.href,
                     website: document.getElementById('contactWebsite')?.value || ''
                 })
@@ -3798,6 +4130,16 @@ function handleOrderCopyAndOpen(btnElement) {
 
         rxdeExitConfirmed = false;
 
+        if (state.rxdeModal === 'search') {
+            if (modal && modal.classList.contains('active')) closeModal(true);
+            if (contact && contact.style.display === 'flex') closeContact(true);
+
+            // Восстанавливаем родительский экран из текущего URL, затем открываем поиск.
+            if (db && db.length) restoreViewFromCurrentUrl();
+            openMobileSearch(true);
+            return;
+        }
+
         if (state.rxdeModal === 'cart') {
             if (contact && contact.style.display === 'flex') closeContact(true);
             if (!(modal && modal.classList.contains('active'))) openCart(true);
@@ -3812,6 +4154,7 @@ function handleOrderCopyAndOpen(btnElement) {
             return;
         }
 
+        if (mobileSearchIsOpen) closeMobileSearch(true);
         if (modal && modal.classList.contains('active')) closeModal(true);
         if (contact && contact.style.display === 'flex') closeContact(true);
         if (info && info.style.display === 'flex') closeInfo();
@@ -3904,58 +4247,10 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     };
 
-    function rememberRecentCategory() {
-        if (!filters.publicCategory || !PUBLIC_CATEGORY_ORDER.includes(filters.publicCategory)) return;
-        try {
-            const current = {
-                category: filters.publicCategory,
-                subcategory: ''
-            };
-            const previous = getRecentCategories().filter(item => item.category !== current.category);
-            localStorage.setItem('rxde_recent_categories', JSON.stringify([current, ...previous].slice(0, 3)));
-        } catch (e) {}
-    }
-
-    function getRecentCategories() {
-        try {
-            let saved = JSON.parse(localStorage.getItem('rxde_recent_categories') || 'null');
-            if (!Array.isArray(saved)) {
-                const legacy = JSON.parse(localStorage.getItem('rxde_recent_category') || 'null');
-                saved = legacy ? [legacy] : [];
-            }
-            const seen = new Set();
-            return saved.reduce((result, item) => {
-                if (!item || !PUBLIC_CATEGORY_ORDER.includes(item.category) || seen.has(item.category)) return result;
-                seen.add(item.category);
-                result.push({ category: item.category, subcategory: '' });
-                return result;
-            }, []).slice(0, 3);
-        } catch (e) {
-            return [];
-        }
-    }
-
-    function returnToRecentCategory(index) {
-        const recent = getRecentCategories()[Number(index)];
-        if (!recent) return;
-        filters.search = '';
-        filters.publicCategory = recent.category;
-        filters.publicSubcategory = recent.subcategory;
-        filters.prescriptionMode = false;
-        filters.alphabet = '';
-        rememberRecentCategory();
-        const input = document.getElementById('search');
-        if (input) input.value = '';
-        const url = new URL(window.location);
-        url.searchParams.delete('q');
-        url.searchParams.delete('service');
-        url.searchParams.delete('letter');
-        url.searchParams.set('cat', recent.category);
-        if (recent.subcategory) url.searchParams.set('sub', recent.subcategory);
-        else url.searchParams.delete('sub');
-        window.history.replaceState({ rxdeView: true }, '', url);
-        render(true);
-    }
+    // История просмотренных категорий намеренно не сохраняется.
+    function rememberRecentCategory() {}
+    function getRecentCategories() { return []; }
+    function returnToRecentCategory() {}
 
     // 4. Главная отрисовка (SEO H1 + Лента)
     // ВОТ ТАК ДОЛЖНО СТАТЬ (БЕЗ H1 и <p>):
@@ -3973,7 +4268,6 @@ function handleOrderCopyAndOpen(btnElement) {
 
         const visibleCategories = PUBLIC_CATEGORY_ORDER.filter(category => counts[category] > 0);
         const categoryLimit = visibleCategories.length;
-        const recentCategories = getRecentCategories();
         let html = `
             <section class="home-catalog" aria-labelledby="homeCatalogTitle">
                 <div class="home-catalog-layout">
@@ -3984,7 +4278,6 @@ function handleOrderCopyAndOpen(btnElement) {
                                 <small>${visibleCategories.length} разделов · ${visibleCategories.reduce((sum, category) => sum + counts[category], 0)} позиций</small>
                             </div>
                         </div>
-                        ${recentCategories.length ? `<nav class="recent-categories-strip" aria-label="Недавно просмотренные категории"><span>Недавно смотрели</span><div>${recentCategories.map((item, index) => `<button type="button" onclick="returnToRecentCategory(${index})">${escapeUiText(item.category)}</button>`).join('')}</div></nav>` : ''}
                         <div class="category-grid">
                             ${visibleCategories.slice(0, categoryLimit).map(category => `
                                 <button class="category-tile category-${PUBLIC_CATEGORY_COVERS[category] || 'default'}" type="button" onclick="selectPublicCategory('${category}')">
