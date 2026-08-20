@@ -10607,3 +10607,56 @@ body:not(.rxde-mode-cart) {
     contain: layout paint !important;
     isolation: isolate !important;
 }
+
+
+/* ==========================================================
+   RXDE V70 — CART CLICK GUARD / NO DOTS / NO EDGE FLASH
+   ========================================================== */
+
+/* Точки между "Итого" и суммой удалены окончательно. */
+#modal .order-summary-dots {
+    display: none !important;
+    border: 0 !important;
+}
+
+/* Без точек итог становится простой двухчастной строкой. */
+#modal .order-summary-main {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+}
+
+/* В открытой корзине плавающий общий итог не нужен:
+   он уже есть в footer и не может повторно открыть/перерисовать корзину. */
+body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+    display: none !important;
+}
+
+/* Убираем мобильные focus/tap вспышки с плавающих действий. */
+.mobile-quick-actions button,
+.mobile-quick-actions .quick-order-total {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+}
+
+/*
+  Старое базовое правило .card.selected рисовало синюю полосу слева.
+  Для каталога у нас уже есть собственное зелёное выделение,
+  поэтому старый синий слой полностью нейтрализуем.
+*/
+.card.selected {
+    border-left-color: transparent !important;
+    border-left-width: 0 !important;
+}
+
+#list .catalog-product-card.selected {
+    border-left: 3px solid #0b7c59 !important;
+}
+
+/* Не даём горизонтальному overflow создавать край/полосу viewport. */
+html,
+body {
+    overflow-x: clip !important;
+    max-width: 100% !important;
+}

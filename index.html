@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v69">
+    <link rel="stylesheet" href="style.css?build=v70">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -371,8 +371,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v69';
-    const RXDE_DB_BUILD = '08-21 01:32';
+    const RXDE_BUILD = 'v70';
+    const RXDE_DB_BUILD = '08-21 01:44';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -2833,7 +2833,6 @@ function clearAdminPanel() {
                     <div class="order-sheet-total">
                         <div class="order-summary-main">
                             <span class="order-summary-kicker">Итого</span>
-                            <span class="order-summary-dots" aria-hidden="true"></span>
                             <div class="order-summary-values" onclick="secretAdminCopy(event)">
                                 <span class="order-summary-eur">${grandTotalEur.toLocaleString('ru-RU')} €</span>
                                 <strong id="footerTotalSum" class="order-summary-rub">${grandTotalRub.toLocaleString('ru-RU')} ₽</strong>
@@ -3647,12 +3646,15 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function openCart(fromHistory = false) {
-        if (cartOpenInProgress) return;
-        cartOpenInProgress = true;
-
-        isQuestionMode = false;
-
         const modal = document.getElementById('modal');
+
+        // Повторное нажатие на сумму/корзину, пока корзина уже открыта,
+        // вообще ничего не делает. Никакой повторной сборки DOM.
+        if (modal && modal.classList.contains('active')) return;
+        if (cartOpenInProgress) return;
+
+        cartOpenInProgress = true;
+        isQuestionMode = false;
         const items = document.getElementById('cartItems');
         const footer = document.getElementById('footerTotalContent');
 
@@ -5437,7 +5439,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v69 · style v69 · база 08-21 01:32
+                index v70 · style v70 · база 08-21 01:44
             </div>
         </div>
     </footer>
