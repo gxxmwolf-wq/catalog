@@ -5466,3 +5466,296 @@ button { letter-spacing: 0; }
         pointer-events: none;
     }
 }
+
+
+/* =========================================
+   RXDE MOBILE V32 — компактная главная + выразительный поиск
+   ========================================= */
+@media (max-width: 720px) {
+    /* Убираем отдельную строку "Каталог / Безрецептурные товары". */
+    .home-catalog-head {
+        display: none !important;
+    }
+
+    .intro-section {
+        padding-top: 7px !important;
+    }
+
+    .mobile-search-entry {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 7px;
+        min-height: 32px;
+        padding: 0 10px 0 6px;
+        border: 1px solid rgba(16,29,38,.42) !important;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #fff, #f4f7f8) !important;
+        color: #17232c !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 2px 8px rgba(18,36,48,.08) !important;
+        font-size: 11px;
+        font-weight: 780;
+    }
+
+    .header-search-lens {
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 22px;
+        border: 1px solid rgba(17,37,49,.20);
+        border-radius: 50%;
+        background: #eef3f6;
+        box-shadow: inset 0 1px 3px rgba(20,44,59,.12);
+    }
+
+    .header-search-lens svg,
+    .mobile-search-lens svg {
+        fill: none;
+        stroke: #18394d;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+    }
+
+    .header-search-lens svg { width: 13px; height: 13px; }
+
+    .mobile-search-overlay {
+        background: rgba(218,226,231,.30) !important;
+        backdrop-filter: blur(6px) saturate(.92) !important;
+        -webkit-backdrop-filter: blur(6px) saturate(.92) !important;
+    }
+
+    .mobile-search-sheet {
+        inset: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)) !important;
+        border: 1px solid rgba(13,29,39,.18) !important;
+        border-radius: 24px !important;
+        background: rgba(255,255,255,.985) !important;
+        box-shadow: 0 28px 80px rgba(16,31,42,.22), 0 3px 12px rgba(16,31,42,.09) !important;
+        transform: translateY(10px) scale(.988);
+        opacity: 0;
+        transition: transform .16s cubic-bezier(.2,.8,.2,1), opacity .14s ease;
+    }
+
+    .mobile-search-overlay.active .mobile-search-sheet {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+
+    .mobile-search-brandbar {
+        display: grid;
+        grid-template-columns: 34px auto 1fr 34px;
+        align-items: center;
+        gap: 8px;
+        min-height: 50px;
+        padding: 6px 9px;
+        border-bottom: 1px solid #edf1f3;
+    }
+
+    .mobile-search-back,
+    .mobile-search-close {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border: 1px solid rgba(17,35,48,.16);
+        border-radius: 11px;
+        background: #f7f9fa;
+        color: #1b2b36;
+    }
+
+    .mobile-search-back svg {
+        width: 18px;
+        height: 18px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .mobile-search-logo {
+        width: 72px;
+        height: auto;
+        display: block;
+    }
+
+    .mobile-search-title {
+        color: #56636d;
+        font-size: 10px;
+        font-weight: 780;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .mobile-search-input-wrap {
+        grid-template-columns: 34px minmax(0,1fr) 34px !important;
+        margin: 9px 10px 5px !important;
+        min-height: 52px !important;
+        padding: 0 8px !important;
+        border: 1px solid rgba(14,33,46,.35) !important;
+        border-radius: 16px !important;
+        background: #fff !important;
+        box-shadow: inset 0 1px 4px rgba(19,42,57,.07), 0 5px 15px rgba(19,42,57,.05) !important;
+    }
+
+    .mobile-search-lens {
+        display: grid;
+        place-items: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #edf2f5;
+        box-shadow: inset 0 1px 4px rgba(20,44,59,.13);
+    }
+
+    .mobile-search-lens svg { width: 16px; height: 16px; }
+
+    .mobile-search-input-wrap input {
+        font-size: 17px !important;
+        font-weight: 680 !important;
+        color: #111c24 !important;
+    }
+
+    .mobile-search-clear {
+        width: 30px !important;
+        height: 30px !important;
+        border: 0 !important;
+        border-radius: 10px !important;
+        background: #f2f4f5 !important;
+        color: #7b8790 !important;
+        font-size: 15px;
+    }
+
+    .mobile-search-scope-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 2px 10px 4px;
+        min-height: 26px;
+    }
+
+    .mobile-search-scope-row[hidden] { display: none !important; }
+
+    .mobile-search-scope-row > span {
+        max-width: 58%;
+        overflow: hidden;
+        padding: 5px 8px;
+        border: 1px solid #d8e2e8;
+        border-radius: 999px;
+        background: #f5f8fa;
+        color: #52616c;
+        font-size: 10px;
+        font-weight: 750;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mobile-search-scope-row button {
+        padding: 5px 8px;
+        border: 0;
+        background: transparent;
+        color: #235d7f;
+        font: inherit;
+        font-size: 10px;
+        font-weight: 820;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .mobile-search-suggestions-host {
+        flex: 0 0 auto;
+        max-height: 28vh;
+        overflow-y: auto;
+    }
+
+    .mobile-search-suggestions-host #suggestRow {
+        display: flex !important;
+        padding: 4px 10px 7px !important;
+        gap: 6px !important;
+    }
+
+    .mobile-search-suggestions-host .s-chip {
+        border-radius: 999px !important;
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        box-shadow: none !important;
+    }
+
+    .mobile-search-empty-hint {
+        padding: 20px 24px 7px !important;
+        color: #8b979f !important;
+        font-size: 12px !important;
+    }
+
+    .mobile-search-list-host {
+        padding: 0 2px 70px !important;
+        scroll-padding-top: 5px;
+    }
+
+    .mobile-search-list-host #list {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 8px !important;
+    }
+
+    .mobile-search-list-host .card {
+        border: 1px solid rgba(16,37,51,.11) !important;
+        border-radius: 18px !important;
+        margin: 8px 0 !important;
+        padding: 12px !important;
+        background: #fff !important;
+        box-shadow: 0 5px 16px rgba(15,38,52,.05) !important;
+    }
+
+    .mobile-quick-actions {
+        right: max(10px, env(safe-area-inset-right)) !important;
+        bottom: calc(24px + env(safe-area-inset-bottom)) !important;
+        gap: 8px !important;
+    }
+
+    .mobile-quick-actions button {
+        width: 42px !important;
+        height: 42px !important;
+        border: 1px solid rgba(11,25,34,.48) !important;
+        border-radius: 14px !important;
+        background: rgba(255,255,255,.96) !important;
+        color: #132834 !important;
+        box-shadow: 0 9px 24px rgba(12,29,40,.18), inset 0 1px 0 rgba(255,255,255,.95) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    .mobile-quick-actions button:active {
+        transform: scale(.93);
+    }
+
+    .mobile-quick-actions svg {
+        width: 21px;
+        height: 21px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .mobile-quick-chat {
+        background: rgba(18,41,55,.96) !important;
+        color: #fff !important;
+        border-color: rgba(18,41,55,.96) !important;
+    }
+
+    .mobile-quick-cart {
+        background: rgba(0,86,145,.96) !important;
+        color: #fff !important;
+        border-color: rgba(0,86,145,.96) !important;
+    }
+
+    .mobile-cart-count {
+        top: -5px !important;
+        right: -5px !important;
+        min-width: 18px !important;
+        height: 18px !important;
+        line-height: 14px !important;
+    }
+}

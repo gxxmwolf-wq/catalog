@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?v=31">
+    <link rel="stylesheet" href="style.css?v=32">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -49,7 +49,12 @@
                     </div>
                     <button class="header-catalog-btn" type="button" onclick="goHome()">Каталог</button>
                     <button class="header-contact-btn desktop-contact-entry" type="button" onclick="openContact('question')">Написать нам</button>
-                    <button class="header-search-btn mobile-search-entry" type="button" onclick="openMobileSearch()" aria-label="Открыть поиск">⌕ Поиск</button>
+                    <button class="header-search-btn mobile-search-entry" type="button" onclick="openMobileSearch()" aria-label="Открыть поиск">
+                        <span class="header-search-lens" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
+                        </span>
+                        <span>Поиск</span>
+                    </button>
                 </div>
 
                 <div class="header-utilities">
@@ -93,7 +98,7 @@
         <section class="home-catalog" aria-labelledby="homeCatalogSeedTitle">
             <div class="home-catalog-layout">
                 <div class="catalog-main">
-                    <div class="home-section-head">
+                    <div class="home-section-head home-catalog-head">
                         <div><span>Каталог</span><h1 id="homeCatalogSeedTitle">Безрецептурные товары</h1></div>
                     </div>
                     <div class="category-grid">
@@ -137,24 +142,35 @@
 
     <div id="mobileSearchOverlay" class="mobile-search-overlay" aria-hidden="true">
         <div class="mobile-search-sheet">
-            <div class="mobile-search-topbar">
-                <button type="button" class="mobile-search-back" onclick="closeMobileSearch()" aria-label="Назад">‹</button>
-                <div class="mobile-search-heading">
-                    <strong>Поиск</strong>
-                    <small id="mobileSearchScope">По всему каталогу</small>
-                </div>
-                <button id="mobileSearchEverywhereBtn" type="button" class="mobile-search-everywhere" onclick="searchEverywhereFromMobile()" hidden>Искать везде</button>
+            <div class="mobile-search-brandbar">
+                <button type="button" class="mobile-search-back" onclick="closeMobileSearch()" aria-label="Назад">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+
+                <img src="assets/rxde-logo.svg" class="mobile-search-logo" alt="RXDE">
+                <span class="mobile-search-title">Поиск</span>
+
+                <button type="button" class="mobile-search-close" onclick="closeMobileSearch()" aria-label="Закрыть">✕</button>
             </div>
 
             <div class="mobile-search-input-wrap">
-                <span aria-hidden="true">⌕</span>
+                <span class="mobile-search-lens" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
+                </span>
                 <input id="mobileSearchInput" type="search" inputmode="search"
-                       placeholder="Название, действующее вещество или PZN"
+                       placeholder="Название, вещество или PZN"
                        autocomplete="off" autocorrect="off" spellcheck="false"
                        oninput="handleMobileSearchInput()"
                        onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
-                <button type="button" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
+                <button type="button" class="mobile-search-clear" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
             </div>
+
+            <div id="mobileSearchScopeRow" class="mobile-search-scope-row" hidden>
+                <span id="mobileSearchScope"></span>
+                <button id="mobileSearchEverywhereBtn" type="button" onclick="searchEverywhereFromMobile()">Искать везде</button>
+            </div>
+
+            <div id="mobileSearchSuggestionsHost" class="mobile-search-suggestions-host"></div>
 
             <div id="mobileSearchEmptyHint" class="mobile-search-empty-hint">
                 Начните вводить название, действующее вещество или PZN.
@@ -165,46 +181,17 @@
     </div>
 
     <nav id="mobileQuickActions" class="mobile-quick-actions" aria-label="Быстрые действия">
-        <button type="button" onclick="openMobileSearch()" aria-label="Поиск" title="Поиск">
-            <span class="mobile-quick-icon">⌕</span>
+        <button type="button" onclick="openMobileSearch()" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
+            <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 4.6 4.6"/></svg>
         </button>
-        <button type="button" onclick="openSmartContact()" aria-label="Написать нам" title="Написать нам">
-            <span class="mobile-quick-icon">✉</span>
+        <button type="button" onclick="openSmartContact()" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
+            <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
         </button>
-        <button type="button" onclick="openCart()" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action">
-            <span class="mobile-quick-icon">▣</span>
+        <button type="button" onclick="openCart()" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
+            <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
             <span id="mobileCartCount" class="mobile-cart-count">0</span>
         </button>
     </nav>
-
- 
-    <div id="modal" class="modal" onclick="closeModal()">
-        <div class="m-box" onclick="event.stopPropagation()">
-            <div class="order-document-brand">
-                <div class="embedded-logo order-doc-logo" aria-label="RXDE"><img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE"></div>
-                <div class="order-doc-heading"><strong>Лист заказа</strong><small>Аптека Германии · выкуп · отчёт · отправка</small></div>
-                <div class="order-doc-meta"><small id="modalOrderNumber">Заявка</small><strong id="modalOrderDate">—</strong></div>
-            </div>
-            
-            <div class="modal-head">
-                <div id="modalHeaderLinks" class="m-head-add-more"></div>
-
-                <div class="m-head-info">
-                    <div class="order-course"><span>Расчётный курс</span><strong id="cartRate">0</strong><small>₽ / €</small></div>
-                </div>
-
-                <div onclick="closeModal()" class="close-x">✕</div>
-            </div>
-
-            <div class="m-scroll-area">
-                <div id="cartItems"></div>
-            </div>
-            
-        <div class="modal-footer-sticky" id="footerTotalContent" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap-reverse; gap: 15px;">
-                </div>
-            
-        </div>
-    </div>
 
     <div id="infoOverlay" class="info-overlay" onclick="closeInfo()" style="z-index: 2147483647 !important;">
         <div class="info-box" onclick="event.stopPropagation()" style="position: relative; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden;">
@@ -2440,6 +2427,7 @@ function clearAdminPanel() {
         const monthEl = document.getElementById('calendarMonth');
         const dayEl = document.getElementById('calendarDay');
         const principles = document.getElementById('headerPrinciples');
+
         if (principles) principles.classList.remove('is-ready');
         if (monthEl) monthEl.textContent = now.toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '').toUpperCase();
         if (!dayEl) return;
@@ -2457,42 +2445,33 @@ function clearAdminPanel() {
             return;
         }
 
-        if (calendarAnimationTimer) clearTimeout(calendarAnimationTimer);
-        turningPage.classList.remove('is-flipping');
+        if (calendarAnimationTimer) {
+            clearTimeout(calendarAnimationTimer);
+            calendarAnimationTimer = null;
+        }
 
-        const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reduceMotion || targetDay <= 1) {
+        const previousShown = parseInt(currentPage.textContent, 10);
+        const hasPreviousDay = Number.isFinite(previousShown) && previousShown > 0 && previousShown !== targetDay;
+
+        if (!hasPreviousDay) {
             currentPage.textContent = formatDay(targetDay);
             turningPage.textContent = formatDay(targetDay);
+            turningPage.classList.remove('is-flipping');
             revealHeaderPrinciples();
             return;
         }
 
-        let visibleDay = 1;
-        currentPage.textContent = formatDay(visibleDay);
-        turningPage.textContent = formatDay(visibleDay);
+        turningPage.textContent = formatDay(targetDay);
+        turningPage.classList.remove('is-flipping');
+        void turningPage.offsetWidth;
+        turningPage.classList.add('is-flipping');
 
-        const turnNextPage = () => {
-            if (visibleDay >= targetDay) {
-                turningPage.classList.remove('is-flipping');
-                revealHeaderPrinciples();
-                return;
-            }
-
-            const previousDay = visibleDay;
-            visibleDay += 1;
-            turningPage.textContent = formatDay(previousDay);
-            currentPage.textContent = formatDay(visibleDay);
+        calendarAnimationTimer = setTimeout(() => {
+            currentPage.textContent = formatDay(targetDay);
             turningPage.classList.remove('is-flipping');
-            void turningPage.offsetWidth;
-            turningPage.classList.add('is-flipping');
-
-            const remaining = targetDay - visibleDay;
-            const delay = remaining <= 2 ? 105 : (targetDay > 24 ? 42 : 54);
-            calendarAnimationTimer = setTimeout(turnNextPage, delay);
-        };
-
-        calendarAnimationTimer = setTimeout(turnNextPage, 130);
+            revealHeaderPrinciples();
+            calendarAnimationTimer = null;
+        }, 430);
     }
 
     async function refreshHeaderSnapshot() {
@@ -3278,34 +3257,52 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function updateMobileSearchScope() {
+        const row = document.getElementById('mobileSearchScopeRow');
         const scope = document.getElementById('mobileSearchScope');
         const everywhere = document.getElementById('mobileSearchEverywhereBtn');
-        if (!scope || !everywhere) return;
+        if (!row || !scope || !everywhere) return;
 
         if (filters.publicCategory) {
-            scope.textContent = filters.publicSubcategory
-                ? `${filters.publicCategory} · выбранный раздел`
-                : filters.publicCategory;
+            scope.textContent = filters.publicCategory;
+            row.hidden = false;
             everywhere.hidden = false;
         } else if (filters.prescriptionMode) {
             scope.textContent = 'Индивидуальный каталог';
+            row.hidden = false;
             everywhere.hidden = false;
         } else {
-            scope.textContent = 'По всему каталогу';
+            scope.textContent = '';
+            row.hidden = true;
             everywhere.hidden = true;
         }
     }
 
     function moveProductListToMobileSearch() {
         const list = document.getElementById('list');
-        const host = document.getElementById('mobileSearchListHost');
-        if (list && host && list.parentElement !== host) host.appendChild(list);
+        const listHost = document.getElementById('mobileSearchListHost');
+        const suggestions = document.getElementById('suggestRow');
+        const suggestionsHost = document.getElementById('mobileSearchSuggestionsHost');
+
+        if (suggestions && suggestionsHost && suggestions.parentElement !== suggestionsHost) {
+            suggestionsHost.appendChild(suggestions);
+        }
+        if (list && listHost && list.parentElement !== listHost) {
+            listHost.appendChild(list);
+        }
     }
 
     function restoreProductListHome() {
         const list = document.getElementById('list');
         const anchor = document.getElementById('listAnchor');
-        if (list && anchor && list.previousElementSibling !== anchor) anchor.after(list);
+        const suggestions = document.getElementById('suggestRow');
+        const searchHub = document.getElementById('searchHub');
+
+        if (list && anchor) anchor.after(list);
+
+        if (suggestions && searchHub) {
+            const searchInputWrap = searchHub.querySelector('.inp-wrap');
+            if (searchInputWrap) searchInputWrap.after(suggestions);
+        }
     }
 
     function syncMobileSearchHint() {
@@ -3354,12 +3351,15 @@ function handleOrderCopyAndOpen(btnElement) {
         mobileInput.value = desktopInput?.value || filters.search || '';
         updateMobileSearchScope();
 
-        // Поиск с главной начинается с чистого рабочего листа.
-        if (!mobileInput.value.trim() && !filters.publicCategory && !filters.prescriptionMode) {
+        // Под поиском остаётся текущий экран сайта — ничего не пересобираем.
+        // В самом листе показываем только подсказки и результаты.
+        if (!mobileInput.value.trim()) {
             const list = document.getElementById('list');
             if (list) list.innerHTML = '';
+            const suggestions = document.getElementById('suggestRow');
+            if (suggestions) suggestions.innerHTML = '';
         } else {
-            render(false);
+            handleMobileSearchInput();
         }
 
         syncMobileSearchHint();
