@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v57">
+    <link rel="stylesheet" href="style.css?build=v60">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -367,8 +367,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v57';
-    const RXDE_DB_BUILD = '08-20 21:03';
+    const RXDE_BUILD = 'v60';
+    const RXDE_DB_BUILD = '08-20 21:25';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -1378,12 +1378,15 @@
                             </div>
                             ${q > 0 ? `<button type="button" class="sum-box sum-box-cart-link" onclick="openCart()" aria-label="Открыть лист заказа">
                             <div class="sum-box-line-total">
-                                <span class="s-eur">${rowSumEur.toLocaleString('ru-RU')} €</span>
-                                <span class="s-rub">${rowSumRub.toLocaleString('ru-RU')} ₽</span>
+                                <span class="sum-box-label">Позиция</span>
+                                <strong>${rowSumEur.toLocaleString('ru-RU')} €</strong>
+                                <small>${rowSumRub.toLocaleString('ru-RU')} ₽</small>
                             </div>
+                            <div class="sum-box-divider"></div>
                             <div class="sum-box-order-total">
-                                <span>Заказ</span>
-                                <strong>${getCurrentCartRubTotal().toLocaleString('ru-RU')} ₽</strong>
+                                <span class="sum-box-label">Весь заказ</span>
+                                <strong>${getCurrentCartEurTotal().toLocaleString('ru-RU')} €</strong>
+                                <small>${getCurrentCartRubTotal().toLocaleString('ru-RU')} ₽</small>
                                 <b>→</b>
                             </div>
                         </button>` : ''}
@@ -2819,7 +2822,6 @@ function clearAdminPanel() {
             month: 'long',
             year: 'numeric'
         });
-
         dayEl.parentElement.setAttribute('aria-label', `Сегодня ${fullDate}`);
 
         if (!currentPage || !turningPage) {
@@ -2840,27 +2842,18 @@ function clearAdminPanel() {
             return;
         }
 
-        /*
-         * Строго заданная последовательность:
-         * текущее число - 3 → +1 → +1 → +1 → текущее число.
-         *
-         * Для декоративного перелистывания используем диапазон 1..28.
-         * До 28-го числа последовательность полностью буквальная.
-         */
-        const targetDay = Math.min(Math.max(actualDay, 1), 28);
+        // РОВНО 4 числа: сегодня-3 -> сегодня-2 -> сегодня-1 -> сегодня.
+        // Для декоративного цикла допустимы только 1..28.
+        const target = Math.min(Math.max(actualDay, 1), 28);
+        const wrap28 = value => ((value - 1 + 28) % 28) + 1;
         const sequence = [
-            targetDay - 3,
-            targetDay - 2,
-            targetDay - 1,
-            targetDay
-        ].map(value => {
-            while (value < 1) value += 28;
-            while (value > 28) value -= 28;
-            return value;
-        });
+            wrap28(target - 3),
+            wrap28(target - 2),
+            wrap28(target - 1),
+            target
+        ];
 
         let index = 0;
-
         currentPage.textContent = formatDay(sequence[0]);
         turningPage.textContent = formatDay(sequence[1]);
         turningPage.classList.remove('is-flipping');
@@ -2890,11 +2883,11 @@ function clearAdminPanel() {
                     return;
                 }
 
-                calendarAnimationTimer = setTimeout(flipNext, 65);
-            }, 380);
+                calendarAnimationTimer = setTimeout(flipNext, 55);
+            }, 350);
         };
 
-        calendarAnimationTimer = setTimeout(flipNext, 160);
+        calendarAnimationTimer = setTimeout(flipNext, 140);
     }
 
     async function refreshHeaderSnapshot() {
@@ -3374,7 +3367,8 @@ function handleOrderCopyAndOpen(btnElement) {
                 const titleStyle = isZero ? 'text-decoration: line-through; color: #888;' : '';
 
                 div.innerHTML += `
-                <div class="card" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
+                <div class="card cart-reorder-card" data-cart-pzn="${cleanPZN}" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
+                    <button class="cart-drag-handle" type="button" aria-label="Изменить порядок позиции" title="Перетащить"><span></span><span></span><span></span></button>
                 ${renderPriceCheckIndicator(cleanPZN)}
                 <div class="order-line-number" style="background: ${badgeBg};">
                     ${displayNum}
@@ -3465,6 +3459,191 @@ function handleOrderCopyAndOpen(btnElement) {
     
         requestAnimationFrame(initOrderPullGesture);
 } // <-- Конец функции renderCartItems 
+
+        requestAnimationFrame(initCartReorder);
+    let cartReorderCleanup = null;
+
+    function saveCartOrder() {
+        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+        updateBar();
+    }
+
+    function reorderCartByPzn(draggedPzn, targetPzn, placeAfter = false) {
+        if (!draggedPzn || !targetPzn || draggedPzn === targetPzn) return false;
+
+        const from = cart.findIndex(item => String(item.pzn) === String(draggedPzn));
+        let to = cart.findIndex(item => String(item.pzn) === String(targetPzn));
+        if (from < 0 || to < 0) return false;
+
+        const [moved] = cart.splice(from, 1);
+
+        // index target may shift after removal
+        to = cart.findIndex(item => String(item.pzn) === String(targetPzn));
+        if (to < 0) {
+            cart.push(moved);
+        } else {
+            cart.splice(placeAfter ? to + 1 : to, 0, moved);
+        }
+
+        saveCartOrder();
+        return true;
+    }
+
+    function initCartReorder() {
+        if (cartReorderCleanup) {
+            cartReorderCleanup();
+            cartReorderCleanup = null;
+        }
+
+        const container = document.getElementById('cartItems');
+        if (!container) return;
+
+        const handles = Array.from(container.querySelectorAll('.cart-drag-handle'));
+        if (!handles.length) return;
+
+        let activeCard = null;
+        let activeHandle = null;
+        let pointerId = null;
+        let startY = 0;
+        let latestY = 0;
+        let ghost = null;
+        let targetCard = null;
+        let placeAfter = false;
+
+        const clearTarget = () => {
+            container.querySelectorAll('.cart-reorder-target-before, .cart-reorder-target-after')
+                .forEach(el => el.classList.remove('cart-reorder-target-before', 'cart-reorder-target-after'));
+        };
+
+        const cleanupGhost = () => {
+            if (ghost) ghost.remove();
+            ghost = null;
+            clearTarget();
+            if (activeCard) activeCard.classList.remove('is-reordering');
+            activeCard = null;
+            activeHandle = null;
+            pointerId = null;
+            targetCard = null;
+        };
+
+        const onMove = (event) => {
+            if (event.pointerId !== pointerId || !activeCard) return;
+
+            latestY = event.clientY;
+            const dy = latestY - startY;
+
+            if (Math.abs(dy) < 5 && !ghost) return;
+
+            event.preventDefault();
+
+            if (!ghost) {
+                const rect = activeCard.getBoundingClientRect();
+                ghost = activeCard.cloneNode(true);
+                ghost.classList.add('cart-reorder-ghost');
+                ghost.querySelectorAll('button,input').forEach(el => {
+                    el.disabled = true;
+                    el.tabIndex = -1;
+                });
+                ghost.style.width = `${rect.width}px`;
+                ghost.style.left = `${rect.left}px`;
+                ghost.style.top = `${rect.top}px`;
+                document.body.appendChild(ghost);
+                activeCard.classList.add('is-reordering');
+            }
+
+            ghost.style.transform = `translate3d(0, ${dy}px, 0)`;
+
+            clearTarget();
+
+            const cards = Array.from(container.querySelectorAll('.cart-reorder-card'))
+                .filter(card => card !== activeCard);
+
+            targetCard = null;
+            let bestDistance = Infinity;
+
+            for (const card of cards) {
+                const rect = card.getBoundingClientRect();
+                if (latestY < rect.top - 12 || latestY > rect.bottom + 12) continue;
+
+                const center = rect.top + rect.height / 2;
+                const distance = Math.abs(latestY - center);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    targetCard = card;
+                    placeAfter = latestY > center;
+                }
+            }
+
+            if (targetCard) {
+                targetCard.classList.add(placeAfter ? 'cart-reorder-target-after' : 'cart-reorder-target-before');
+            }
+        };
+
+        const onUp = (event) => {
+            if (event.pointerId !== pointerId) return;
+
+            if (activeHandle) {
+                try { activeHandle.releasePointerCapture(pointerId); } catch (_) {}
+            }
+
+            if (ghost && targetCard && activeCard) {
+                const draggedPzn = activeCard.dataset.cartPzn;
+                const targetPzn = targetCard.dataset.cartPzn;
+
+                ghost.classList.add('is-dropping');
+
+                setTimeout(() => {
+                    const changed = reorderCartByPzn(draggedPzn, targetPzn, placeAfter);
+                    cleanupGhost();
+
+                    if (changed) {
+                        renderCartItems(); // номера пересчитываются автоматически
+                    }
+                }, 120);
+            } else {
+                cleanupGhost();
+            }
+        };
+
+        const onCancel = () => cleanupGhost();
+
+        const listeners = [];
+
+        handles.forEach(handle => {
+            const onDown = (event) => {
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+                const card = handle.closest('.cart-reorder-card');
+                if (!card) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                activeCard = card;
+                activeHandle = handle;
+                pointerId = event.pointerId;
+                startY = event.clientY;
+                latestY = startY;
+
+                try { handle.setPointerCapture(pointerId); } catch (_) {}
+
+                window.addEventListener('pointermove', onMove, { passive: false });
+                window.addEventListener('pointerup', onUp, { once: true });
+                window.addEventListener('pointercancel', onCancel, { once: true });
+            };
+
+            handle.addEventListener('pointerdown', onDown);
+            listeners.push([handle, onDown]);
+        });
+
+        cartReorderCleanup = () => {
+            cleanupGhost();
+            listeners.forEach(([handle, fn]) => handle.removeEventListener('pointerdown', fn));
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerup', onUp);
+            window.removeEventListener('pointercancel', onCancel);
+        };
+    }
 
     function toggleLogisticsInfo(event) {
         if (event) event.stopPropagation();
@@ -3567,7 +3746,8 @@ function handleOrderCopyAndOpen(btnElement) {
         // Сначала показываем оболочку. Даже если внутри рендера ошибка,
         // пользователь всё равно увидит корзину, а ошибка попадёт в console.
         document.body.classList.remove('rxde-search-front', 'rxde-contact-front');
-        document.body.classList.add('rxde-cart-front');
+        document.body.classList.remove('rxde-mode-search', 'rxde-mode-contact');
+        document.body.classList.add('rxde-cart-front', 'rxde-mode-cart');
 
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -3679,9 +3859,10 @@ function handleOrderCopyAndOpen(btnElement) {
         modal.classList.remove('open', 'active');
         modal.style.display = 'none';
 
-        document.body.classList.remove('rxde-cart-front');
+        document.body.classList.remove('rxde-cart-front', 'rxde-mode-cart');
         if (mobileSearchIsOpen) {
-            document.body.classList.add('rxde-search-front');
+            document.body.classList.remove('rxde-mode-cart', 'rxde-mode-contact');
+        document.body.classList.add('rxde-search-front', 'rxde-mode-search');
         }
 
         updateBar();
@@ -3691,7 +3872,9 @@ function handleOrderCopyAndOpen(btnElement) {
             const cleanState = { ...(window.history.state || {}), rxdeView: true, rxdeRootGuard: true, rxdeModal: null };
             window.history.replaceState(cleanState, '', window.location.href);
         }
-    }
+    
+        if (!fromHistory) rxdeStabilizeAfterLocalUiChange();
+}
 
     function addMoreItems() {
         closeModal();
@@ -3924,13 +4107,15 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function closeMobileSearch(fromHistory = false) {
+        rxdeDismissKeyboardNow();
+
         const overlay = document.getElementById('mobileSearchOverlay');
         if (!overlay || !mobileSearchIsOpen) return;
 
         mobileSearchIsOpen = false;
         overlay.classList.remove('active');
         overlay.setAttribute('aria-hidden', 'true');
-        document.body.classList.remove('mobile-search-open', 'rxde-search-front');
+        document.body.classList.remove('mobile-search-open', 'rxde-search-front', 'rxde-mode-search');
 
         const cartUnderSearch = document.getElementById('modal');
         if (cartUnderSearch && cartUnderSearch.classList.contains('active')) {
@@ -3961,7 +4146,9 @@ function handleOrderCopyAndOpen(btnElement) {
         requestAnimationFrame(() => {
             window.scrollTo({ top: mobileSearchParentScrollY, behavior: 'instant' });
         });
-    }
+    
+        if (!fromHistory) rxdeStabilizeAfterLocalUiChange();
+}
 
 
     function handleMobileSearchInput(updateUrl = true) {
@@ -4094,6 +4281,23 @@ function handleOrderCopyAndOpen(btnElement) {
         return '+' + digits;
     }
 
+    function getCurrentCartEurTotal() {
+        let eur = 0;
+        for (const cartItem of cart) {
+            const product = db.find(row =>
+                String(row.PZN || '').trim() === String(cartItem.pzn || '').trim()
+            );
+            if (!product) continue;
+
+            const price = Number(product.Price || product.price || 0);
+            const qty = Number(cartItem.qty || 0);
+            if (Number.isFinite(price) && Number.isFinite(qty)) eur += price * qty;
+        }
+
+        if (cart.length) eur += 50;
+        return Number.isFinite(eur) ? eur : 0;
+    }
+
     function getCurrentCartRubTotal() {
         let eur = 0;
         for (const cartItem of cart) {
@@ -4223,7 +4427,8 @@ function handleOrderCopyAndOpen(btnElement) {
             );
         }
         document.body.classList.remove('rxde-search-front', 'rxde-cart-front');
-        document.body.classList.add('rxde-contact-front');
+        document.body.classList.remove('rxde-mode-search', 'rxde-mode-cart');
+        document.body.classList.add('rxde-contact-front', 'rxde-mode-contact');
 
         const overlay = document.getElementById('contactOverlay');
         const title = document.getElementById('contactTitle');
@@ -4389,13 +4594,15 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function closeContact(fromHistory = false) {
+        rxdeDismissKeyboardNow();
+
         const overlay = document.getElementById('contactOverlay');
         if (!overlay) return;
 
         overlay.style.display = 'none';
         overlay.classList.remove('order-finalize-overlay');
         overlay.querySelector('.rxde-contact-box')?.classList.remove('order-finalize-box');
-        document.body.classList.remove('rxde-contact-front');
+        document.body.classList.remove('rxde-contact-front', 'rxde-mode-contact');
         setPhoneError('');
 
         const cartModal = document.getElementById('modal');
@@ -4421,7 +4628,9 @@ function handleOrderCopyAndOpen(btnElement) {
             delete cleanState.contactIndex;
             window.history.replaceState(cleanState, '', window.location.href);
         }
-    }
+    
+        if (!fromHistory) rxdeStabilizeAfterLocalUiChange();
+}
 
     /* =========================================
     BLOCK 7.6: СБОР ДАННЫХ ДЛЯ МЕНЕДЖЕРА
@@ -4785,85 +4994,115 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: НАТИВНАЯ ИСТОРИЯ V51
-    Строгая иерархия:
-    overlay -> главная сверху -> выход
+    BLOCK 11: RXDE BACK/SWIPE STATE MACHINE V58
+
+    Иерархия всегда одна:
+    верхний слой -> экран под ним -> главная сверху -> выход.
+    После каждого Back история "перешивается" в 2 локальные записи,
+    поэтому браузер не может случайно перескочить наружу.
     ========================================= */
 
-    window.history.replaceState(
-        { rxdeView: true, rxdeEntryBoundary: true, rxdeModal: null, rxdeScreen: 'root' },
-        '',
-        window.location.href
-    );
-    window.history.pushState(
-        { rxdeView: true, rxdeRootGuard: true, rxdeModal: null, rxdeScreen: 'root' },
-        '',
-        window.location.href
-    );
-
     let rxdeExitConfirmed = false;
+    let rxdeHistoryBusy = false;
+
+    function rxdeIsEditableElement(element) {
+        if (!element) return false;
+        const tag = (element.tagName || '').toUpperCase();
+        return tag === 'INPUT' ||
+               tag === 'TEXTAREA' ||
+               tag === 'SELECT' ||
+               element.isContentEditable === true;
+    }
+
+    function rxdeKeyboardLikelyOpen() {
+        const active = document.activeElement;
+        if (!rxdeIsEditableElement(active)) return false;
+
+        const vv = window.visualViewport;
+        if (!vv) return true;
+
+        // На мобильных клавиатура обычно заметно уменьшает visualViewport.
+        // 120 px — достаточно мягкий порог, чтобы не спутать с адресной строкой.
+        return (window.innerHeight - vv.height) > 120;
+    }
+
+    function rxdeDismissKeyboardNow() {
+        const active = document.activeElement;
+        if (!rxdeIsEditableElement(active)) return false;
+
+        try { active.blur(); } catch (_) {}
+
+        // Safari/Chrome иногда держат selection ещё один кадр.
+        try {
+            const selection = window.getSelection && window.getSelection();
+            if (selection && typeof selection.removeAllRanges === 'function') {
+                selection.removeAllRanges();
+            }
+        } catch (_) {}
+
+        return true;
+    }
+
+    function rxdeRootUrl() {
+        return window.location.origin + window.location.pathname;
+    }
+
+    function rxdeCurrentScreen() {
+        if (filters.publicSubcategory) return 'subcategory';
+        if (filters.publicCategory) return 'category';
+        if (filters.prescriptionMode) return 'service';
+        if (filters.search) return 'search';
+        return 'root';
+    }
+
+    function rxdeTopLayer() {
+        const contact = document.getElementById('contactOverlay');
+        const modal = document.getElementById('modal');
+        const info = document.getElementById('infoOverlay');
+        const tg = document.getElementById('tgOverlay');
+
+        if (contact && contact.style.display === 'flex') return 'contact';
+        if (info && info.style.display === 'flex') return 'info';
+        if (tg && tg.style.display === 'flex') return 'telegram';
+        if (mobileSearchIsOpen) return 'mobile-search';
+        if (modal && modal.classList.contains('active')) return 'cart';
+        return null;
+    }
+
+    function rxdeStateForCurrentUi(extra = {}) {
+        return {
+            rxdeView: true,
+            rxdeScreen: rxdeCurrentScreen(),
+            rxdeLayer: rxdeTopLayer(),
+            rxdeModal: rxdeTopLayer(),
+            ...extra
+        };
+    }
+
+    function rxdeStabilizeHistory(url = window.location.href) {
+        // Текущий UI становится гарантированным "основанием".
+        // Поверх кладём guard. Следующий Back всегда останется внутри документа.
+        const base = rxdeStateForCurrentUi({ rxdeGuard: false });
+        const guard = rxdeStateForCurrentUi({ rxdeGuard: true });
+
+        try {
+            window.history.replaceState(base, '', url);
+            window.history.pushState(guard, '', url);
+        } catch (_) {}
+    }
+
+    function rxdeStabilizeAfterLocalUiChange() {
+        if (rxdeHistoryBusy) return;
+        setTimeout(() => rxdeStabilizeHistory(window.location.href), 0);
+    }
 
     function rootCatalogNow() {
-        return !filters.publicCategory &&
-               !filters.publicSubcategory &&
-               !filters.prescriptionMode &&
-               !filters.search &&
-               !mobileSearchIsOpen;
-    }
-
-    function anyOverlayOpen() {
-        const modal = document.getElementById('modal');
-        const contact = document.getElementById('contactOverlay');
-        const info = document.getElementById('infoOverlay');
-        const tg = document.getElementById('tgOverlay');
-
-        return !!(
-            (modal && modal.classList.contains('active')) ||
-            (contact && contact.style.display === 'flex') ||
-            (info && info.style.display === 'flex') ||
-            (tg && tg.style.display === 'flex') ||
-            mobileSearchIsOpen
-        );
-    }
-
-    function closeTopOverlayLocally() {
-        const modal = document.getElementById('modal');
-        const contact = document.getElementById('contactOverlay');
-        const info = document.getElementById('infoOverlay');
-        const tg = document.getElementById('tgOverlay');
-
-        if (contact && contact.style.display === 'flex') {
-            closeContact(true);
-            return true;
-        }
-        if (modal && modal.classList.contains('active')) {
-            closeModal(true);
-            return true;
-        }
-        if (mobileSearchIsOpen) {
-            closeMobileSearch(true);
-            return true;
-        }
-        if (info && info.style.display === 'flex') {
-            closeInfo();
-            return true;
-        }
-        if (tg && tg.style.display === 'flex' && typeof closeTgOverlay === 'function') {
-            closeTgOverlay();
-            return true;
-        }
-        return false;
-    }
-
-    function pushRootGuard(url = window.location.href) {
-        window.history.pushState(
-            { rxdeView: true, rxdeRootGuard: true, rxdeModal: null, rxdeScreen: 'root' },
-            '',
-            url
-        );
+        return rxdeCurrentScreen() === 'root' && !mobileSearchIsOpen;
     }
 
     function forceHomeTop() {
+        rxdeHistoryBusy = true;
+
         filters.search = '';
         filters.publicCategory = '';
         filters.publicSubcategory = '';
@@ -4874,70 +5113,141 @@ function handleOrderCopyAndOpen(btnElement) {
         const input = document.getElementById('search');
         if (input) input.value = '';
 
-        const url = new URL(window.location.origin + window.location.pathname);
         render(true);
-        requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: 'smooth' }));
-        pushRootGuard(url.toString());
+
+        const rootUrl = rxdeRootUrl();
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Критично: НЕ push поверх старой category-state.
+            // Заменяем её на чистую root-base и только затем кладём guard.
+            const base = {
+                rxdeView: true,
+                rxdeScreen: 'root',
+                rxdeLayer: null,
+                rxdeModal: null,
+                rxdeGuard: false
+            };
+            const guard = { ...base, rxdeGuard: true };
+
+            try {
+                window.history.replaceState(base, '', rootUrl);
+                window.history.pushState(guard, '', rootUrl);
+            } catch (_) {}
+
+            rxdeHistoryBusy = false;
+        });
     }
 
+    function closeTopLayerForBack() {
+        const layer = rxdeTopLayer();
+
+        if (layer === 'contact') {
+            closeContact(true);
+            return true;
+        }
+        if (layer === 'info') {
+            closeInfo();
+            return true;
+        }
+        if (layer === 'telegram' && typeof closeTgOverlay === 'function') {
+            closeTgOverlay();
+            return true;
+        }
+        if (layer === 'mobile-search') {
+            closeMobileSearch(true);
+            return true;
+        }
+        if (layer === 'cart') {
+            closeModal(true);
+            return true;
+        }
+        return false;
+    }
+
+    // Initial shield: fresh page always has one local history entry behind it.
+    window.history.replaceState(
+        { rxdeView: true, rxdeScreen: rxdeCurrentScreen(), rxdeLayer: null, rxdeGuard: false },
+        '',
+        window.location.href
+    );
+    window.history.pushState(
+        { rxdeView: true, rxdeScreen: rxdeCurrentScreen(), rxdeLayer: null, rxdeGuard: true },
+        '',
+        window.location.href
+    );
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key !== 'Escape') return;
+
+        const layer = rxdeTopLayer();
+        if (!layer) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        rxdeDismissKeyboardNow();
+        closeTopLayerForBack();
+        rxdeStabilizeAfterLocalUiChange();
+    }, true);
+
     window.addEventListener('popstate', function(event) {
-        const state = event.state || {};
+        if (rxdeHistoryBusy) return;
 
-        // ВАЖНО: фиксируем экран ДО восстановления URL.
-        // Именно это отличает "Back из категории" от "Back с главной".
-        const wasInternalScreen = !rootCatalogNow();
+        rxdeHistoryBusy = true;
 
-        // 1. Любой открытый слой съедает один Back только на себя.
-        if (anyOverlayOpen()) {
-            if (closeTopOverlayLocally()) {
-                pushRootGuard();
-                return;
+        // 1. Любой открытый слой съедает ровно один Back.
+        // Если открыта клавиатура, этот ЖЕ Back одновременно:
+        // blur поля -> закрытие клавиатуры -> закрытие слоя.
+        // Второй свайп только ради клавиатуры не нужен.
+        const topLayer = rxdeTopLayer();
+        if (topLayer) {
+            const hadKeyboard = rxdeKeyboardLikelyOpen() || rxdeIsEditableElement(document.activeElement);
+
+            if (hadKeyboard) {
+                rxdeDismissKeyboardNow();
             }
+
+            closeTopLayerForBack();
+
+            requestAnimationFrame(() => {
+                rxdeStabilizeHistory(window.location.href);
+                rxdeHistoryBusy = false;
+            });
+            return;
         }
 
-        // 2. Если свайп был сделан из категории / подкатегории /
-        //    индивидуального каталога — первый Back ВСЕГДА на главную вверх.
-        if (wasInternalScreen) {
+        // 2. Любой внутренний экран -> главная сверху.
+        if (rxdeCurrentScreen() !== 'root') {
+            rxdeHistoryBusy = false;
             forceHomeTop();
             return;
         }
 
-        // 3. Неизвестная внешняя запись истории — не выпускаем сразу:
-        //    сначала формируем главную RXDE сверху.
-        if (!state.rxdeView) {
-            forceHomeTop();
-            return;
-        }
-
-        if (db && db.length) restoreViewFromCurrentUrl();
-
-        // 4. Если URL восстановил внутренний экран — всё равно сначала Home.
-        if (!rootCatalogNow()) {
-            forceHomeTop();
-            return;
-        }
-
-        // 5. Главная, но пользователь прокручен вниз: сначала верх категорий.
+        // 3. Главная, но пользователь ниже верхней точки -> сначала наверх.
         if (window.scrollY > 80) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            pushRootGuard();
+
+            requestAnimationFrame(() => {
+                rxdeStabilizeHistory(rxdeRootUrl());
+                rxdeHistoryBusy = false;
+            });
             return;
         }
 
-        // 6. Только главная + верх = реальная граница выхода.
-        if (!rxdeExitConfirmed) {
-            const leave = window.confirm('Выйти из RXDE?');
-            if (!leave) {
-                pushRootGuard();
-                return;
-            }
+        // 4. Только главная + самый верх = реальный запрос выхода.
+        const leave = window.confirm('Выйти из RXDE?');
 
-            rxdeExitConfirmed = true;
-            setTimeout(() => window.history.back(), 0);
+        if (!leave) {
+            rxdeStabilizeHistory(rxdeRootUrl());
+            rxdeHistoryBusy = false;
             return;
         }
 
-        rxdeExitConfirmed = false;
+        // После подтверждения разрешаем браузеру выйти за наш shield.
+        rxdeExitConfirmed = true;
+        rxdeHistoryBusy = false;
+        setTimeout(() => window.history.go(-2), 0);
     });
 
     /* =========================================
@@ -5253,7 +5563,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v57 · style v57 · база 08-20 21:03
+                index v60 · style v60 · база 08-20 21:25
             </div>
         </div>
     </footer>
