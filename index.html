@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v74">
+    <link rel="stylesheet" href="style.css?build=v75">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -372,8 +372,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v74';
-    const RXDE_DB_BUILD = '08-21 13:36';
+    const RXDE_BUILD = 'v75';
+    const RXDE_DB_BUILD = '08-21 14:04';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -684,8 +684,16 @@
                     </button>
                     <div class="prescription-context-actions">
                         ${activeRequest ? `<button class="prescription-show-all" type="button" onclick="showAllPrescriptionProducts()">Весь раздел</button>` : ''}
-                        <button class="category-request-cta" type="button" onclick="openContact('question')">
-                            <span><strong>Нужна помощь?</strong><small>${activeRequest ? `Запрос: ${activeRequestLabel}` : 'Уточним наличие индивидуально'}</small></span><i aria-hidden="true">→</i>
+                        <button class="category-search-field prescription-search-field" type="button"
+                                onclick="openMobileSearch(false, { focusInput: true })"
+                                aria-label="Поиск по всему каталогу">
+                            <span class="category-search-field-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
+                            </span>
+                            <span class="category-search-field-copy">
+                                <strong>Поиск по всему каталогу</strong>
+                                <small>Название, действующее вещество или PZN</small>
+                            </span>
                         </button>
                     </div>
                 </section>`;
@@ -1694,31 +1702,28 @@
         renderSuggestions(filters.search);
     }
     function getSubstanceHtml(row, allowSearch = true) {
-    const substance = String(row.Substance_DE || '').trim();
+        const substance = String(row.Substance_DE || '').trim();
 
-    // Не выводим пустое значение, кириллицу и подозрительно длинный текст
-    if (
-        !substance ||
-        !/[A-Za-z]/.test(substance) ||
-        /[А-Яа-яЁё]/.test(substance) ||
-        substance.length > 120
-    ) {
-        return '';
+        if (
+            !substance ||
+            !/[A-Za-z]/.test(substance) ||
+            /[А-Яа-яЁё]/.test(substance) ||
+            substance.length > 120
+        ) {
+            return '';
+        }
+
+        const safeSubstance = escapeUiText(substance);
+
+        // МНН — справочная строка. Отдельную лупу здесь убираем:
+        // она дублировала обычный поиск и путала назначение значков.
+        return `
+            <div class="c-substance" title="${safeSubstance}">
+                <span>МНН:</span>
+                <span class="c-substance-value">${safeSubstance}</span>
+            </div>
+        `;
     }
-
-    const safeSubstance = escapeUiText(substance);
-    const encodedSubstance = encodeURIComponent(substance).replace(/'/g, '%27');
-    return `
-        <div class="c-substance" title="${safeSubstance}">
-            <span>МНН:</span><span class="c-substance-value">${safeSubstance}</span>
-            ${allowSearch ? `
-                <button class="substance-search-button" type="button" onclick="searchBySubstance('${encodedSubstance}', event)" title="Найти все препараты с этим действующим веществом" aria-label="Найти препараты с МНН ${safeSubstance}">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"></circle><path d="m15 15 4 4"></path></svg>
-                </button>
-            ` : ''}
-        </div>
-    `;
-}
 
     function handleImgError(img) {
         const div = document.createElement('div');
@@ -3594,8 +3599,8 @@ function handleOrderCopyAndOpen(btnElement) {
                     <div class="c-title" style="${titleStyle}">
                         ${r.Name_DE}
                         <span class="order-variant-search" onclick="searchVariantFromCart('${r.Name_DE}', event)" 
-                            title="Найти все варианты этого препарата" 
-                            aria-label="Найти все варианты этого препарата">
+                            title="Показать все варианты этого торгового названия" 
+                            aria-label="Показать все варианты этого торгового названия">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="5.8"></circle><path d="m15.2 15.2 4.4 4.4"></path></svg>
                         </span>
                         ${isRx ? '<span class="b-rx">RX</span>' : ''}
@@ -5708,7 +5713,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v74 · style v74 · база 08-21 13:36
+                index v75 · style v75 · база 08-21 14:04
             </div>
         </div>
     </footer>
