@@ -11571,3 +11571,31 @@ h1.service-flow-title {
         color: #17252e !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V81 — QUIET EMAIL FALLBACK
+   ========================================================== */
+
+.rxde-email-fallback {
+    margin: 5px 0 9px !important;
+    color: #8a979f !important;
+    font-size: 9.5px !important;
+    line-height: 1.3 !important;
+}
+
+.rxde-email-fallback a {
+    color: #526f80 !important;
+    font-weight: 700 !important;
+    text-decoration: underline !important;
+    text-decoration-color: #bcc9d0 !important;
+    text-underline-offset: 2px !important;
+    overflow-wrap: anywhere !important;
+}
+
+.site-footer .footer-email-link {
+    color: #76858e !important;
+    text-decoration: underline !important;
+    text-decoration-color: #c2cbd0 !important;
+    text-underline-offset: 2px !important;
+}

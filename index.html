@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v80">
+    <link rel="stylesheet" href="style.css?build=v81">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -288,6 +288,10 @@
                     onkeydown="if(event.key==='Enter'){event.preventDefault();showPhoneConfirmation();}"
                 >
                 <div class="rxde-phone-hint">Укажите полный номер с кодом страны.</div>
+                <div class="rxde-email-fallback">
+                    Если связь через мессенджеры недоступна:
+                    <a href="mailto:med.zakaz.de@gmail.com">med.zakaz.de@gmail.com</a>
+                </div>
                 <div id="phoneError" class="rxde-phone-error" role="alert"></div>
 
                 <div class="rxde-honeypot" aria-hidden="true">
@@ -379,8 +383,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v80';
-    const RXDE_DB_BUILD = '08-21 15:07';
+    const RXDE_BUILD = 'v81';
+    const RXDE_DB_BUILD = '08-21 15:18';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -5826,13 +5830,15 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-links">
                 <button type="button" onclick="showInfo('privacy')">Конфиденциальность</button>
                 <span aria-hidden="true">·</span>
+                <a class="footer-email-link" href="mailto:med.zakaz.de@gmail.com">Почта</a>
+                <span aria-hidden="true">·</span>
                 <span>Информация на сайте носит справочный характер</span>
             </div>
 
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v80 · style v80 · база 08-21 15:07
+                index v81 · style v81 · база 08-21 15:18
             </div>
         </div>
     </footer>
