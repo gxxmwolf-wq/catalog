@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v79">
+    <link rel="stylesheet" href="style.css?build=v80">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -379,8 +379,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v79';
-    const RXDE_DB_BUILD = '08-21 14:52';
+    const RXDE_BUILD = 'v80';
+    const RXDE_DB_BUILD = '08-21 15:07';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -421,6 +421,8 @@
     const ORDER_ACTION_HINT = 'Менеджер проверит и подтвердит';
     let clearOrderUndoTimer = null;
     let cartOpenInProgress = false;
+    let prescriptionSearchReturn = null;
+
 
 
     /* =========================================
@@ -678,7 +680,7 @@
             const activeRequestLabel = escapeUiText(activeRequest);
             bar.innerHTML = `
                 <section class="category-context-strip prescription-category-context">
-                    <button class="category-context-main" type="button" aria-label="Вернуться в общий каталог" onclick="goHome()">
+                    <button class="category-context-main" type="button" aria-label="Вернуться на предыдущий шаг" onclick="returnFromPrescriptionService(event)">
                         <span class="category-context-image prescription-context-image" aria-hidden="true">
                             <span class="category-back-chevron"></span>
                             <svg viewBox="0 0 64 64" fill="none"><path d="M20 10h19l9 9v35H20z"/><path d="M39 10v11h11M27 31h14M27 39h14M27 47h9"/></svg>
@@ -690,6 +692,10 @@
                         </span>
                     </button>
                     <div class="prescription-context-actions">
+                        <button class="prescription-desktop-close" type="button"
+                                onclick="returnFromPrescriptionService(event)"
+                                aria-label="Вернуться на предыдущий шаг"
+                                title="Назад">×</button>
                         ${activeRequest ? `<button class="prescription-show-all" type="button" onclick="showAllPrescriptionProducts()">Весь раздел</button>` : ''}
                         <button class="category-search-field prescription-search-field" type="button"
                                 onclick="openMobileSearch(false, { focusInput: true })"
@@ -5358,7 +5364,14 @@ function handleOrderCopyAndOpen(btnElement) {
             return;
         }
 
-        // 3. Категория / индивидуальный сервис / обычный поиск -> главная.
+        // 3. Персональный заказ, открытый из поиска -> обратно в тот же поиск.
+        if (filters.prescriptionMode && prescriptionSearchReturn) {
+            rxdeHistoryBusy = false;
+            returnFromPrescriptionService();
+            return;
+        }
+
+        // 4. Категория / индивидуальный сервис / обычный поиск -> главная.
         if (filters.publicCategory || filters.prescriptionMode || filters.search) {
             rxdeHistoryBusy = false;
             rxdeGoRootTop();
@@ -5611,26 +5624,121 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function openPrescriptionService(pzn = '') {
+        const requestedPzn = String(pzn || '').trim();
+
+        // Если пришли из полноэкранного поиска по конкретному препарату,
+        // сохраняем сам поиск как предыдущий шаг.
+        if (mobileSearchIsOpen && requestedPzn) {
+            prescriptionSearchReturn = {
+                query: String(mobileSearchSavedQuery || document.getElementById('mobileSearchInput')?.value || '').trim(),
+                originalCategory: mobileSearchOriginalCategory || '',
+                originalSubcategory: mobileSearchOriginalSubcategory || '',
+                originalPrescriptionMode: !!mobileSearchOriginalPrescriptionMode,
+                parentScrollY: Number(mobileSearchParentScrollY || 0)
+            };
+
+            // Закрываем только визуальный слой поиска и возвращаем list домой,
+            // не вызывая старую цепочку render -> search DOM -> render.
+            const overlay = document.getElementById('mobileSearchOverlay');
+            if (overlay) {
+                overlay.classList.remove('active');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+            mobileSearchIsOpen = false;
+            document.body.classList.remove(
+                'mobile-search-open',
+                'rxde-search-front',
+                'rxde-mode-search'
+            );
+            restoreProductListHome();
+            clearSearchBackdrop();
+        } else if (!requestedPzn) {
+            // Прямой вход в раздел "Сложные препараты" не имеет родителя-поиска.
+            prescriptionSearchReturn = null;
+        }
+
         filters.publicCategory = '';
         filters.publicSubcategory = '';
         filters.prescriptionMode = true;
         filters.prescriptionVisible = 24;
-        filters.search = pzn || '';
+        filters.search = requestedPzn;
         filters.alphabet = '';
+
         const input = document.getElementById('search');
         if (input) input.value = filters.search;
+
         const url = new URL(window.location);
         url.searchParams.delete('cat');
         url.searchParams.delete('sub');
         url.searchParams.set('service', 'rx');
         url.searchParams.delete('letter');
+
         if (filters.search) url.searchParams.set('q', filters.search);
         else url.searchParams.delete('q');
+
+        // Это самостоятельный следующий шаг, поэтому pushState.
         rxdeNavigate(url);
+
         const suggestions = document.getElementById('suggestRow');
         if (suggestions) suggestions.innerHTML = '';
+
         render(true);
-        if (!pzn && input) setTimeout(() => input.focus({ preventScroll: true }), 150);
+
+        if (!requestedPzn && input) {
+            setTimeout(() => input.focus({ preventScroll: true }), 150);
+        }
+    }
+
+    function returnFromPrescriptionService(event = null) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        if (!prescriptionSearchReturn) {
+            rxdeGoRootTop();
+            return;
+        }
+
+        const saved = { ...prescriptionSearchReturn };
+        prescriptionSearchReturn = null;
+
+        // Сначала восстанавливаем экран, поверх которого жил тот поиск.
+        filters.search = '';
+        filters.publicCategory = saved.originalCategory || '';
+        filters.publicSubcategory = saved.originalSubcategory || '';
+        filters.prescriptionMode = !!saved.originalPrescriptionMode;
+        filters.prescriptionVisible = 24;
+        filters.alphabet = '';
+
+        const input = document.getElementById('search');
+        if (input) input.value = '';
+
+        render(false);
+
+        // Затем возвращаем тот же полноэкранный поиск, без клавиатуры.
+        mobileSearchSavedQuery = saved.query || '';
+        requestAnimationFrame(() => {
+            openMobileSearch(true, {
+                query: saved.query || '',
+                clearCurrentList: true,
+                focusInput: false
+            });
+
+            requestAnimationFrame(() => {
+                try {
+                    const state = {
+                        ...(window.history.state || {}),
+                        rxdeView: true,
+                        rxdeScreen: 'search',
+                        rxdeLayer: 'mobile-search',
+                        rxdeModal: 'search',
+                        rxdeGuard: true
+                    };
+                    window.history.replaceState(state, '', window.location.href);
+                } catch (_) {}
+            });
+        });
     }
 
     function showMorePrescriptionProducts() {
@@ -5724,7 +5832,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v79 · style v79 · база 08-21 14:52
+                index v80 · style v80 · база 08-21 15:07
             </div>
         </div>
     </footer>

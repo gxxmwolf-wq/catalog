@@ -11425,3 +11425,149 @@ h1.service-flow-title {
         overflow: hidden !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V80 — RX RETURN PATH + DESKTOP CARD GEOMETRY
+   ========================================================== */
+
+/*
+  На десктопе карточка препарата должна иметь устойчивую структуру:
+  фото | тело карточки, а внутри тела meta и purchase-row не сжимают друг друга.
+*/
+@media (min-width: 721px) {
+    #list .catalog-product-card {
+        display: grid !important;
+        grid-template-columns: 78px minmax(0, 1fr) !important;
+        align-items: start !important;
+        gap: 16px !important;
+        min-height: 0 !important;
+        height: auto !important;
+        overflow: hidden !important;
+    }
+
+    #list .catalog-product-card > .product-thumb {
+        width: 78px !important;
+        height: 78px !important;
+        min-width: 78px !important;
+        object-fit: contain !important;
+    }
+
+    #list .catalog-product-card > .card-body {
+        display: block !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    #list .catalog-product-card .card-bottom {
+        display: grid !important;
+        grid-template-columns: minmax(260px, 1fr) minmax(300px, 360px) !important;
+        align-items: end !important;
+        gap: 22px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    #list .catalog-product-card .c-meta-box {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        word-break: normal !important;
+        overflow-wrap: break-word !important;
+    }
+
+    #list .catalog-product-card .c-meta {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        white-space: normal !important;
+        word-break: normal !important;
+    }
+
+    #list .catalog-product-card .product-purchase-row {
+        grid-column: 2 !important;
+        display: grid !important;
+        grid-template-columns: minmax(72px, .8fr) auto minmax(90px, .9fr) !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 360px !important;
+        justify-self: end !important;
+    }
+
+    #list .catalog-product-card:not(.selected) .product-purchase-row {
+        grid-template-columns: minmax(72px, 1fr) 118px !important;
+    }
+
+    #list .catalog-product-card:not(.selected) .qty-capsule-wrap {
+        grid-column: 2 !important;
+        justify-self: end !important;
+    }
+
+    /* Не позволяем старым "последний div" правилам ломать meta-колонку. */
+    #list .catalog-product-card .card-bottom > div:last-child {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+}
+
+/* На узком ноутбуке meta и покупка складываются вертикально. */
+@media (min-width: 721px) and (max-width: 960px) {
+    #list .catalog-product-card .card-bottom {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    #list .catalog-product-card .product-purchase-row {
+        grid-column: 1 !important;
+        justify-self: start !important;
+        max-width: 390px !important;
+    }
+}
+
+/* Крестик нужен на ноутбуке как эквивалент свайпа назад. */
+.prescription-desktop-close {
+    display: none !important;
+}
+
+@media (min-width: 721px) {
+    .prescription-context-actions {
+        position: relative !important;
+        padding-right: 43px !important;
+    }
+
+    .prescription-desktop-close {
+        position: absolute !important;
+        top: 50% !important;
+        right: 0 !important;
+        transform: translateY(-50%) !important;
+
+        display: grid !important;
+        place-items: center !important;
+
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        padding: 0 !important;
+
+        border: 1px solid #d9e2e7 !important;
+        border-radius: 10px !important;
+        background: #fff !important;
+        color: #50616b !important;
+
+        font-size: 24px !important;
+        font-weight: 300 !important;
+        line-height: 1 !important;
+        cursor: pointer !important;
+    }
+
+    .prescription-desktop-close:hover {
+        border-color: #aebdc5 !important;
+        background: #f7fafb !important;
+        color: #17252e !important;
+    }
+}
