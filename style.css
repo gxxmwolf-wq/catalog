@@ -11381,3 +11381,47 @@ h1.service-flow-title {
         max-width: 30px !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V79 — DESKTOP SEARCH LAYER
+   ========================================================== */
+
+/*
+  Старый V31 глобально задавал:
+  .mobile-search-overlay { display:none; }
+
+  На телефоне это позже переопределялось внутри max-width:720px,
+  а на ноутбуке — нет. JS исправно открывал поиск и ставил .active,
+  но сам overlay продолжал оставаться display:none.
+*/
+@media (min-width: 721px) {
+    .mobile-search-overlay {
+        display: block !important;
+        position: fixed !important;
+        inset: 0 !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    .mobile-search-overlay.active {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+
+    body.rxde-search-front .mobile-search-overlay {
+        display: block !important;
+    }
+
+    .mobile-search-sheet {
+        display: flex !important;
+        flex-direction: column !important;
+        width: auto !important;
+        max-width: 1180px !important;
+        max-height: none !important;
+        overflow: hidden !important;
+    }
+}
