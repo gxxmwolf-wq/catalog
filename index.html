@@ -7,23 +7,24 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v75">
+    <link rel="stylesheet" href="style.css?build=v77">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
-        <title>RXDE.online — сервис доставки из Германии</title>
-        <meta name="description" content="Сервис доставки аптечных препаратов из Германии. Заказ онлайн, гарантия подлинности.">
+        <title>RXDE — каталог товаров из аптек Германии и сервис заказа из Германии</title>
+        <meta name="description" content="Каталог товаров из аптек Германии: поиск по названию и PZN, расчёт стоимости и логистики, индивидуальный запрос и сопровождение заказа из Германии.">
+        <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
         <link rel="canonical" href="https://rxde.online/">
 
         <script type="application/ld+json">
         {
-        "@context": "https://schema.org",
-        "@type": "DeliveryService",
-        "name": "RXDE.online",
-        "description": "Сервис доставки из аптек Германии",
-        "areaServed": "RU",
-        "url": "https://rxde.online",
-        "logo": "https://rxde.online/assets/rxde-logo.svg"
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "RXDE.online",
+          "alternateName": "RXDE",
+          "url": "https://rxde.online/",
+          "description": "Каталог товаров из аптек Германии и сервис сопровождения индивидуального заказа из Германии",
+          "inLanguage": "ru"
         }
         </script>
         
@@ -32,11 +33,16 @@
         <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon-180.png?v=2">
         
         <meta property="og:type" content="website">
-        <meta property="og:title" content="RXDE.online — Ваш сервис доставки">
-        <meta property="og:description" content="Понятный расчетный курс, почтовая доставка, отчет.">
+        <meta property="og:title" content="RXDE — каталог товаров из аптек Германии">
+        <meta property="og:description" content="Поиск по названию и PZN, расчёт стоимости и логистики, индивидуальный запрос из Германии.">
         <meta property="og:url" content="https://rxde.online/">
         <meta property="og:site_name" content="RXDE">
-        <meta property="og:image" content="https://rxde.online/assets/rxde-logo-180.png"> 
+        <meta property="og:locale" content="ru_RU">
+        <meta property="og:image" content="https://rxde.online/assets/rxde-logo-180.png">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:title" content="RXDE — каталог товаров из аптек Германии">
+        <meta name="twitter:description" content="Поиск по названию и PZN, расчёт стоимости и логистики, индивидуальный запрос из Германии.">
+        <meta name="twitter:image" content="https://rxde.online/assets/rxde-logo-180.png"> 
 
     </head>
     <body>
@@ -45,7 +51,7 @@
             <div class="top-menu-bar">
                 <div class="header-primary-nav">
                     <div class="embedded-logo" onclick="goHome()" oncontextmenu="handleLogoClick(event)" role="button" tabindex="0" aria-label="Вернуться на главную" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome();}">
-                        <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE">
+                        <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE — каталог товаров из Германии">
                     </div>
                     <button class="header-catalog-btn" type="button" onclick="goHome()">Каталог</button>
                     <button class="header-search-btn mobile-search-entry" type="button" aria-label="Открыть поиск">
@@ -82,7 +88,7 @@
             </div>
 
             <div class="service-flow" role="button" tabindex="0" aria-label="Вернуться на главную страницу" title="Вернуться на главную" onclick="goHome()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome();}">
-                <strong class="service-flow-title">Ваш индивидуальный заказ из Германии</strong>
+                <h1 class="service-flow-title">Каталог товаров из аптек Германии и индивидуальный заказ</h1>
                 <div class="service-flow-steps">
                     <span><svg viewBox="0 0 24 24"><path d="M5 21V8l7-5 7 5v13M9 21v-7h6v7M9 9h6"/></svg><b>Аптека Германии</b></span>
                     <i>›</i>
@@ -97,6 +103,7 @@
         <section class="home-catalog" aria-labelledby="homeCatalogSeedTitle">
             <div class="home-catalog-layout">
                 <div class="catalog-main">
+                    <h2 id="homeCatalogSeedTitle" class="seo-catalog-heading">Каталог товаров из Германии</h2>
                     <div class="category-grid">
                         <button class="category-tile category-vitamins" type="button" onclick="selectPublicCategory('Витамины и минералы')"><strong>Витамины и минералы</strong><span>Открыть раздел</span></button>
                         <button class="category-tile category-cosmetics" type="button" onclick="selectPublicCategory('Уход и косметика')"><strong>Уход и косметика</strong><span>Открыть раздел</span></button>
@@ -372,8 +379,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v75';
-    const RXDE_DB_BUILD = '08-21 14:04';
+    const RXDE_BUILD = 'v77';
+    const RXDE_DB_BUILD = '08-21 14:29';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -1363,7 +1370,7 @@
             if (isRx && !prescriptionMode) {
                 htmlBuffer += `
                 <div class="card catalog-product-card prescription-search-result">
-                    <img src="img/${cleanPZN}.jpg" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
+                    <img src="img/${cleanPZN}.jpg" loading="lazy" width="68" height="68" alt="${escapeUiText(r.Name_DE || 'Товар из Германии')}" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
                     <div class="card-body">
                         <div class="c-title">${r.Name_DE} <span class="b-rx">RX</span></div>
                         ${getSubstanceHtml(r)}
@@ -1383,7 +1390,7 @@
 
             htmlBuffer += `
             <div class="card catalog-product-card ${q > 0 ? 'selected' : ''}">
-                <img src="img/${cleanPZN}.jpg" loading="lazy" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
+                <img src="img/${cleanPZN}.jpg" loading="lazy" width="68" height="68" alt="${escapeUiText(r.Name_DE || 'Товар из Германии')}" class="product-thumb" onerror="handleImgError(this)" onclick="openPhoto(this.src)" style="cursor: zoom-in;">
                 <div class="card-body">
                     <div class="c-title">
                         ${r.Name_DE} ${isRx ? '<span class="b-rx">RX</span>' : ''}
@@ -3591,7 +3598,7 @@ function handleOrderCopyAndOpen(btnElement) {
                 <div class="order-line-number" style="background: ${badgeBg};">
                     ${displayNum}
                 </div>
-                    <img src="img/${cleanPZN}.jpg" class="product-thumb" loading="lazy" decoding="async" onerror="handleImgError(this)" onclick="openPhoto(this.src)">
+                    <img src="img/${cleanPZN}.jpg" class="product-thumb" loading="lazy" decoding="async" width="82" height="82" alt="${escapeUiText(r.Name_DE || 'Товар из Германии')}" onerror="handleImgError(this)" onclick="openPhoto(this.src)">
                     <div class="card-body">
                     <button class="order-line-delete" type="button" onclick="requestPositionDelete('${cleanPZN}', event)" aria-label="Удалить позицию" title="Удалить позицию">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
@@ -5703,17 +5710,21 @@ function handleOrderCopyAndOpen(btnElement) {
 
     <footer class="site-footer">
         <div class="footer-content">
-            <p class="disclaimer-text">
-                <strong>RXDE.online</strong> — информационно-логистический сервис. Мы не являемся аптечной организацией, не осуществляем торговлю, дистанционную продажу или доставку лекарственных препаратов. Сервис обеспечивает логистическое сопровождение (курьерская и почтовая служба) Вашего частного заказа из лицензированных аптек Германии. Вся информация на сайте носит ознакомительный характер.
-            </p>
-            <div style="margin-top: 10px; text-align: center;">
-                <span onclick="showInfo('privacy')" style="font-size: 11px; color: #999; text-decoration: underline; cursor: pointer;">
-                    Политика конфиденциальности и работа с ПД
-                </span>
+            <div class="footer-brandline">
+                <strong>RXDE.online</strong>
+                <span>Сервис сопровождения индивидуальных заказов из Германии</span>
             </div>
-            <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
+
+            <div class="footer-links">
+                <button type="button" onclick="showInfo('privacy')">Конфиденциальность</button>
+                <span aria-hidden="true">·</span>
+                <span>Информация на сайте носит справочный характер</span>
+            </div>
+
+            <div class="footer-copy">© 2026 RXDE.online</div>
+
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v75 · style v75 · база 08-21 14:04
+                index v77 · style v77 · база 08-21 14:29
             </div>
         </div>
     </footer>

@@ -11047,3 +11047,137 @@ body.rxde-mode-cart #modal .m-box {
         max-width: 102px !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V76 — SEO SEMANTICS WITHOUT VISUAL REDESIGN
+   ========================================================== */
+
+h1.service-flow-title {
+    margin: 0 !important;
+    font: inherit !important;
+    font-weight: inherit !important;
+    color: inherit !important;
+}
+
+.seo-catalog-heading {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+
+/* ==========================================================
+   RXDE V77 — COMPACT FOOTER
+   ========================================================== */
+
+.site-footer {
+    margin-top: 34px !important;
+    padding: 15px 18px 72px !important;
+    border-top: 1px solid #edf1f3 !important;
+    background: #fbfcfd !important;
+}
+
+.site-footer .footer-content {
+    width: min(100%, 920px) !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+}
+
+.site-footer .footer-brandline {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 5px 8px !important;
+    color: #66747d !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+}
+
+.site-footer .footer-brandline strong {
+    color: #244a62 !important;
+    font-size: 10.5px !important;
+    font-weight: 800 !important;
+    letter-spacing: .015em !important;
+}
+
+.site-footer .footer-links {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+    margin-top: 7px !important;
+    color: #98a3aa !important;
+    font-size: 9px !important;
+    line-height: 1.25 !important;
+}
+
+.site-footer .footer-links button {
+    appearance: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    color: #76858e !important;
+    font: inherit !important;
+    text-decoration: underline !important;
+    text-decoration-color: #c2cbd0 !important;
+    text-underline-offset: 2px !important;
+    cursor: pointer !important;
+}
+
+.site-footer .footer-copy {
+    margin-top: 9px !important;
+    color: #b0b8bd !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+    text-transform: none !important;
+    letter-spacing: .025em !important;
+}
+
+.site-footer .build-version-stamp {
+    margin-top: 6px !important;
+    color: #c0c6ca !important;
+    font-size: 8px !important;
+    font-weight: 560 !important;
+    letter-spacing: .02em !important;
+}
+
+.site-footer .disclaimer-text {
+    display: none !important;
+}
+
+@media (max-width: 720px) {
+    .site-footer {
+        margin-top: 24px !important;
+        padding: 13px 14px 68px !important;
+    }
+
+    .site-footer .footer-brandline {
+        display: grid !important;
+        gap: 3px !important;
+        font-size: 9px !important;
+    }
+
+    .site-footer .footer-brandline strong {
+        font-size: 10px !important;
+    }
+
+    .site-footer .footer-links {
+        max-width: 310px !important;
+        margin: 6px auto 0 !important;
+        font-size: 8.4px !important;
+    }
+
+    .site-footer .footer-copy {
+        margin-top: 8px !important;
+        font-size: 8px !important;
+    }
+}
