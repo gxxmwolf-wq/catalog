@@ -7,7 +7,17 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v83">
+    <script>
+    window.RXDE_FILE_MODE = location.protocol === 'file:';
+    document.write(
+        '<link rel="stylesheet" href="' +
+        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v83') +
+        '">'
+    );
+    if (window.RXDE_FILE_MODE) {
+        document.write('<script src="db_local.js"><\/script>');
+    }
+</script>
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -160,7 +170,7 @@
                            placeholder="Название, вещество или PZN"
                            autocomplete="off" autocorrect="off" spellcheck="false"
                            oninput="handleMobileSearchInput()"
-                           onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();if(!tryAdminUnlock(this.value)){this.blur();}}">
 
                     <button type="button" class="search-clear-btn" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
                 </div>
@@ -350,6 +360,18 @@
                 <div onclick="closeAdminModal()" style="font-size: 22px; color: #b08d00; cursor: pointer; padding: 0 5px;">✕</div>
             </div>
             
+            <div style="margin:0 0 12px; padding:10px; border:1px solid #e5e5e5; border-radius:9px; background:#fff;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:11px;">
+                    <span style="color:#777; font-weight:700;">РАСЧЁТНЫЙ КУРС</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <strong id="adminRateValue" style="font-size:13px;">—</strong>
+                        <button type="button" onclick="setManualRate()" style="border:1px solid #d8d8d8; background:#fff; border-radius:7px; padding:5px 8px; font-size:10px; cursor:pointer;">ИЗМЕНИТЬ</button>
+                        <button id="adminRateAutoBtn" type="button" onclick="clearManualRate()" style="display:none; border:0; background:none; color:#777; padding:4px; font-size:10px; cursor:pointer;">АВТО</button>
+                    </div>
+                </div>
+                <div id="adminRateMode" style="margin-top:4px; color:#999; font-size:9px;">автоматический</div>
+            </div>
+
             <div style="font-size: 12px; color: #888; font-weight: 700; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center;">
                 <span>ИМПОРТ ЗАКАЗА</span>
                 <div style="display: flex; gap: 15px;">
@@ -390,7 +412,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v83';
+    const RXDE_BUILD = 'v85';
     const RXDE_DB_BUILD = '08-21 15:55';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
@@ -408,6 +430,8 @@
     // Единый защищённый серверный канал связи. Токен бота хранится только на сервере.
     const CONTACT_API_URL = 'https://api.rxde.online/contact';
     const KURS_FALLBACK = 100;
+    let manualRateOverride = parseFloat(localStorage.getItem('rxde_manual_rate_override') || '0') || 0;
+
 
     // База данных и корзина
     let db = [], cart = [], rateCalc = 100, shipEur = 50, filters = { search: '', publicCategory: '', publicSubcategory: '', prescriptionMode: false, prescriptionVisible: 24, alphabet: '' };
@@ -793,6 +817,35 @@
     }
 
     // --- 2. ЛОГИКА КУРСА (ОБНОВЛЕНО) ---
+    function syncAdminRateUi() {
+        const valueEl = document.getElementById('adminRateValue');
+        const modeEl = document.getElementById('adminRateMode');
+        const autoBtn = document.getElementById('adminRateAutoBtn');
+        if (valueEl) valueEl.textContent = `${rateCalc} ₽/€`;
+        if (modeEl) modeEl.textContent = manualRateOverride > 0 ? 'ручной курс' : 'автоматический';
+        if (autoBtn) autoBtn.style.display = manualRateOverride > 0 ? 'inline-block' : 'none';
+    }
+
+    function setManualRate() {
+        const current = manualRateOverride > 0 ? manualRateOverride : parseFloat(rateCalc || 0);
+        const raw = prompt('Расчётный курс ₽/€', current > 0 ? current.toFixed(2) : '');
+        if (raw === null) return;
+        const value = parseFloat(String(raw).replace(',', '.'));
+        if (!(value > 0)) {
+            alert('Введите корректный курс.');
+            return;
+        }
+        manualRateOverride = value;
+        localStorage.setItem('rxde_manual_rate_override', String(value));
+        calculateFinalLogic();
+    }
+
+    function clearManualRate() {
+        manualRateOverride = 0;
+        localStorage.removeItem('rxde_manual_rate_override');
+        calculateFinalLogic();
+    }
+
     function calculateFinalLogic() {
         if (!db || db.length === 0) return;
 
@@ -801,7 +854,9 @@
         
         let baseRate = gRate > 0 ? gRate : (cbrRateData > 0 ? cbrRateData : KURS_FALLBACK);
         
-        rateCalc = (Math.floor(baseRate + gSmena)).toFixed(2); 
+        rateCalc = manualRateOverride > 0
+            ? manualRateOverride.toFixed(2)
+            : (Math.floor(baseRate + gSmena)).toFixed(2); 
 
         if(document.getElementById('cbrRate')) {
             document.getElementById('cbrRate').innerText = parseFloat(baseRate).toFixed(2);
@@ -830,7 +885,8 @@
         }
         
         updateBar();
-        render(); 
+        render();
+        syncAdminRateUi();
     }
 
     function getRubPrice(eur) { return Math.floor((parseFloat(eur) * rateCalc) / 100) * 100; }
@@ -1935,6 +1991,36 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
+    function tryAdminUnlock(rawValue) {
+        const query = String(rawValue || '').trim().toUpperCase();
+        if (query !== 'ADMIN' && query !== 'АДМИН') return false;
+
+        localStorage.setItem('rxde_super_admin', 'true');
+
+        const desktopInput = document.getElementById('search');
+        const mobileInput = document.getElementById('mobileSearchInput');
+
+        if (desktopInput) desktopInput.value = '';
+        if (mobileInput) mobileInput.value = '';
+        filters.search = '';
+        mobileSearchSavedQuery = '';
+
+        try { desktopInput?.blur(); } catch (_) {}
+        try { mobileInput?.blur(); } catch (_) {}
+
+        if (mobileSearchIsOpen) {
+            mobileSearchIsOpen = false;
+            document.getElementById('mobileSearchOverlay')?.classList.remove('active');
+            document.body.classList.remove('rxde-search-front', 'rxde-mode-search', 'mobile-search-open');
+            restoreProductListHome();
+            clearSearchBackdrop();
+        }
+
+        if (navigator.vibrate) navigator.vibrate(15);
+        runAdminImport();
+        return true;
+    }
+
     function checkEnter(event) {
         if (event.key === 'Enter') {
             const searchInput = document.getElementById('search');
@@ -1944,16 +2030,7 @@
             if (!query) return;
 
             // --- ВЫЗОВ АДМИНКИ ЧЕРЕЗ ПОИСК ---
-            if (query === 'ADMIN' || query === 'АДМИН') {
-                searchInput.blur();
-                searchInput.value = '';
-                
-                // 🚨 ВЫДАЕМ ПРАВА СУПЕР-АДМИНА ЭТОМУ УСТРОЙСТВУ НАВСЕГДА 🚨
-                localStorage.setItem('rxde_super_admin', 'true');
-                
-                runAdminImport(); // Запускаем панель
-                return; 
-            }
+            if (tryAdminUnlock(query)) return;
 
             // --- ОБЫЧНЫЙ ПОИСК И ТРЕКИ ---
             const cleanTrack = query.replace(/\s/g, '');
@@ -3204,6 +3281,9 @@ function clearAdminPanel() {
 
     async function refreshHeaderSnapshot() {
         renderHeaderDate();
+    if (window.RXDE_FILE_MODE) {
+        console.info('[RXDE] file:// mode; admin flag:', localStorage.getItem('rxde_super_admin') ? 'ON' : 'OFF');
+    }
     try {
         localStorage.removeItem('rxde_recent_categories');
         localStorage.removeItem('rxde_recent_category');
@@ -3280,8 +3360,55 @@ function clearAdminPanel() {
         deliveryAddress = "";
     }
 
-    // 2. Функция безопасной парсинг-загрузки с повтором (если CDN тупит)
+    // 2. Универсальная загрузка базы.
+    // HTTP/HTTPS: всё работает как раньше через db.csv.
+    // file://: берём db_local.js рядом с index.html, без fetch и без выбора файла.
+    function finishDBLoad(rows) {
+        db = (rows || []).map(row => {
+            row._searchPool = `${row.Name_DE || ''} ${row.Name_RU || ''} ${row.Form_DE || ''} ${row.Substance_DE || ''} ${row.Substance_RU || ''} ${row.Category || ''} ${row.Form_RU || ''} ${row.PZN || ''}`.toLowerCase();
+            return row;
+        });
+
+        tryRestoreSearchFromUrl();
+        const cartRestored = tryRestoreCartFromUrl();
+        calculateFinalLogic();
+
+        if (cartRestored) setTimeout(openCart, 300);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('faq')) setTimeout(() => showInfo('faq'), 300);
+        else if (urlParams.has('exp')) setTimeout(() => showInfo('exp'), 300);
+        else if (urlParams.has('contact')) setTimeout(() => openContact('question'), 300);
+
+        // Даже при file:// пробуем получить свежий курс/настройки из сети.
+        Promise.allSettled([fetchCbrRate(), fetchGoogleSettings()])
+            .then(calculateFinalLogic);
+    }
+
     function loadDB(retries = 5) {
+        if (window.RXDE_FILE_MODE) {
+            if (Array.isArray(window.RXDE_LOCAL_DB) && window.RXDE_LOCAL_DB.length) {
+                console.info('[RXDE] локальная база db_local.js:', window.RXDE_LOCAL_DB.length);
+                finishDBLoad(window.RXDE_LOCAL_DB);
+                return;
+            }
+
+            // На случай, если конкретный браузер всё-таки разрешает file:// fetch.
+            if (typeof Papa !== 'undefined') {
+                Papa.parse('db.csv', {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: results => finishDBLoad(results.data || []),
+                    error: () => alert('RXDE: рядом с index.html нужен файл db_local.js')
+                });
+                return;
+            }
+
+            alert('RXDE: рядом с index.html нужен файл db_local.js');
+            return;
+        }
+
         if (typeof Papa === 'undefined') {
             if (retries > 0) setTimeout(() => loadDB(retries - 1), 200);
             return;
@@ -3291,37 +3418,14 @@ function clearAdminPanel() {
             download: true,
             header: true,
             skipEmptyLines: true,
-            complete: function(results) {
-                db = (results.data || []).map(row => {
-                    row._searchPool = `${row.Name_DE || ''} ${row.Name_RU || ''} ${row.Form_DE || ''} ${row.Substance_DE || ''} ${row.Substance_RU || ''} ${row.Category || ''} ${row.Form_RU || ''} ${row.PZN || ''}`.toLowerCase();
-                    return row;
-                });
-
-                tryRestoreSearchFromUrl();
-                const cartRestored = tryRestoreCartFromUrl();
-                calculateFinalLogic();
-
-                if (cartRestored) setTimeout(openCart, 300);
-
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('faq')) setTimeout(() => showInfo('faq'), 300);
-                else if (urlParams.has('exp')) setTimeout(() => showInfo('exp'), 300);
-                else if (urlParams.has('contact')) setTimeout(() => openContact('question'), 300);
-
-                // Курс и настройки обновляются в фоне и не задерживают первый экран.
-                Promise.allSettled([fetchCbrRate(), fetchGoogleSettings()])
-                    .then(calculateFinalLogic);
-            },
-            error: function(err) {
-                console.error("Ошибка db.csv:", err);
-            }
+            complete: results => finishDBLoad(results.data || []),
+            error: err => console.error('Ошибка db.csv:', err)
         });
     }
 
-    // Запускаем загрузку базы
     loadDB();
 
-    // Новости не блокируют каталог и загружаются в свободное время.
+// Новости не блокируют каталог и загружаются в свободное время.
     if ('requestIdleCallback' in window) {
         requestIdleCallback(fetchNews, { timeout: 2000 });
     } else {
@@ -5938,7 +6042,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v83 · style v83 · база 08-21 15:55
+                index v85 · style v83 · база 08-21 15:55
             </div>
         </div>
     </footer>
