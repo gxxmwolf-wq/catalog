@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v73">
+    <link rel="stylesheet" href="style.css?build=v74">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -372,8 +372,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v73';
-    const RXDE_DB_BUILD = '08-21 13:18';
+    const RXDE_BUILD = 'v74';
+    const RXDE_DB_BUILD = '08-21 13:36';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -2913,6 +2913,26 @@ function clearAdminPanel() {
         );
 
         if (footerTotalContent && shouldRenderCartFooter) {
+            const existingFooter = footerTotalContent.querySelector('.order-sheet-footer');
+
+            if (existingFooter) {
+                const eurEl = existingFooter.querySelector('.order-summary-eur');
+                const rubEl = existingFooter.querySelector('#footerTotalSum');
+                const metaEl = existingFooter.querySelector('.order-sheet-total > small');
+                const actionEl = existingFooter.querySelector('#copyActionBlock');
+
+                if (eurEl) eurEl.textContent = `${grandTotalEur.toLocaleString('ru-RU')} €`;
+                if (rubEl) rubEl.textContent = `${grandTotalRub.toLocaleString('ru-RU')} ₽`;
+                if (metaEl) metaEl.textContent =
+                    `${activeItems.length} поз. · ${totalPacks} уп. · логистика DHL включена`;
+                if (actionEl) actionEl.disabled = totalPacks <= 0;
+
+                if(document.getElementById('cartRate')) {
+                    document.getElementById('cartRate').innerText = rateCalc.toLocaleString('ru-RU');
+                }
+                return;
+            }
+
             footerTotalContent.innerHTML = `
                 <div class="order-sheet-footer">
                     <div class="order-sheet-total">
@@ -3506,12 +3526,12 @@ function handleOrderCopyAndOpen(btnElement) {
             </button>
         `;
 
-        div.innerHTML = '';
+        let cartHtml = '';
 
         if (restoredDate && cart.length > 0) {
             const title = isManagerOrder ? '👨‍⚕️ Заказ от менеджера' : '🛒 Сохраненная корзина';
             const dateNow = new Date().toLocaleDateString('ru-RU'); 
-            div.innerHTML += `
+            cartHtml += `
                 <div style="background: #f8f9fa; border-left: 4px solid ${isManagerOrder ? 'var(--p)' : '#ccc'}; border-radius: 6px; padding: 8px 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="line-height: 1.2;">
                         <div style="font-weight: 800; color: #000; font-size: 11px; text-transform: uppercase;">${title}</div>
@@ -3526,8 +3546,8 @@ function handleOrderCopyAndOpen(btnElement) {
             return;
         }
 
-        div.innerHTML += renderPriceCheckToolbar();
-        div.innerHTML += `
+        cartHtml += renderPriceCheckToolbar();
+        cartHtml += `
             <div class="order-table-head" aria-hidden="true">
                 <span>Наименование и упаковка</span>
                 <span>Цена · количество · сумма</span>
@@ -3560,7 +3580,7 @@ function handleOrderCopyAndOpen(btnElement) {
                 const cardStyle = isZero ? 'opacity: 0.6; filter: grayscale(100%);' : '';
                 const titleStyle = isZero ? 'text-decoration: line-through; color: #888;' : '';
 
-                div.innerHTML += `
+                cartHtml += `
                 <div class="card" data-cart-pzn="${cleanPZN}" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
                 ${renderPriceCheckIndicator(cleanPZN)}
                 <div class="order-line-number" style="background: ${badgeBg};">
@@ -3627,7 +3647,7 @@ function handleOrderCopyAndOpen(btnElement) {
         });
 
         // Обязательная логистика — отдельная строка расчёта, не кнопка добавления товара.
-        div.innerHTML += `
+        cartHtml += `
         <section class="logistics-card" aria-label="Обязательная логистика DHL">
             <div class="logistics-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24"><path d="M3 7h11v10H3zM14 10h3l4 4v3h-7zM7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM18 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg>
@@ -3650,6 +3670,10 @@ function handleOrderCopyAndOpen(btnElement) {
         </section>
         <div style="height: 15px;"></div>`;
     
+
+        // Один commit на весь чек: браузер не видит промежуточные версии карточек.
+        div.innerHTML = cartHtml;
+
 
 } // <-- Конец функции renderCartItems 
 
@@ -3962,9 +3986,10 @@ function handleOrderCopyAndOpen(btnElement) {
         if (recentInput && activeSearchValue) return;
 
         const contact = document.getElementById('contactOverlay');
+
+        // Google/Gboard Autofill сам меняет высоту visualViewport.
+        // Форму телефона по этому сигналу никогда не закрываем.
         if (contact && contact.style.display === 'flex') {
-            closeContact(true);
-            setTimeout(() => rxdeArmBack(window.location.href), 0);
             return;
         }
 
@@ -4899,6 +4924,9 @@ function handleOrderCopyAndOpen(btnElement) {
         const target = document.getElementById('quickCartButton') || document.getElementById('headerOrderButton');
         if (!target) return;
 
+        // Быстрые +/- не накапливают технические animation layers.
+        document.querySelectorAll('.cart-fly-pill').forEach(node => node.remove());
+
         const targetRect = target.getBoundingClientRect();
         const start = isRemoving ? targetRect : sourceRect;
         const finish = isRemoving ? sourceRect : targetRect;
@@ -4920,10 +4948,14 @@ function handleOrderCopyAndOpen(btnElement) {
         ], { duration: 470, easing: 'cubic-bezier(.2,.82,.28,1)' });
 
         animation.finished.finally(() => pill.remove());
-        target.classList.remove('order-bump');
-        void target.offsetWidth;
-        target.classList.add('order-bump');
-        setTimeout(() => target.classList.remove('order-bump'), 510);
+        // Сам coordinate-fly оставляем. Дополнительный bump цели в корзине
+        // только создавал ещё один repaint/compositor layer.
+        if (!document.body.classList.contains('rxde-mode-cart')) {
+            target.classList.remove('order-bump');
+            void target.offsetWidth;
+            target.classList.add('order-bump');
+            setTimeout(() => target.classList.remove('order-bump'), 510);
+        }
     }
 
         /* =========================================
@@ -5676,7 +5708,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v73 · style v73 · база 08-21 13:18
+                index v74 · style v74 · база 08-21 13:36
             </div>
         </div>
     </footer>
