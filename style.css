@@ -10660,3 +10660,30 @@ body {
     overflow-x: clip !important;
     max-width: 100% !important;
 }
+
+
+/* ==========================================================
+   RXDE V71 — CLEAN CART EDITS + UNIFIED SEARCH TRANSITIONS
+   ========================================================== */
+
+/* Общий итог снова виден и в самой корзине. */
+body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+    display: flex !important;
+}
+
+/* При изменении количества в корзине не показываем техническую fly-анимацию. */
+body.rxde-mode-cart .cart-fly-pill {
+    display: none !important;
+}
+
+/* Корзина — полностью непрозрачный рабочий слой:
+   техническая страница/поиск под ней не просвечивают при repaint. */
+body.rxde-mode-cart #modal .m-box {
+    background: #f3f9f5 !important;
+    opacity: 1 !important;
+}
+
+/* Поисковый слой при возврате появляется сразу без промежуточного ghost-кадра. */
+body.rxde-search-front .mobile-search-overlay.active .mobile-search-sheet {
+    opacity: 1 !important;
+}

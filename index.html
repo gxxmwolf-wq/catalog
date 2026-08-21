@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v70">
+    <link rel="stylesheet" href="style.css?build=v71">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -371,8 +371,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v70';
-    const RXDE_DB_BUILD = '08-21 01:44';
+    const RXDE_BUILD = 'v71';
+    const RXDE_DB_BUILD = '08-21 10:58';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -2655,25 +2655,36 @@ function clearAdminPanel() {
         const nextQty = Math.min(999, requestedQty);
         cart[index].qty = nextQty;
 
-        if (nextQty !== previousQty) {
-            const source = event && event.currentTarget
-                ? event.currentTarget
-                : (event && event.target ? event.target : null);
+        const modal = document.getElementById('modal');
+        const cartIsOpen = !!(modal && modal.classList.contains('active'));
 
-            if (source && source.getBoundingClientRect) {
-                animateFly(source.getBoundingClientRect(), nextQty < previousQty);
-            } else {
+        if (nextQty !== previousQty) {
+            if (cartIsOpen) {
+                // Внутри корзины никаких летящих/вспомогательных слоёв.
                 playCartTone(nextQty < previousQty);
+            } else {
+                const source = event && event.currentTarget
+                    ? event.currentTarget
+                    : (event && event.target ? event.target : null);
+
+                if (source && source.getBoundingClientRect) {
+                    animateFly(source.getBoundingClientRect(), nextQty < previousQty);
+                } else {
+                    playCartTone(nextQty < previousQty);
+                }
             }
         }
 
         localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-        updateBar();
-        render(false);
 
-        const modal = document.getElementById('modal');
-        if (modal && modal.classList.contains('active')) {
+        if (cartIsOpen) {
+            // Не трогаем каталог/поиск под корзиной.
+            // Рисуем только сам лист заказа и его актуальный итог.
             renderCartItems();
+            updateBar(true);
+        } else {
+            updateBar();
+            render(false);
         }
     }
 
@@ -2699,22 +2710,30 @@ function clearAdminPanel() {
             cart.push({ pzn, qty: nextQty });
         }
 
+        const modal = document.getElementById('modal');
+        const cartIsOpen = !!(modal && modal.classList.contains('active'));
+
         if (nextQty !== previousQty) {
-            const field = event && event.target;
-            if (field && field.getBoundingClientRect) {
-                animateFly(field.getBoundingClientRect(), nextQty < previousQty);
-            } else {
+            if (cartIsOpen) {
                 playCartTone(nextQty < previousQty);
+            } else {
+                const field = event && event.target;
+                if (field && field.getBoundingClientRect) {
+                    animateFly(field.getBoundingClientRect(), nextQty < previousQty);
+                } else {
+                    playCartTone(nextQty < previousQty);
+                }
             }
         }
 
         localStorage.setItem('de_cart_v2', JSON.stringify(cart));
-        updateBar();
-        render(false);
 
-        const modal = document.getElementById('modal');
-        if (modal && modal.classList.contains('active')) {
+        if (cartIsOpen) {
             renderCartItems();
+            updateBar(true);
+        } else {
+            updateBar();
+            render(false);
         }
     }
 
@@ -3671,6 +3690,15 @@ function handleOrderCopyAndOpen(btnElement) {
         if (contact) contact.style.display = 'none';
         if (info) info.style.display = 'none';
 
+        // Если корзина открывается поверх поиска — сам поисковый DOM сохраняем,
+        // но его compositor-слой временно убираем с экрана.
+        const searchOverlayUnderCart = document.getElementById('mobileSearchOverlay');
+        if (mobileSearchIsOpen && searchOverlayUnderCart) {
+            searchOverlayUnderCart.classList.remove('active');
+            searchOverlayUnderCart.style.display = 'none';
+            searchOverlayUnderCart.setAttribute('aria-hidden', 'true');
+        }
+
         if (!fromHistory && (!window.history.state || window.history.state.rxdeModal !== 'cart')) {
             window.history.pushState(
                 { ...(window.history.state || {}), rxdeView: true, rxdeModal: 'cart' },
@@ -3762,7 +3790,14 @@ function handleOrderCopyAndOpen(btnElement) {
         document.body.classList.remove('rxde-cart-front', 'rxde-mode-cart');
         if (mobileSearchIsOpen) {
             document.body.classList.remove('rxde-mode-cart', 'rxde-mode-contact');
-        document.body.classList.add('rxde-search-front', 'rxde-mode-search');
+            document.body.classList.add('rxde-search-front', 'rxde-mode-search');
+
+            const searchOverlay = document.getElementById('mobileSearchOverlay');
+            if (searchOverlay) {
+                searchOverlay.style.display = '';
+                searchOverlay.setAttribute('aria-hidden', 'false');
+                searchOverlay.classList.add('active');
+            }
         }
 
         updateBar();
@@ -3776,12 +3811,18 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!fromHistory) rxdeStabilizeAfterLocalUiChange();
 }
 
-    function addMoreItems() {
+    function openSearchFromCart() {
+        // Один универсальный переход из корзины в поиск.
+        // Сохраняем прежний поисковый запрос/результаты и только меняем слой.
         closeModal();
 
         setTimeout(() => {
             openMobileSearch();
-        }, 70);
+        }, 40);
+    }
+
+    function addMoreItems() {
+        openSearchFromCart();
     }
     /* =========================================
     BLOCK 7.5: ЕДИНАЯ ЛОГИКА СВЯЗИ И ОТПРАВКИ
@@ -5396,7 +5437,12 @@ function handleOrderCopyAndOpen(btnElement) {
         event.stopPropagation();
 
         if (action.matches('.header-search-btn') || action.id === 'quickSearchButton') {
-            openMobileSearch();
+            const cartModal = document.getElementById('modal');
+            if (cartModal && cartModal.classList.contains('active')) {
+                openSearchFromCart();
+            } else {
+                openMobileSearch();
+            }
         } else if (action.id === 'quickContactButton') {
             openSmartContact();
         } else if (action.id === 'quickCartButton') {
@@ -5410,7 +5456,13 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!headerSearch) return;
         event.preventDefault();
         event.stopPropagation();
-        openMobileSearch();
+
+        const cartModal = document.getElementById('modal');
+        if (cartModal && cartModal.classList.contains('active')) {
+            openSearchFromCart();
+        } else {
+            openMobileSearch();
+        }
     });
 
     document.addEventListener('pointerdown', function(event) {
@@ -5439,7 +5491,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v70 · style v70 · база 08-21 01:44
+                index v71 · style v71 · база 08-21 10:58
             </div>
         </div>
     </footer>
