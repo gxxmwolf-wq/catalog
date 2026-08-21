@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v71">
+    <link rel="stylesheet" href="style.css?build=v73">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -119,6 +119,7 @@
     </div>
 
     <div id="contextBar" class="context-bar" aria-live="polite"></div>
+    <div id="viewLocationBar" class="view-location-bar" aria-live="polite" hidden></div>
 
     <section id="searchHub" class="search-hub" aria-label="Поиск по каталогу">
         <div class="search-hub-label"><span id="searchScopeLabel">Поиск по каталогу</span><small id="searchScopeHint">Название, действующее вещество или PZN</small></div>
@@ -175,7 +176,7 @@
             <div id="mobileSearchSuggestionsHost" class="mobile-search-suggestions-host"></div>
 
             <div id="mobileSearchEmptyHint" class="mobile-search-empty-hint">
-                Начните вводить название, действующее вещество или PZN.
+                Введите название, действующее вещество или PZN.
             </div>
 
             <div id="mobileSearchListHost" class="mobile-search-list-host"></div>
@@ -371,8 +372,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v71';
-    const RXDE_DB_BUILD = '08-21 10:58';
+    const RXDE_BUILD = 'v73';
+    const RXDE_DB_BUILD = '08-21 13:18';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -707,7 +708,7 @@
                         <span class="category-context-title"><strong>${category}</strong><small>${shownCount} из ${totalCount} товаров</small></span>
                     </span>
                 </button>
-                <button class="category-search-field" type="button" onclick="openMobileSearch()" aria-label="Поиск по всему каталогу">
+                <button class="category-search-field" type="button" onclick="openMobileSearch(false, { focusInput: true })" aria-label="Поиск по всему каталогу">
                     <span class="category-search-field-icon" aria-hidden="true">
                         <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
                     </span>
@@ -1166,11 +1167,46 @@
         render(true);
     }
 
+    function syncViewLocation() {
+        const bar = document.getElementById('viewLocationBar');
+        if (!bar) return;
+
+        let parts = [];
+        if (filters.prescriptionMode) {
+            parts = ['Каталог', 'Индивидуальный сервис'];
+        } else if (filters.publicCategory) {
+            parts = ['Каталог', filters.publicCategory];
+            if (filters.publicSubcategory) {
+                const rows = db.filter(row =>
+                    String(row.Category || '').trim() === filters.publicCategory
+                );
+                const sub = getVisibleSubcategories(filters.publicCategory, rows)
+                    .find(item => item.id === filters.publicSubcategory);
+                if (sub) parts.push(sub.label);
+            }
+        }
+
+        if (!parts.length) {
+            bar.hidden = true;
+            bar.innerHTML = '';
+            return;
+        }
+
+        bar.hidden = false;
+        bar.innerHTML = parts.map((part, index) => {
+            const last = index === parts.length - 1;
+            return `<span class="${last ? 'active' : ''}">${part}</span>${last ? '' : '<i>›</i>'}`;
+        }).join('');
+    }
+
+
     // Теперь здесь ДВА параметра. Второй (isTrackComplete) помогает корректно работать с треками.
     function render(isNewSearch = false, isTrackComplete = false) {
         const list = document.getElementById('list'); 
         const intro = document.getElementById('introBlock');
         if (!list || !intro) return;
+
+        syncViewLocation();
 
         if (isNewSearch) window.scrollTo({ top: 0, behavior: 'instant' }); 
         
@@ -2606,6 +2642,43 @@ function clearAdminPanel() {
 
         setTimeout(() => toast.classList.remove('show'), 4200);
     }
+    function updateCartRowInPlace(pzn) {
+        const cleanPzn = String(pzn || '').trim().padStart(8, '0');
+        const item = cart.find(entry =>
+            String(entry.pzn || '').trim().padStart(8, '0') === cleanPzn
+        );
+        const row = document.querySelector(
+            `#cartItems .card[data-cart-pzn="${cleanPzn}"]`
+        );
+        if (!item || !row) return false;
+
+        const dbItem = db.find(entry =>
+            String(entry.PZN || '').trim().padStart(8, '0') === cleanPzn
+        );
+        if (!dbItem) return false;
+
+        const price = parseFloat(
+            String(dbItem.Price || '')
+                .replace(/[^0-9,.]/g, '')
+                .replace(',', '.')
+        ) || 0;
+
+        const qty = Math.max(1, Number(item.qty || 1));
+        const qtyInput = row.querySelector('.qty-input');
+        if (qtyInput) qtyInput.value = qty;
+
+        const sumEur = Math.round(price * qty);
+        const sumRub = getRubPrice(sumEur);
+
+        const eurEl = row.querySelector('.sum-box .s-eur');
+        const rubEl = row.querySelector('.sum-box .s-rub');
+        if (eurEl) eurEl.textContent = `${sumEur.toLocaleString('ru-RU')} €`;
+        if (rubEl) rubEl.textContent = `${sumRub.toLocaleString('ru-RU')} ₽`;
+
+        return true;
+    }
+
+
 
     function modQty(pzn, d, event) {
         if (event) event.stopPropagation();
@@ -2659,28 +2732,25 @@ function clearAdminPanel() {
         const cartIsOpen = !!(modal && modal.classList.contains('active'));
 
         if (nextQty !== previousQty) {
-            if (cartIsOpen) {
-                // Внутри корзины никаких летящих/вспомогательных слоёв.
-                playCartTone(nextQty < previousQty);
-            } else {
-                const source = event && event.currentTarget
-                    ? event.currentTarget
-                    : (event && event.target ? event.target : null);
+            const source = event && event.currentTarget
+                ? event.currentTarget
+                : (event && event.target ? event.target : null);
 
-                if (source && source.getBoundingClientRect) {
-                    animateFly(source.getBoundingClientRect(), nextQty < previousQty);
-                } else {
-                    playCartTone(nextQty < previousQty);
-                }
+            // Fly-анимацию возвращаем ВЕЗДЕ: она работает координатно
+            // и не требует перерисовки карточки.
+            if (source && source.getBoundingClientRect) {
+                animateFly(source.getBoundingClientRect(), nextQty < previousQty);
+            } else {
+                playCartTone(nextQty < previousQty);
             }
         }
 
         localStorage.setItem('de_cart_v2', JSON.stringify(cart));
 
         if (cartIsOpen) {
-            // Не трогаем каталог/поиск под корзиной.
-            // Рисуем только сам лист заказа и его актуальный итог.
-            renderCartItems();
+            // Ключевой фикс: карточку НЕ пересоздаём.
+            // Меняем только число, сумму строки и общий footer.
+            updateCartRowInPlace(pzn);
             updateBar(true);
         } else {
             updateBar();
@@ -2714,22 +2784,18 @@ function clearAdminPanel() {
         const cartIsOpen = !!(modal && modal.classList.contains('active'));
 
         if (nextQty !== previousQty) {
-            if (cartIsOpen) {
-                playCartTone(nextQty < previousQty);
+            const field = event && event.target;
+            if (field && field.getBoundingClientRect) {
+                animateFly(field.getBoundingClientRect(), nextQty < previousQty);
             } else {
-                const field = event && event.target;
-                if (field && field.getBoundingClientRect) {
-                    animateFly(field.getBoundingClientRect(), nextQty < previousQty);
-                } else {
-                    playCartTone(nextQty < previousQty);
-                }
+                playCartTone(nextQty < previousQty);
             }
         }
 
         localStorage.setItem('de_cart_v2', JSON.stringify(cart));
 
         if (cartIsOpen) {
-            renderCartItems();
+            updateCartRowInPlace(pzn);
             updateBar(true);
         } else {
             updateBar();
@@ -3495,7 +3561,7 @@ function handleOrderCopyAndOpen(btnElement) {
                 const titleStyle = isZero ? 'text-decoration: line-through; color: #888;' : '';
 
                 div.innerHTML += `
-                <div class="card" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
+                <div class="card" data-cart-pzn="${cleanPZN}" style="position: relative; margin-bottom: 15px; border-left: none; ${cardStyle}">
                 ${renderPriceCheckIndicator(cleanPZN)}
                 <div class="order-line-number" style="background: ${badgeBg};">
                     ${displayNum}
@@ -3620,7 +3686,8 @@ function handleOrderCopyAndOpen(btnElement) {
             openMobileSearch(false, {
                 query: brand,
                 everywhere: true,
-                clearCurrentList: true
+                clearCurrentList: true,
+                focusInput: false
             });
         });
     }
@@ -3662,6 +3729,19 @@ function handleOrderCopyAndOpen(btnElement) {
         const h = String(now.getHours()).padStart(2, '0');
         const min = String(now.getMinutes()).padStart(2, '0');
         return `${d}${m}${y}-${h}${min}`;
+    }
+
+    function focusCheckoutAction() {
+        const button = document.getElementById('copyActionBlock');
+        if (!button) return;
+
+        button.classList.remove('rxde-checkout-focus');
+        void button.offsetWidth;
+        button.classList.add('rxde-checkout-focus');
+
+        setTimeout(() => {
+            button.classList.remove('rxde-checkout-focus');
+        }, 1600);
     }
 
     function openCart(fromHistory = false) {
@@ -3768,6 +3848,7 @@ function handleOrderCopyAndOpen(btnElement) {
         document.body.style.top = `-${scrollPos}px`;
         document.body.style.width = '100%';
 
+        requestAnimationFrame(focusCheckoutAction);
         cartOpenInProgress = false;
     }
 
@@ -3817,7 +3898,7 @@ function handleOrderCopyAndOpen(btnElement) {
         closeModal();
 
         setTimeout(() => {
-            openMobileSearch();
+            openMobileSearch(false, { focusInput: false });
         }, 40);
     }
 
@@ -3840,6 +3921,66 @@ function handleOrderCopyAndOpen(btnElement) {
     let pendingContactContext = '';
     let pendingContactSource = 'rxde.online/question';
     let contactReturnToCart = false;
+    let rxdeLastFormInputAt = 0;
+    let rxdeKeyboardWasOpen = false;
+
+
+    function rxdeMarkFormInputActivity() {
+        rxdeLastFormInputAt = Date.now();
+    }
+
+    document.addEventListener('input', function(event) {
+        if (event.target && (
+            event.target.id === 'clientPhone' ||
+            event.target.id === 'mobileSearchInput'
+        )) {
+            rxdeMarkFormInputActivity();
+        }
+    }, true);
+
+    function rxdeKeyboardViewportMonitor() {
+        const vv = window.visualViewport;
+        if (!vv) return;
+
+        const keyboardOpen = (window.innerHeight - vv.height) > 120;
+        if (keyboardOpen) {
+            rxdeKeyboardWasOpen = true;
+            return;
+        }
+
+        if (!rxdeKeyboardWasOpen) return;
+        rxdeKeyboardWasOpen = false;
+
+        // Автозаполнение/ввод только что изменили поле — ничего не закрываем.
+        // Если строка поиска ПУСТАЯ, пользователь ничего не вводил:
+        // системный Back после скрытия клавиатуры может сразу закрыть поиск.
+        const activeSearchValue = String(
+            document.getElementById('mobileSearchInput')?.value || ''
+        ).trim();
+        const recentInput = (Date.now() - rxdeLastFormInputAt) < 900;
+
+        if (recentInput && activeSearchValue) return;
+
+        const contact = document.getElementById('contactOverlay');
+        if (contact && contact.style.display === 'flex') {
+            closeContact(true);
+            setTimeout(() => rxdeArmBack(window.location.href), 0);
+            return;
+        }
+
+        if (mobileSearchIsOpen) {
+            closeMobileSearch(true);
+            setTimeout(() => rxdeArmBack(window.location.href), 0);
+        }
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener(
+            'resize',
+            rxdeKeyboardViewportMonitor,
+            { passive: true }
+        );
+    }
 
     function setPhoneError(message = '') {
         const box = document.getElementById('phoneError');
@@ -3866,26 +4007,12 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function captureSearchBackdrop() {
+        // V72: никаких DOM-клонов страницы под поиском.
+        // Один настоящий слой = никаких секундных дублей карточек.
         const host = document.getElementById('mobileSearchBackdropSnapshot');
-        if (!host) return;
-
-        host.innerHTML = '';
-        const frame = document.createElement('div');
-        frame.className = 'mobile-search-snapshot-frame';
-        frame.style.transform = `translateY(${-window.scrollY}px)`;
-
-        Array.from(document.body.children).forEach(node => {
-            if (!(node instanceof HTMLElement)) return;
-            if (node.id === 'mobileSearchOverlay' || node.id === 'mobileQuickActions') return;
-            if (node.tagName === 'SCRIPT') return;
-
-            const clone = node.cloneNode(true);
-            stripSnapshotIds(clone);
-            frame.appendChild(clone);
-        });
-
-        host.appendChild(frame);
+        if (host) host.innerHTML = '';
     }
+
 
     function clearSearchBackdrop() {
         const host = document.getElementById('mobileSearchBackdropSnapshot');
@@ -3907,30 +4034,38 @@ function handleOrderCopyAndOpen(btnElement) {
         const sectionBtn = document.getElementById('mobileSearchEverywhereBtn');
         if (!row || !scope || !sectionBtn) return;
 
+        const query = (document.getElementById('mobileSearchInput')?.value || '').trim();
         const hasOriginalSection = !!mobileSearchOriginalCategory || !!mobileSearchOriginalPrescriptionMode;
+        const currentlyGlobal = !filters.publicCategory && !filters.prescriptionMode;
+
+        if (currentlyGlobal) {
+            scope.textContent = query
+                ? `Поиск · весь каталог · «${query}»`
+                : 'Поиск · весь каталог';
+        } else {
+            const label = filters.prescriptionMode
+                ? 'Индивидуальный каталог'
+                : filters.publicCategory;
+            scope.textContent = query
+                ? `Поиск · ${label} · «${query}»`
+                : `Поиск · ${label}`;
+        }
+
+        row.hidden = false;
+
         if (!hasOriginalSection) {
-            scope.textContent = '';
-            row.hidden = true;
             sectionBtn.hidden = true;
             return;
         }
 
-        const currentlyGlobal = !filters.publicCategory && !filters.prescriptionMode;
-
+        sectionBtn.hidden = false;
         if (currentlyGlobal) {
-            scope.textContent = 'По всему каталогу';
             sectionBtn.textContent = mobileSearchOriginalPrescriptionMode
                 ? 'Только индивидуальный каталог'
-                : `Только раздел «${mobileSearchOriginalCategory}»`;
+                : `Только «${mobileSearchOriginalCategory}»`;
         } else {
-            scope.textContent = filters.prescriptionMode
-                ? 'Индивидуальный каталог'
-                : filters.publicCategory;
-            sectionBtn.textContent = 'Искать по всему каталогу';
+            sectionBtn.textContent = 'Искать везде';
         }
-
-        row.hidden = false;
-        sectionBtn.hidden = false;
     }
 
 
@@ -3980,7 +4115,9 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!overlay || !mobileInput) return;
 
         if (mobileSearchIsOpen) {
-            mobileInput.focus({ preventScroll: true });
+            if (options.focusInput) {
+                try { mobileInput.focus({ preventScroll: true }); } catch (_) {}
+            }
             return;
         }
 
@@ -4057,14 +4194,18 @@ function handleOrderCopyAndOpen(btnElement) {
             if (suggestions) suggestions.innerHTML = '';
             syncMobileSearchHint();
         }
-        // Нажатие на лупу сразу активирует поле поиска.
-        setTimeout(() => {
-            try {
-                mobileInput.focus({ preventScroll: true });
-                const len = mobileInput.value.length;
-                mobileInput.setSelectionRange(len, len);
-            } catch (_) {}
-        }, 120);
+        // Обычная лупа только открывает сохранённый поиск.
+        // Клавиатура появляется лишь там, где пользователь явно нажал
+        // строку поиска или лупу напротив конкретного товара.
+        if (options.focusInput) {
+            setTimeout(() => {
+                try {
+                    mobileInput.focus({ preventScroll: true });
+                    const len = mobileInput.value.length;
+                    mobileInput.setSelectionRange(len, len);
+                } catch (_) {}
+            }, 80);
+        }
 
         const swipeHint = document.getElementById('mobileSearchSwipeHint');
         if (swipeHint) {
@@ -4995,11 +5136,12 @@ function handleOrderCopyAndOpen(btnElement) {
         }
     }
     /* =========================================
-    BLOCK 11: RXDE BACK / SWIPE V63
-    Текущий слой -> внутренний экран -> главная сверху -> выход.
+    BLOCK 11: RXDE BACK / SWIPE V72
+    Слой -> подкатегория -> категория -> главная сверху -> выход.
     ========================================= */
 
     let rxdeHistoryBusy = false;
+    let rxdeAllowExit = false;
 
     function rxdeRootUrl() {
         return window.location.origin + window.location.pathname;
@@ -5020,8 +5162,8 @@ function handleOrderCopyAndOpen(btnElement) {
         const tg = document.getElementById('tgOverlay');
 
         if (contact && contact.style.display === 'flex') return 'contact';
-        if (mobileSearchIsOpen) return 'mobile-search';
         if (modal && modal.classList.contains('active')) return 'cart';
+        if (mobileSearchIsOpen) return 'mobile-search';
         if (info && info.style.display === 'flex') return 'info';
         if (tg && tg.style.display === 'flex') return 'telegram';
         return null;
@@ -5041,7 +5183,6 @@ function handleOrderCopyAndOpen(btnElement) {
         const active = document.activeElement;
         if (!active) return;
         const tag = (active.tagName || '').toUpperCase();
-
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active.isContentEditable) {
             try { active.blur(); } catch (_) {}
         }
@@ -5063,13 +5204,13 @@ function handleOrderCopyAndOpen(btnElement) {
             closeContact(true);
             return true;
         }
+        if (layer === 'cart') {
+            closeModal(true);
+            return true;
+        }
         if (layer === 'mobile-search') {
             rxdeDismissKeyboardNow();
             closeMobileSearch(true);
-            return true;
-        }
-        if (layer === 'cart') {
-            closeModal(true);
             return true;
         }
         if (layer === 'info') {
@@ -5081,6 +5222,29 @@ function handleOrderCopyAndOpen(btnElement) {
             return true;
         }
         return false;
+    }
+
+    function rxdeShowCategoryRoot() {
+        filters.publicSubcategory = '';
+        filters.search = '';
+        filters.alphabet = '';
+
+        const input = document.getElementById('search');
+        if (input) input.value = '';
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete('sub');
+        url.searchParams.delete('q');
+        url.searchParams.delete('letter');
+
+        window.history.replaceState(
+            rxdeState(filters.publicCategory ? 'category' : 'service', null, false),
+            '',
+            url
+        );
+
+        render(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function rxdeGoRootTop() {
@@ -5109,7 +5273,7 @@ function handleOrderCopyAndOpen(btnElement) {
         });
     }
 
-    // Всегда держим одну локальную запись перед текущим экраном.
+    // Стартовый защитный шаг.
     window.history.replaceState(
         rxdeState(rxdeCurrentScreen(), rxdeTopLayer(), false),
         '',
@@ -5122,13 +5286,17 @@ function handleOrderCopyAndOpen(btnElement) {
     );
 
     window.addEventListener('popstate', function() {
+        if (rxdeAllowExit) {
+            rxdeAllowExit = false;
+            return;
+        }
         if (rxdeHistoryBusy) return;
+
         rxdeHistoryBusy = true;
 
-        // 1. Один Back закрывает только текущий верхний слой.
+        // 1. Верхний слой всегда закрывается одним Back.
         if (rxdeTopLayer()) {
             rxdeCloseTopLayerForBack();
-
             requestAnimationFrame(() => {
                 rxdeArmBack(window.location.href);
                 rxdeHistoryBusy = false;
@@ -5136,17 +5304,26 @@ function handleOrderCopyAndOpen(btnElement) {
             return;
         }
 
-        // 2. Любой внутренний экран идёт на главную, а не наружу.
-        if (rxdeCurrentScreen() !== 'root') {
+        // 2. Подкатегория -> родительская категория.
+        if (filters.publicSubcategory) {
+            rxdeShowCategoryRoot();
+            requestAnimationFrame(() => {
+                rxdeArmBack(window.location.href);
+                rxdeHistoryBusy = false;
+            });
+            return;
+        }
+
+        // 3. Категория / индивидуальный сервис / обычный поиск -> главная.
+        if (filters.publicCategory || filters.prescriptionMode || filters.search) {
             rxdeHistoryBusy = false;
             rxdeGoRootTop();
             return;
         }
 
-        // 3. Если на главной прокручено вниз — сначала верх.
+        // 4. Главная, но пользователь ниже категорий -> только наверх.
         if (window.scrollY > 80) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
-
             requestAnimationFrame(() => {
                 rxdeArmBack(rxdeRootUrl());
                 rxdeHistoryBusy = false;
@@ -5154,7 +5331,7 @@ function handleOrderCopyAndOpen(btnElement) {
             return;
         }
 
-        // 4. Только главная + самый верх = запрос выхода.
+        // 5. Главная + верх = единственное место, где спрашиваем о выходе.
         const leave = window.confirm('Выйти из RXDE?');
 
         if (!leave) {
@@ -5164,7 +5341,8 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         rxdeHistoryBusy = false;
-        setTimeout(() => window.history.go(-2), 0);
+        rxdeAllowExit = true;
+        setTimeout(() => window.history.back(), 0);
     });
 
     /* =========================================
@@ -5438,10 +5616,14 @@ function handleOrderCopyAndOpen(btnElement) {
 
         if (action.matches('.header-search-btn') || action.id === 'quickSearchButton') {
             const cartModal = document.getElementById('modal');
+
             if (cartModal && cartModal.classList.contains('active')) {
                 openSearchFromCart();
             } else {
-                openMobileSearch();
+                const hasSavedSearch = !!String(mobileSearchSavedQuery || '').trim();
+                openMobileSearch(false, {
+                    focusInput: !hasSavedSearch
+                });
             }
         } else if (action.id === 'quickContactButton') {
             openSmartContact();
@@ -5461,7 +5643,10 @@ function handleOrderCopyAndOpen(btnElement) {
         if (cartModal && cartModal.classList.contains('active')) {
             openSearchFromCart();
         } else {
-            openMobileSearch();
+            const hasSavedSearch = !!String(mobileSearchSavedQuery || '').trim();
+            openMobileSearch(false, {
+                focusInput: !hasSavedSearch
+            });
         }
     });
 
@@ -5491,7 +5676,7 @@ function handleOrderCopyAndOpen(btnElement) {
             </div>
             <div class="footer-copy">© 2026 RXDE.online | Сервис доставки из Германии</div>
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v71 · style v71 · база 08-21 10:58
+                index v73 · style v73 · база 08-21 13:18
             </div>
         </div>
     </footer>

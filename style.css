@@ -10687,3 +10687,152 @@ body.rxde-mode-cart #modal .m-box {
 body.rxde-search-front .mobile-search-overlay.active .mobile-search-sheet {
     opacity: 1 !important;
 }
+
+
+/* ==========================================================
+   RXDE V72 — ONE DOM / CLEAR LOCATION / SIMPLE NAVIGATION
+   ========================================================== */
+
+/* Fly-анимация снова работает и в корзине. */
+body.rxde-mode-cart .cart-fly-pill {
+    display: block !important;
+}
+
+/* Поиск больше не клонирует страницу под собой. */
+.mobile-search-backdrop-snapshot {
+    display: none !important;
+}
+
+.mobile-search-overlay {
+    background: rgba(229,238,243,.72) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Один лёгкий "лист", без сложного стекла и compositor-клонов. */
+.mobile-search-sheet,
+#modal .m-box,
+.rxde-contact-box {
+    backface-visibility: hidden !important;
+}
+
+.mobile-search-sheet {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #fff !important;
+}
+
+.mobile-search-overlay.active .mobile-search-sheet {
+    animation: rxdeSheetArrive .16s ease-out both !important;
+}
+
+@keyframes rxdeSheetArrive {
+    from { opacity: .94; transform: translateY(7px) scale(.995); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Где я нахожусь — компактная дорожка только внутри каталога. */
+.view-location-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    margin: 6px auto 8px;
+    width: min(calc(100% - 24px), 1180px);
+    min-height: 27px;
+    padding: 4px 9px;
+
+    border: 1px solid #e1e8ec;
+    border-radius: 10px;
+    background: #f8fafb;
+    color: #7a8992;
+
+    font-size: 9px;
+    line-height: 1;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.view-location-bar[hidden] {
+    display: none !important;
+}
+
+.view-location-bar span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.view-location-bar span.active {
+    color: #244d67;
+    font-weight: 800;
+}
+
+.view-location-bar i {
+    color: #a8b4bb;
+    font-style: normal;
+    flex: 0 0 auto;
+}
+
+/* В поиске строка положения всегда видна. */
+.mobile-search-scope-row {
+    display: flex !important;
+    min-height: 30px !important;
+    padding: 5px 10px !important;
+    border-bottom: 1px solid #edf1f3 !important;
+    background: #f8fafb !important;
+}
+
+.mobile-search-scope-row[hidden] {
+    display: flex !important;
+}
+
+.mobile-search-scope-row > span {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Итоговый чек: один короткий акцент на следующем логичном действии. */
+#modal #copyActionBlock.rxde-checkout-focus {
+    animation: rxdeCheckoutHalo 1.45s ease-out 1 !important;
+}
+
+@keyframes rxdeCheckoutHalo {
+    0%   { box-shadow: 0 0 0 0 rgba(9,135,88,.00); }
+    28%  { box-shadow: 0 0 0 5px rgba(9,135,88,.15), 0 8px 20px rgba(9,135,88,.14); }
+    100% { box-shadow: 0 0 0 0 rgba(9,135,88,.00), 0 8px 20px rgba(9,135,88,.10); }
+}
+
+/* Количество в корзине меняется без пересоздания карточки. */
+#modal #cartItems .card[data-cart-pzn] {
+    contain: layout paint !important;
+}
+
+/* Плавающий итог остаётся видимым и в корзине. */
+body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+    display: flex !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-search-overlay.active .mobile-search-sheet,
+    #modal #copyActionBlock.rxde-checkout-focus {
+        animation: none !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V73 — SEARCH INTENT
+   ========================================================== */
+
+/* Поиск конкретного препарата — это просмотр вариантов, не ввод текста.
+   Поэтому клавиатура не должна закрывать половину экрана. */
+.mobile-search-scope-row {
+    min-height: 28px !important;
+}
+
+/* Чистый поиск по-прежнему выглядит как рабочее поле ввода. */
+.mobile-search-empty-hint {
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+}
