@@ -11599,3 +11599,57 @@ h1.service-flow-title {
     text-decoration-color: #c2cbd0 !important;
     text-underline-offset: 2px !important;
 }
+
+
+/* ==========================================================
+   RXDE V82 — CART -> SEARCH LAYER
+   ========================================================== */
+body.rxde-search-front #mobileSearchOverlay {
+    pointer-events: auto !important;
+}
+
+@media (max-width: 720px) {
+    body.rxde-search-front #mobileSearchOverlay.active {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V83 — MAIL AS AN ALTERNATIVE CONTACT ACTION
+   ========================================================== */
+
+.rxde-mail-option {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    margin: 10px 0 2px !important;
+    color: #9aa6ad !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+}
+
+.rxde-mail-option::before,
+.rxde-mail-option::after {
+    content: "" !important;
+    width: 28px !important;
+    height: 1px !important;
+    background: #e1e7ea !important;
+}
+
+.rxde-mail-option a {
+    color: #526f80 !important;
+    font-size: 10.5px !important;
+    font-weight: 760 !important;
+    text-decoration: underline !important;
+    text-decoration-color: #b9c6cd !important;
+    text-underline-offset: 2px !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mail-option a:active {
+    opacity: .72 !important;
+}

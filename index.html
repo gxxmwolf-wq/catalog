@@ -7,7 +7,7 @@
         <meta name="yandex-verification" content="74167e2381a5fa3f" />
         
 
-    <link rel="stylesheet" href="style.css?build=v81">
+    <link rel="stylesheet" href="style.css?build=v83">
         <script defer src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
         
@@ -303,6 +303,13 @@
                     Продолжить
                 </button>
 
+                <div class="rxde-mail-option">
+                    <span>или</span>
+                    <a id="contactMailLink" href="mailto:med.zakaz.de@gmail.com" onclick="prepareContactMailLink()">
+                        Сам напишу на почту
+                    </a>
+                </div>
+
                 <div class="rxde-contact-consent">
                     Отправляя запрос, вы соглашаетесь на обработку указанного номера телефона
                     для ответа на обращение.
@@ -383,8 +390,8 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v81';
-    const RXDE_DB_BUILD = '08-21 15:18';
+    const RXDE_BUILD = 'v83';
+    const RXDE_DB_BUILD = '08-21 15:55';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
 
@@ -426,6 +433,7 @@
     let clearOrderUndoTimer = null;
     let cartOpenInProgress = false;
     let prescriptionSearchReturn = null;
+    let searchReturnToCart = false;
 
 
 
@@ -3793,6 +3801,9 @@ function handleOrderCopyAndOpen(btnElement) {
     function openCart(fromHistory = false) {
         const modal = document.getElementById('modal');
 
+        // Обычное открытие корзины завершает предыдущий переход search -> cart.
+        if (!mobileSearchIsOpen) searchReturnToCart = false;
+
         // Повторное нажатие на сумму/корзину, пока корзина уже открыта,
         // вообще ничего не делает. Никакой повторной сборки DOM.
         if (modal && modal.classList.contains('active')) return;
@@ -3935,17 +3946,25 @@ function handleOrderCopyAndOpen(btnElement) {
             window.history.replaceState(cleanState, '', window.location.href);
         }
     
-        if (!fromHistory) rxdeStabilizeAfterLocalUiChange();
+        if (!fromHistory && typeof rxdeStabilizeAfterLocalUiChange === 'function') rxdeStabilizeAfterLocalUiChange();
 }
 
     function openSearchFromCart() {
-        // Один универсальный переход из корзины в поиск.
-        // Сохраняем прежний поисковый запрос/результаты и только меняем слой.
-        closeModal();
+        // Корзина -> поиск = отдельный рабочий шаг.
+        // Корзину не "закрываем в главную": просто прячем её как родительский слой.
+        searchReturnToCart = true;
 
-        setTimeout(() => {
-            openMobileSearch(false, { focusInput: false });
-        }, 40);
+        const hadSavedSearch = !!String(mobileSearchSavedQuery || '').trim();
+
+        // fromHistory=true здесь намеренно: не запускаем старую локальную
+        // стабилизацию history между двумя слоями.
+        closeModal(true);
+
+        requestAnimationFrame(() => {
+            openMobileSearch(false, {
+                focusInput: !hadSavedSearch
+            });
+        });
     }
 
     function addMoreItems() {
@@ -3981,6 +4000,10 @@ function handleOrderCopyAndOpen(btnElement) {
             event.target.id === 'mobileSearchInput'
         )) {
             rxdeMarkFormInputActivity();
+        }
+
+        if (event.target && event.target.id === 'contactOptionalMessage') {
+            prepareContactMailLink();
         }
     }, true);
 
@@ -4287,6 +4310,30 @@ function handleOrderCopyAndOpen(btnElement) {
         restoreProductListHome();
         clearSearchBackdrop();
 
+        // Если поиск был открыт ИЗ КОРЗИНЫ, один Back/свайп/закрытие
+        // возвращает именно в ту же корзину, а не в главное меню.
+        if (searchReturnToCart) {
+            searchReturnToCart = false;
+
+            filters.search = '';
+            filters.publicCategory = mobileSearchOriginalCategory || '';
+            filters.publicSubcategory = mobileSearchOriginalSubcategory || '';
+            filters.prescriptionMode = !!mobileSearchOriginalPrescriptionMode;
+            filters.prescriptionVisible = 24;
+            filters.alphabet = '';
+
+            const desktopInput = document.getElementById('search');
+            if (desktopInput) desktopInput.value = '';
+
+            render(false);
+
+            requestAnimationFrame(() => {
+                openCart(true);
+            });
+
+            return;
+        }
+
         // Возвращаем экран, поверх которого был открыт поиск.
         filters.search = '';
         filters.publicCategory = mobileSearchOriginalCategory || '';
@@ -4309,7 +4356,7 @@ function handleOrderCopyAndOpen(btnElement) {
             window.scrollTo({ top: mobileSearchParentScrollY, behavior: 'instant' });
         });
     
-        if (!fromHistory) rxdeStabilizeAfterLocalUiChange();
+        if (!fromHistory && typeof rxdeStabilizeAfterLocalUiChange === 'function') rxdeStabilizeAfterLocalUiChange();
 }
 
 
@@ -4600,6 +4647,58 @@ function handleOrderCopyAndOpen(btnElement) {
     window.addEventListener('resize', syncContactVisualViewport, { passive: true });
 
 
+    function buildContactMailData() {
+        let subject = 'Обращение с RXDE.online';
+        let body = '';
+
+        if (pendingContactSource === 'rxde.online/order') {
+            const data = getOrderTextAndLink();
+            subject = 'Заказ с RXDE.online';
+            if (data) {
+                body = `Здравствуйте!\n\n${data.text}Ссылка на корзину:\n${data.link}`;
+            } else {
+                body = 'Здравствуйте!\n\nХочу уточнить заказ с RXDE.online.';
+            }
+        } else if (pendingContactSource === 'rxde.online/search') {
+            const q = getCurrentSearchText();
+            subject = q ? `Поиск препарата: ${q}` : 'Поиск препарата на RXDE.online';
+            body = q
+                ? `Здравствуйте!\n\nПомогите, пожалуйста, найти:\n${q}`
+                : 'Здравствуйте!\n\nПомогите, пожалуйста, найти препарат.';
+        } else if (pendingContactSource === 'rxde.online/prescription') {
+            const q = getCurrentSearchText();
+            subject = q ? `Индивидуальный запрос: ${q}` : 'Индивидуальный запрос RXDE';
+            body = q
+                ? `Здравствуйте!\n\nИндивидуальный запрос по препарату:\n${q}`
+                : 'Здравствуйте!\n\nХочу уточнить возможность индивидуального заказа.';
+        } else {
+            const optionalMessage = String(
+                document.getElementById('contactOptionalMessage')?.value || ''
+            ).trim();
+
+            subject = 'Вопрос с RXDE.online';
+            body = optionalMessage
+                ? `Здравствуйте!\n\n${optionalMessage}`
+                : 'Здравствуйте!\n\nУ меня вопрос по RXDE.online.';
+        }
+
+        if (pendingContactContext && !body.includes(pendingContactContext)) {
+            body += `\n\nКонтекст:\n${pendingContactContext}`;
+        }
+
+        body += `\n\nСтраница:\n${window.location.href}`;
+
+        return { subject, body };
+    }
+
+    function prepareContactMailLink() {
+        const link = document.getElementById('contactMailLink');
+        if (!link) return;
+
+        const mail = buildContactMailData();
+        link.href = `mailto:med.zakaz.de@gmail.com?subject=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}`;
+    }
+
     function openContact(type = 'question', index = null, fromHistory = false) {
         const cartModal = document.getElementById('modal');
         const cartWasOpen = !!(cartModal && cartModal.classList.contains('active'));
@@ -4633,6 +4732,7 @@ function handleOrderCopyAndOpen(btnElement) {
         else pendingContactSource = 'rxde.online/question';
 
         pendingContactContext = buildContactContext(type, index);
+        requestAnimationFrame(prepareContactMailLink);
 
         if (type === 'order' && !pendingContactContext) {
             alert('Лист заказа пуст.');
@@ -4818,7 +4918,7 @@ function handleOrderCopyAndOpen(btnElement) {
             window.history.replaceState(cleanState, '', window.location.href);
         }
     
-        if (!fromHistory) rxdeStabilizeAfterLocalUiChange();
+        if (!fromHistory && typeof rxdeStabilizeAfterLocalUiChange === 'function') rxdeStabilizeAfterLocalUiChange();
 }
 
     /* =========================================
@@ -5838,7 +5938,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v81 · style v81 · база 08-21 15:18
+                index v83 · style v83 · база 08-21 15:55
             </div>
         </div>
     </footer>
