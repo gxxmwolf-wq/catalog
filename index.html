@@ -11,7 +11,7 @@
     window.RXDE_FILE_MODE = location.protocol === 'file:';
     document.write(
         '<link rel="stylesheet" href="' +
-        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v83') +
+        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v91') +
         '">'
     );
     if (window.RXDE_FILE_MODE) {
@@ -63,7 +63,12 @@
                     <div class="embedded-logo" onclick="goHome()" oncontextmenu="handleLogoClick(event)" role="button" tabindex="0" aria-label="Вернуться на главную" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();goHome();}">
                         <img class="brand-logo-image" src="assets/rxde-logo.svg" alt="RXDE — каталог товаров из Германии">
                     </div>
-                    <button class="header-catalog-btn" type="button" onclick="goHome()">Каталог</button>
+                    <button class="header-catalog-btn header-home-glyph-btn" type="button" onclick="goHomeFromAnyLogo(event)" aria-label="Каталог — на главную" title="Каталог">
+                        <svg class="rxde-home-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                            <path class="rxde-home-roof" d="M12 4.5 17.5 9H6.5Z"/>
+                            <path class="rxde-home-lines" d="M6 13h12M6 18h12"/>
+                        </svg>
+                    </button>
                     <button class="header-search-btn mobile-search-entry" type="button" aria-label="Открыть поиск">
                         <span class="header-search-lens" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.7"/><path d="m15 15 4.5 4.5"/></svg>
@@ -86,8 +91,8 @@
                     <span class="header-principle-line"><i aria-hidden="true">✓</i><b>Максимально возможный срок годности</b></span>
                 </div>
                 <div class="rates-compact" onclick="openAdminSecretly()" title="Курс евро ЦБ и изменение к предыдущему значению">
-                    <div class="cbr-rate-line">ЦБ: <span id="cbrRate">0</span><span id="cbrTrend" class="rate-trend" aria-label="Изменение курса"></span></div>
-                    <div style="white-space: nowrap;">Расчетный: <span id="finalRate" style="color:#000; font-weight:700; font-size: 11px;">0</span></div>
+                    <div class="cbr-rate-line">ЦБ: <span id="cbrRate">0</span></div>
+                    <div class="calc-rate-line">Расчётный: <span id="finalRate" style="color:#000; font-weight:700; font-size:11px;">0</span></div>
                 </div>
                 <button id="headerOrderButton" class="header-order-button js-cart-trigger" type="button" aria-label="Открыть лист заказа">
                     <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
@@ -170,7 +175,7 @@
                            placeholder="Название, вещество или PZN"
                            autocomplete="off" autocorrect="off" spellcheck="false"
                            oninput="handleMobileSearchInput()"
-                           onkeydown="if(event.key==='Enter'){event.preventDefault();if(!tryAdminUnlock(this.value)){this.blur();}}">
+                           onkeydown="handleMobileSearchKeydown(event,this)">
 
                     <button type="button" class="search-clear-btn" onclick="clearMobileSearchInput()" aria-label="Очистить">✕</button>
                 </div>
@@ -193,7 +198,14 @@
             <div id="mobileSearchSuggestionsHost" class="mobile-search-suggestions-host"></div>
 
             <div id="mobileSearchEmptyHint" class="mobile-search-empty-hint">
-                Введите название, действующее вещество или PZN.
+                <div class="search-mode-empty">
+                    <svg viewBox="0 0 120 120" aria-hidden="true">
+                        <circle cx="50" cy="50" r="28"></circle>
+                        <path d="M71 71 96 96"></path>
+                    </svg>
+                    <strong>Поиск по каталогу</strong>
+                    <span>Введите название, действующее вещество или PZN</span>
+                </div>
             </div>
 
             <div id="mobileSearchListHost" class="mobile-search-list-host"></div>
@@ -201,6 +213,12 @@
     </div>
 
     <nav id="mobileQuickActions" class="mobile-quick-actions" aria-label="Быстрые действия">
+        <button id="quickHomeButton" type="button" aria-label="Каталог — на главную" title="Каталог" class="mobile-quick-home">
+            <svg class="rxde-home-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                <path class="rxde-home-roof" d="M12 4.5 17.5 9H6.5Z"/>
+                <path class="rxde-home-lines" d="M6 13h12M6 18h12"/>
+            </svg>
+        </button>
         <button id="quickSearchButton" type="button" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 4.6 4.6"/></svg>
         </button>
@@ -412,7 +430,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v85';
+    const RXDE_BUILD = 'v91';
     const RXDE_DB_BUILD = '08-21 15:55';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
@@ -1916,6 +1934,7 @@
             'rxde-mode-cart',
             'rxde-mode-contact'
         );
+        requestAnimationFrame(syncQuickNavState);
 
         filters.search = '';
         filters.publicCategory = '';
@@ -3000,6 +3019,12 @@ function clearAdminPanel() {
         if (headerOrderCount) headerOrderCount.textContent = totalPacks;
         const mobileCartCount = document.getElementById('mobileCartCount');
         if (mobileCartCount) { mobileCartCount.textContent = totalPacks; mobileCartCount.hidden = totalPacks <= 0; }
+        const quickCartStateButton = document.getElementById('quickCartButton');
+        if (quickCartStateButton) {
+            quickCartStateButton.classList.toggle('has-items', totalPacks > 0);
+            quickCartStateButton.classList.toggle('is-empty', totalPacks <= 0);
+        }
+        requestAnimationFrame(syncQuickNavState);
 
         const quickOrderTotal = document.getElementById('quickOrderTotal');
         const quickOrderEur = document.getElementById('quickOrderEur');
@@ -3272,8 +3297,8 @@ function clearAdminPanel() {
                     return;
                 }
 
-                calendarAnimationTimer = setTimeout(flipNext, 28);
-            }, 235);
+                calendarAnimationTimer = setTimeout(flipNext, 20);
+            }, 190);
         };
 
         calendarAnimationTimer = setTimeout(flipNext, 80);
@@ -3953,6 +3978,7 @@ function handleOrderCopyAndOpen(btnElement) {
         document.body.classList.remove('rxde-search-front', 'rxde-contact-front');
         document.body.classList.remove('rxde-mode-search', 'rxde-mode-contact');
         document.body.classList.add('rxde-cart-front', 'rxde-mode-cart');
+        requestAnimationFrame(syncQuickNavState);
 
         // V69: сначала собираем корзину полностью ВНЕ ЭКРАНА.
         modal.classList.remove('active', 'open');
@@ -4030,6 +4056,7 @@ function handleOrderCopyAndOpen(btnElement) {
         modal.style.display = 'none';
 
         document.body.classList.remove('rxde-cart-front', 'rxde-mode-cart');
+        requestAnimationFrame(syncQuickNavState);
         if (mobileSearchIsOpen) {
             document.body.classList.remove('rxde-mode-cart', 'rxde-mode-contact');
             document.body.classList.add('rxde-search-front', 'rxde-mode-search');
@@ -4142,9 +4169,11 @@ function handleOrderCopyAndOpen(btnElement) {
             return;
         }
 
+        // Скрытие экранной клавиатуры само по себе больше НЕ закрывает поиск.
+        // Поиск закрывается только явной навигацией: Назад / свайп / Home / Заказ / Связь.
         if (mobileSearchIsOpen) {
-            closeMobileSearch(true);
-            setTimeout(() => rxdeArmBack(window.location.href), 0);
+            syncQuickNavKeyboardOffset();
+            return;
         }
     }
 
@@ -4336,6 +4365,7 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         mobileSearchIsOpen = true;
+        requestAnimationFrame(syncQuickNavState);
 
         // Активный режим всегда становится верхним рабочим слоем.
         document.body.classList.remove('rxde-cart-front', 'rxde-contact-front');
@@ -4402,6 +4432,7 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!overlay || !mobileSearchIsOpen) return;
 
         mobileSearchIsOpen = false;
+        requestAnimationFrame(syncQuickNavState);
         overlay.classList.remove('active');
         overlay.setAttribute('aria-hidden', 'true');
         document.body.classList.remove('mobile-search-open', 'rxde-search-front', 'rxde-mode-search');
@@ -4463,6 +4494,21 @@ function handleOrderCopyAndOpen(btnElement) {
         if (!fromHistory && typeof rxdeStabilizeAfterLocalUiChange === 'function') rxdeStabilizeAfterLocalUiChange();
 }
 
+
+    function handleMobileSearchKeydown(event, input) {
+        if (!event || event.key !== 'Enter') return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (tryAdminUnlock(input?.value || '')) return;
+
+        // Кнопка "Поиск" на Gboard/Android завершает ввод,
+        // но НЕ является командой выйти из режима поиска.
+        handleMobileSearchInput(true);
+
+        try { input?.blur(); } catch (_) {}
+    }
 
     function handleMobileSearchInput(updateUrl = true) {
         const swipeHint = document.getElementById('mobileSearchSwipeHint');
@@ -4575,20 +4621,8 @@ function handleOrderCopyAndOpen(btnElement) {
 
 
     function openSmartContact() {
-        const cartModal = document.getElementById('modal');
-        if (cartModal && cartModal.classList.contains('active') && cart.length) {
-            openContact('order');
-            return;
-        }
-
-        const q = (document.getElementById('mobileSearchInput')?.value ||
-                   document.getElementById('search')?.value || '').trim();
-
-        if (mobileSearchIsOpen && q) {
-            openContact('search');
-            return;
-        }
-
+        // Кнопка связи всегда означает "задать вопрос".
+        // Подтверждение/создание заказа запускается только явной кнопкой из листа заказа.
         openContact('question');
     }
 
@@ -4685,6 +4719,15 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function buildContactContext(type, index = null) {
+        if (type === 'question') {
+            const cartModal = document.getElementById('modal');
+            const cartIsOpen = !!(cartModal && cartModal.classList.contains('active'));
+            if (cartIsOpen && cart.length) {
+                const summary = getCartContactSummary();
+                return `Вопрос по текущему листу заказа · ${summary.positions} поз. · ${summary.packs} уп. · ${summary.rub.toLocaleString('ru-RU')} ₽`;
+            }
+        }
+
         if (type === 'order') {
             const data = getOrderTextAndLink();
             const summary = getCartContactSummary();
@@ -4807,8 +4850,9 @@ function handleOrderCopyAndOpen(btnElement) {
         const cartModal = document.getElementById('modal');
         const cartWasOpen = !!(cartModal && cartModal.classList.contains('active'));
 
-        contactReturnToCart = (type === 'order' && cartWasOpen);
-        if (cartWasOpen && type !== 'order') closeModal(true);
+        // Связь — отдельный верхний слой. Даже обычный вопрос не уничтожает
+        // открытый лист заказа: после закрытия связи возвращаемся туда же.
+        contactReturnToCart = cartWasOpen;
 
         if (!fromHistory) {
             window.history.replaceState(
@@ -4820,6 +4864,7 @@ function handleOrderCopyAndOpen(btnElement) {
         document.body.classList.remove('rxde-search-front', 'rxde-cart-front');
         document.body.classList.remove('rxde-mode-search', 'rxde-mode-cart');
         document.body.classList.add('rxde-contact-front', 'rxde-mode-contact');
+        requestAnimationFrame(syncQuickNavState);
 
         const overlay = document.getElementById('contactOverlay');
         const title = document.getElementById('contactTitle');
@@ -4867,7 +4912,7 @@ function handleOrderCopyAndOpen(btnElement) {
             contextCard.hidden = !visibleContext;
         }
 
-        const allowOptionalText = type === 'question' && !filters.publicCategory && !filters.prescriptionMode;
+        const allowOptionalText = type === 'question';
         if (optionalWrap) optionalWrap.hidden = !allowOptionalText;
         if (optionalMessage) optionalMessage.value = '';
 
@@ -4996,6 +5041,7 @@ function handleOrderCopyAndOpen(btnElement) {
         overlay.classList.remove('order-finalize-overlay', 'contact-top-overlay');
         overlay.querySelector('.rxde-contact-box')?.classList.remove('order-finalize-box');
         document.body.classList.remove('rxde-contact-front', 'rxde-mode-contact');
+        requestAnimationFrame(syncQuickNavState);
         setPhoneError('');
 
         const cartModal = document.getElementById('modal');
@@ -5963,18 +6009,76 @@ function handleOrderCopyAndOpen(btnElement) {
         toggleNewsList();
     }
 
+    function syncQuickNavState() {
+        const nav = document.getElementById('mobileQuickActions');
+        const home = document.getElementById('quickHomeButton');
+        const search = document.getElementById('quickSearchButton');
+        const contact = document.getElementById('quickContactButton');
+        const cartButton = document.getElementById('quickCartButton');
+        if (!nav) return;
+
+        const contactOpen = document.body.classList.contains('rxde-contact-front');
+        const cartOpen = document.body.classList.contains('rxde-cart-front');
+        const searchOpen = document.body.classList.contains('rxde-search-front') || mobileSearchIsOpen;
+
+        nav.classList.toggle('nav-contact-active', contactOpen);
+        nav.classList.toggle('nav-cart-active', !contactOpen && cartOpen);
+        nav.classList.toggle('nav-search-active', !contactOpen && !cartOpen && searchOpen);
+        nav.classList.toggle('nav-home-active', !contactOpen && !cartOpen && !searchOpen);
+
+        home?.setAttribute('aria-current', (!contactOpen && !cartOpen && !searchOpen) ? 'page' : 'false');
+        search?.setAttribute('aria-current', (!contactOpen && !cartOpen && searchOpen) ? 'page' : 'false');
+        cartButton?.setAttribute('aria-current', (!contactOpen && cartOpen) ? 'page' : 'false');
+        contact?.setAttribute('aria-current', contactOpen ? 'page' : 'false');
+    }
+
+    function syncQuickNavKeyboardOffset() {
+        const nav = document.getElementById('mobileQuickActions');
+        if (!nav) return;
+
+        const vv = window.visualViewport;
+        if (!vv) {
+            nav.style.setProperty('--rxde-nav-keyboard-lift', '0px');
+            nav.classList.remove('keyboard-lifted');
+            return;
+        }
+
+        // Реальная высота экранной клавиатуры относительно layout viewport.
+        const hidden = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        const keyboardOpen = hidden > 120;
+        const lift = keyboardOpen ? Math.ceil(hidden + 10) : 0;
+
+        nav.style.setProperty('--rxde-nav-keyboard-lift', `${lift}px`);
+        nav.classList.toggle('keyboard-lifted', keyboardOpen);
+    }
+
+    function initQuickNavViewportTracking() {
+        syncQuickNavState();
+        syncQuickNavKeyboardOffset();
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', syncQuickNavKeyboardOffset, { passive: true });
+            window.visualViewport.addEventListener('scroll', syncQuickNavKeyboardOffset, { passive: true });
+        }
+        window.addEventListener('resize', syncQuickNavKeyboardOffset, { passive: true });
+    }
+
     // Три постоянные кнопки — независимый верхний слой интерфейса.
     // pointerdown в capture-фазе: быстро и без конфликтов с overlay/drag/click.
     document.addEventListener('pointerdown', function(event) {
         const action = event.target.closest && event.target.closest(
-            '.header-search-btn, #quickSearchButton, #quickContactButton, #quickCartButton'
+            '.header-search-btn, #quickHomeButton, #quickSearchButton, #quickContactButton, #quickCartButton'
         );
         if (!action) return;
 
         event.preventDefault();
         event.stopPropagation();
 
-        if (action.matches('.header-search-btn') || action.id === 'quickSearchButton') {
+        if (action.id === 'quickHomeButton') {
+            rxdeDismissKeyboardNow();
+            goHomeFromAnyLogo(event);
+            requestAnimationFrame(syncQuickNavState);
+        } else if (action.matches('.header-search-btn') || action.id === 'quickSearchButton') {
             const cartModal = document.getElementById('modal');
 
             if (cartModal && cartModal.classList.contains('active')) {
@@ -5985,10 +6089,15 @@ function handleOrderCopyAndOpen(btnElement) {
                     focusInput: !hasSavedSearch
                 });
             }
+            requestAnimationFrame(syncQuickNavState);
         } else if (action.id === 'quickContactButton') {
+            rxdeDismissKeyboardNow();
             openSmartContact();
+            requestAnimationFrame(syncQuickNavState);
         } else if (action.id === 'quickCartButton') {
+            rxdeDismissKeyboardNow();
             openCart();
+            requestAnimationFrame(syncQuickNavState);
         }
     }, true);
 
@@ -6019,7 +6128,10 @@ function handleOrderCopyAndOpen(btnElement) {
     }, true);
 
     // Единственный запуск приложения.
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+        init();
+        initQuickNavViewportTracking();
+    });
     </script>
 
 
@@ -6042,7 +6154,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v85 · style v83 · база 08-21 15:55
+                index v91 · style v91 · база 08-21 15:55
             </div>
         </div>
     </footer>

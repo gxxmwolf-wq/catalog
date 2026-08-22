@@ -11653,3 +11653,427 @@ body.rxde-search-front #mobileSearchOverlay {
 .rxde-mail-option a:active {
     opacity: .72 !important;
 }
+
+
+/* ==========================================================
+   RXDE V88 — QUICK ACTIONS AS REAL NAVIGATION
+   v87 discarded. This is built from v85.
+   ========================================================== */
+
+.mobile-quick-actions {
+    --rxde-nav-keyboard-lift: 0px;
+    right: max(11px, env(safe-area-inset-right)) !important;
+    bottom: calc(18px + env(safe-area-inset-bottom) + var(--rxde-nav-keyboard-lift)) !important;
+    z-index: 14000 !important;
+    gap: 8px !important;
+    transition: bottom .13s ease-out !important;
+}
+
+.mobile-quick-actions button {
+    transition:
+        transform .12s ease,
+        opacity .16s ease,
+        background .16s ease,
+        color .16s ease,
+        border-color .16s ease,
+        box-shadow .16s ease !important;
+}
+
+/* Неактивные состояния — заметно приглушены, но остаются доступными. */
+.mobile-quick-actions.nav-home-active #quickSearchButton,
+.mobile-quick-actions.nav-home-active #quickContactButton,
+.mobile-quick-actions.nav-home-active #quickCartButton,
+.mobile-quick-actions.nav-search-active #quickHomeButton,
+.mobile-quick-actions.nav-search-active #quickContactButton,
+.mobile-quick-actions.nav-search-active #quickCartButton,
+.mobile-quick-actions.nav-cart-active #quickHomeButton,
+.mobile-quick-actions.nav-cart-active #quickSearchButton,
+.mobile-quick-actions.nav-cart-active #quickContactButton,
+.mobile-quick-actions.nav-contact-active #quickHomeButton,
+.mobile-quick-actions.nav-contact-active #quickSearchButton,
+.mobile-quick-actions.nav-contact-active #quickCartButton {
+    opacity: .55 !important;
+    filter: saturate(.62) !important;
+}
+
+/* Активное окно/режим — чуть крупнее и чётче. */
+.mobile-quick-actions.nav-home-active #quickHomeButton,
+.mobile-quick-actions.nav-search-active #quickSearchButton,
+.mobile-quick-actions.nav-cart-active #quickCartButton,
+.mobile-quick-actions.nav-contact-active #quickContactButton {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: scale(1.09) !important;
+    box-shadow: 0 10px 26px rgba(17, 39, 51, .24), inset 0 1px 0 rgba(255,255,255,.9) !important;
+}
+
+/* Каталог / домой — фирменная, но спокойная пиктограмма:
+   красная "крыша" и чёрные горизонтальные линии. */
+#quickHomeButton {
+    background: rgba(255,255,255,.97) !important;
+    color: #161b1e !important;
+    border-color: rgba(28,36,41,.18) !important;
+}
+
+#quickHomeButton .rxde-home-glyph {
+    width: 22px !important;
+    height: 22px !important;
+}
+
+#quickHomeButton .rxde-home-roof {
+    stroke: #cf3138 !important;
+    stroke-width: 2.2 !important;
+    fill: none !important;
+}
+
+#quickHomeButton .rxde-home-lines {
+    stroke: #171c1f !important;
+    stroke-width: 1.8 !important;
+    fill: none !important;
+}
+
+/* Поиск активен — светлый и ясный. */
+.mobile-quick-actions.nav-search-active #quickSearchButton {
+    background: rgba(255,255,255,.98) !important;
+    color: #123f57 !important;
+    border-color: rgba(43,93,119,.34) !important;
+}
+
+/* Связь активна — тёмная рабочая кнопка. */
+.mobile-quick-actions.nav-contact-active #quickContactButton {
+    background: rgba(18,41,55,.98) !important;
+    color: #fff !important;
+    border-color: rgba(18,41,55,.98) !important;
+}
+
+/* Пустой лист заказа — нейтральный. */
+#quickCartButton.is-empty:not([aria-current="page"]) {
+    background: rgba(255,255,255,.94) !important;
+    color: #73818a !important;
+    border-color: rgba(105,122,132,.24) !important;
+}
+
+/* В листе уже есть товары — кнопка заметнее даже когда неактивна. */
+#quickCartButton.has-items:not([aria-current="page"]) {
+    background: rgba(232,244,250,.97) !important;
+    color: #096190 !important;
+    border-color: rgba(9,97,144,.28) !important;
+    opacity: .82 !important;
+    filter: none !important;
+}
+
+/* Сам экран листа заказа — наиболее явное состояние. */
+.mobile-quick-actions.nav-cart-active #quickCartButton {
+    background: rgba(0,86,145,.98) !important;
+    color: #fff !important;
+    border-color: rgba(0,86,145,.98) !important;
+}
+
+/* Когда клавиатура открыта, весь навигатор поднимается над ней.
+   Он остаётся выше поискового слоя и принимает pointerdown первым. */
+.mobile-quick-actions.keyboard-lifted {
+    gap: 6px !important;
+    z-index: 15000 !important;
+}
+
+.mobile-quick-actions.keyboard-lifted button {
+    box-shadow: 0 8px 22px rgba(12,29,40,.22), inset 0 1px 0 rgba(255,255,255,.94) !important;
+}
+
+/* Сумма — информационная, не один из четырёх режимов. */
+#quickOrderTotal {
+    opacity: .92 !important;
+}
+
+@media (max-width: 720px) {
+    .mobile-quick-actions {
+        right: max(9px, env(safe-area-inset-right)) !important;
+        bottom: calc(12px + env(safe-area-inset-bottom) + var(--rxde-nav-keyboard-lift)) !important;
+    }
+
+    .mobile-quick-actions.nav-home-active #quickHomeButton,
+    .mobile-quick-actions.nav-search-active #quickSearchButton,
+    .mobile-quick-actions.nav-cart-active #quickCartButton,
+    .mobile-quick-actions.nav-contact-active #quickContactButton {
+        transform: scale(1.07) !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V90 — SEARCH AS A FULL WORKSPACE + CLEAN CART CURSOR
+   ========================================================== */
+
+/* Поиск — полноценный экран, а не маленькое окно поверх сайта. */
+.mobile-search-sheet {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+}
+
+@supports not (height: 100dvh) {
+    .mobile-search-sheet {
+        height: 100vh !important;
+    }
+}
+
+@media (max-width: 720px), (min-width: 721px) {
+    .mobile-search-sheet {
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        max-width: none !important;
+        border-radius: 0 !important;
+    }
+}
+
+/* Пустой поиск сразу объясняет, в каком режиме находится пользователь. */
+.mobile-search-empty-hint {
+    flex: 1 1 auto !important;
+    min-height: 260px !important;
+    display: grid !important;
+    place-items: center !important;
+    padding: 22px 24px 90px !important;
+}
+
+.mobile-search-empty-hint[hidden] {
+    display: none !important;
+}
+
+.search-mode-empty {
+    display: grid !important;
+    place-items: center !important;
+    gap: 9px !important;
+    text-align: center !important;
+    color: #7a8b95 !important;
+    user-select: none !important;
+}
+
+.search-mode-empty svg {
+    width: clamp(92px, 24vw, 150px) !important;
+    height: clamp(92px, 24vw, 150px) !important;
+    margin-bottom: 5px !important;
+    fill: none !important;
+    stroke: rgba(39, 94, 124, .12) !important;
+    stroke-width: 7 !important;
+    stroke-linecap: round !important;
+}
+
+.search-mode-empty strong {
+    color: #496776 !important;
+    font-size: clamp(17px, 4.6vw, 25px) !important;
+    font-weight: 650 !important;
+    letter-spacing: -.015em !important;
+}
+
+.search-mode-empty span {
+    max-width: 360px !important;
+    color: #91a0a8 !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+}
+
+/* Календарь: сам переворот тоже ускорен вместе с JS-последовательностью. */
+.flip-calendar-sheet.is-flipping {
+    animation-duration: .18s !important;
+}
+
+/* Перетаскивание корзины больше не существует — возвращаем обычный курсор. */
+#modal #cartItems .card,
+#modal #cartItems .card:active,
+#modal .cart-reorder-card,
+#modal .cart-reorder-card:active {
+    cursor: default !important;
+}
+
+#modal #cartItems button,
+#modal #cartItems a,
+#modal #cartItems [role="button"] {
+    cursor: pointer !important;
+}
+
+/* Домой: красный приплюснутый треугольник + две одинаковые чёрные полоски. */
+#quickHomeButton .rxde-home-roof {
+    fill: #cf3138 !important;
+    stroke: none !important;
+}
+
+#quickHomeButton .rxde-home-lines {
+    fill: none !important;
+    stroke: #171c1f !important;
+    stroke-width: 1.9 !important;
+    stroke-linecap: round !important;
+}
+
+
+/* ==========================================================
+   RXDE V91 — MOBILE HEADER / CART CLOSE / SEARCH SUBMIT
+   ========================================================== */
+
+/* Один и тот же знак "Домой" в верхней и плавающей навигации. */
+.header-home-glyph-btn {
+    display: inline-grid !important;
+    place-items: center !important;
+    width: 31px !important;
+    min-width: 31px !important;
+    height: 31px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(28,36,41,.15) !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+}
+
+.header-home-glyph-btn::before {
+    display: none !important;
+    content: none !important;
+}
+
+.header-home-glyph-btn .rxde-home-glyph {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+.header-home-glyph-btn .rxde-home-roof,
+#quickHomeButton .rxde-home-roof {
+    fill: #cf3138 !important;
+    stroke: none !important;
+}
+
+.header-home-glyph-btn .rxde-home-lines,
+#quickHomeButton .rxde-home-lines {
+    fill: none !important;
+    stroke: #171c1f !important;
+    stroke-width: 1.9 !important;
+    stroke-linecap: round !important;
+}
+
+/* Колебания курса не показываем вообще. */
+.rate-trend,
+#cbrTrend {
+    display: none !important;
+}
+
+/* Крестик корзины всегда находится в правом краю собственной строки,
+   независимо от ширины курса/кнопок слева. */
+#modal .modal-head {
+    position: relative !important;
+    padding-right: 66px !important;
+}
+
+#modal .close-x {
+    position: absolute !important;
+    z-index: 30 !important;
+    right: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    margin: 0 !important;
+    justify-self: auto !important;
+    align-self: auto !important;
+}
+
+#modal .close-x:active {
+    transform: translateY(-50%) scale(.94) !important;
+}
+
+@media (max-width: 760px) {
+    /*
+      На телефоне:
+      - оставляем явный Поиск в шапке;
+      - возвращаем ЦБ + расчётный курс;
+      - текстовый "Каталог" заменён маленьким Home;
+      - верхнюю кнопку заказа убираем как дубликат постоянной плавающей корзины.
+    */
+    .rates-compact {
+        display: grid !important;
+        align-content: center !important;
+        width: 76px !important;
+        min-width: 76px !important;
+        max-width: 76px !important;
+        flex: 0 0 76px !important;
+        gap: 2px !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        color: #52636c !important;
+        font-size: 8.5px !important;
+        line-height: 1.05 !important;
+        white-space: nowrap !important;
+    }
+
+    .rates-compact > div {
+        overflow: visible !important;
+        white-space: nowrap !important;
+    }
+
+    .rates-compact #cbrRate,
+    .rates-compact #finalRate {
+        font-size: 10px !important;
+        font-weight: 760 !important;
+        color: #17242b !important;
+    }
+
+    .header-order-button {
+        display: none !important;
+    }
+
+    .header-utilities {
+        width: auto !important;
+        min-width: 0 !important;
+        flex: 0 0 auto !important;
+        gap: 7px !important;
+    }
+
+    .header-primary-nav {
+        gap: 5px !important;
+    }
+
+    .header-home-glyph-btn {
+        width: 29px !important;
+        min-width: 29px !important;
+        height: 29px !important;
+        border-radius: 9px !important;
+    }
+
+    .header-home-glyph-btn .rxde-home-glyph {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    #modal .modal-head {
+        padding-right: 54px !important;
+    }
+
+    #modal .close-x {
+        right: 10px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .rates-compact {
+        width: 70px !important;
+        min-width: 70px !important;
+        max-width: 70px !important;
+        flex-basis: 70px !important;
+        font-size: 8px !important;
+    }
+
+    .rates-compact #cbrRate,
+    .rates-compact #finalRate {
+        font-size: 9px !important;
+    }
+
+    .flip-calendar {
+        width: 35px !important;
+        flex-basis: 35px !important;
+    }
+
+    .mobile-search-entry {
+        padding-inline: 5px 7px !important;
+    }
+}
