@@ -11,7 +11,7 @@
     window.RXDE_FILE_MODE = location.protocol === 'file:';
     document.write(
         '<link rel="stylesheet" href="' +
-        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v91') +
+        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v92') +
         '">'
     );
     if (window.RXDE_FILE_MODE) {
@@ -430,7 +430,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v91';
+    const RXDE_BUILD = 'v92';
     const RXDE_DB_BUILD = '08-21 15:55';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
@@ -1752,19 +1752,39 @@
             chip.innerText = word;
             
             chip.onclick = () => {
-                const input = document.getElementById('search');
-                let words = input.value.trim().split(/\s+/);
-                
-                // Если кликнули, заменяем последнее слово (если не было пробела) или добавляем новое
-                if (!isTrailingSpace) {
-                    words[words.length - 1] = word; 
+                const desktopInput = document.getElementById('search');
+                const mobileInput = document.getElementById('mobileSearchInput');
+
+                const sourceInput = mobileSearchIsOpen && mobileInput ? mobileInput : desktopInput;
+                if (!sourceInput) return;
+
+                let words = sourceInput.value.trim().split(/\s+/);
+                if (words.length === 1 && words[0] === '') words = [];
+
+                // Незаконченное последнее слово заменяем выбранной подсказкой.
+                // После пробела — добавляем новое слово.
+                if (!isTrailingSpace && words.length) {
+                    words[words.length - 1] = word;
                 } else {
                     words.push(word);
                 }
-                
-                input.value = words.join(' ') + ' ';
-                handleInput(); 
-                input.focus();
+
+                const nextValue = words.join(' ') + ' ';
+
+                // В v91 подсказка меняла только скрытое desktop-поле #search.
+                // В мобильном полноэкранном поиске поэтому визуальная строка
+                // оставалась прежней. Теперь оба поля всегда синхронны.
+                if (desktopInput) desktopInput.value = nextValue;
+                if (mobileInput) mobileInput.value = nextValue;
+                mobileSearchSavedQuery = nextValue;
+
+                if (mobileSearchIsOpen) {
+                    handleMobileSearchInput(true);
+                    try { mobileInput?.focus({ preventScroll: true }); } catch (_) {}
+                } else {
+                    handleInput();
+                    try { desktopInput?.focus({ preventScroll: true }); } catch (_) {}
+                }
             };
             box.appendChild(chip);
         });
@@ -6154,7 +6174,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v91 · style v91 · база 08-21 15:55
+                index v92 · style v92 · база 08-21 15:55
             </div>
         </div>
     </footer>
