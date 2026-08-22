@@ -11,7 +11,7 @@
     window.RXDE_FILE_MODE = location.protocol === 'file:';
     document.write(
         '<link rel="stylesheet" href="' +
-        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v117') +
+        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v120') +
         '">'
     );
     if (window.RXDE_FILE_MODE) {
@@ -3766,6 +3766,9 @@ function handleOrderCopyAndOpen(btnElement) {
 
             rows.push(`
                 <div class="order-sheet-compact-row" data-pzn="${escapeUiText(cleanPZN)}">
+                    <button class="order-sheet-reorder-handle" type="button"
+                            aria-label="Переместить позицию"
+                            title="Перетащить выше или ниже">≡</button>
                     <span class="order-sheet-compact-num">${printIdx++}.</span>
                     <span class="order-sheet-compact-name">${escapeUiText(name)}</span>
                     <span class="order-sheet-compact-calc">${formatReceiptEuro(priceEur)}€ × ${qty} = ${rowRub.toLocaleString('ru-RU')} ₽</span>
@@ -3792,6 +3795,7 @@ function handleOrderCopyAndOpen(btnElement) {
                     ${rows.join('')}
                     ${shipRub > 0 ? `
                         <div class="order-sheet-compact-row order-sheet-compact-shipping">
+                            <span class="order-sheet-reorder-spacer" aria-hidden="true"></span>
                             <span class="order-sheet-compact-num">+</span>
                             <span class="order-sheet-compact-name">Логистика DHL</span>
                             <span class="order-sheet-compact-calc">${formatReceiptEuro(shipValueEur)}€ = ${shipRub.toLocaleString('ru-RU')} ₽</span>
@@ -3805,6 +3809,222 @@ function handleOrderCopyAndOpen(btnElement) {
                 </div>
             </section>
         `;
+
+        initCompactOrderReorder();
+    }
+
+    function normalizeCartPzn(value) {
+        return String(value || '').trim().padStart(8, '0');
+    }
+
+    function syncCartOrderFromCompactDom() {
+        const list = document.querySelector('.order-sheet-compact-list');
+        if (!list) return;
+
+        const orderedPzns = [...list.querySelectorAll('.order-sheet-compact-row[data-pzn]')]
+            .map(row => normalizeCartPzn(row.dataset.pzn))
+            .filter(Boolean);
+
+        if (!orderedPzns.length) return;
+
+        const byPzn = new Map();
+        cart.forEach(item => byPzn.set(normalizeCartPzn(item.pzn), item));
+
+        const reordered = [];
+        orderedPzns.forEach(pzn => {
+            const item = byPzn.get(pzn);
+            if (item) {
+                reordered.push(item);
+                byPzn.delete(pzn);
+            }
+        });
+
+        // На случай служебной/неожиданной позиции ничего не теряем.
+        cart.forEach(item => {
+            const pzn = normalizeCartPzn(item.pzn);
+            if (byPzn.has(pzn)) {
+                reordered.push(item);
+                byPzn.delete(pzn);
+            }
+        });
+
+        cart = reordered;
+        localStorage.setItem('de_cart_v2', JSON.stringify(cart));
+    }
+
+    function renumberCompactOrderRows() {
+        const rows = document.querySelectorAll('.order-sheet-compact-row[data-pzn]');
+        rows.forEach((row, index) => {
+            const num = row.querySelector('.order-sheet-compact-num');
+            if (num) num.textContent = `${index + 1}.`;
+        });
+    }
+
+    function initCompactOrderReorder() {
+        const list = document.querySelector('.order-sheet-compact-list');
+        if (!list) return;
+
+        const scrollArea = list.closest('.m-scroll-area') || list.parentElement;
+
+        let draggingRow = null;
+        let activeHandle = null;
+        let activePointerId = null;
+        let lastClientY = 0;
+        let autoScrollRaf = 0;
+
+        const rowsWithoutDragged = () =>
+            [...list.querySelectorAll('.order-sheet-compact-row[data-pzn]')]
+                .filter(row => row !== draggingRow);
+
+        const setDraggingCursor = active => {
+            document.documentElement.classList.toggle('rxde-order-reordering-root', active);
+            document.body.classList.toggle('rxde-order-reordering', active);
+            if (activeHandle) {
+                activeHandle.style.setProperty('cursor', active ? 'grabbing' : 'grab', 'important');
+            }
+        };
+
+        const placeDraggedRow = clientY => {
+            if (!draggingRow) return;
+
+            const rows = rowsWithoutDragged();
+            const shipping = list.querySelector('.order-sheet-compact-shipping');
+
+            if (!rows.length) {
+                list.insertBefore(draggingRow, shipping || null);
+                return;
+            }
+
+            // Вставляем перед первой строкой, центр которой находится ниже курсора.
+            // Это позволяет сразу перескочить через несколько строк.
+            let beforeRow = null;
+            for (const row of rows) {
+                const rect = row.getBoundingClientRect();
+                if (clientY < rect.top + rect.height / 2) {
+                    beforeRow = row;
+                    break;
+                }
+            }
+
+            if (beforeRow) {
+                if (draggingRow.nextElementSibling !== beforeRow) {
+                    list.insertBefore(draggingRow, beforeRow);
+                }
+            } else {
+                // В самый низ — но всегда перед строкой логистики.
+                if (shipping) {
+                    if (draggingRow.nextElementSibling !== shipping) {
+                        list.insertBefore(draggingRow, shipping);
+                    }
+                } else if (draggingRow !== list.lastElementChild) {
+                    list.appendChild(draggingRow);
+                }
+            }
+
+            renumberCompactOrderRows();
+        };
+
+        const stopAutoScroll = () => {
+            if (autoScrollRaf) {
+                cancelAnimationFrame(autoScrollRaf);
+                autoScrollRaf = 0;
+            }
+        };
+
+        const autoScrollStep = () => {
+            autoScrollRaf = 0;
+            if (!draggingRow || !scrollArea) return;
+
+            const rect = scrollArea.getBoundingClientRect();
+            const edge = Math.min(90, Math.max(50, rect.height * 0.17));
+
+            let velocity = 0;
+
+            if (lastClientY < rect.top + edge) {
+                const power = Math.min(1, Math.max(0, (rect.top + edge - lastClientY) / edge));
+                velocity = -(4 + 20 * power);
+            } else if (lastClientY > rect.bottom - edge) {
+                const power = Math.min(1, Math.max(0, (lastClientY - (rect.bottom - edge)) / edge));
+                velocity = 4 + 20 * power;
+            }
+
+            if (velocity !== 0) {
+                scrollArea.scrollTop += velocity;
+                placeDraggedRow(lastClientY);
+                autoScrollRaf = requestAnimationFrame(autoScrollStep);
+            }
+        };
+
+        const ensureAutoScroll = () => {
+            if (!autoScrollRaf) autoScrollRaf = requestAnimationFrame(autoScrollStep);
+        };
+
+        const finishDrag = event => {
+            if (!draggingRow) return;
+            if (event && activePointerId !== null && event.pointerId !== undefined &&
+                event.pointerId !== activePointerId) return;
+
+            stopAutoScroll();
+
+            draggingRow.classList.remove('is-reordering');
+
+            try {
+                if (activeHandle && activePointerId !== null &&
+                    activeHandle.hasPointerCapture &&
+                    activeHandle.hasPointerCapture(activePointerId)) {
+                    activeHandle.releasePointerCapture(activePointerId);
+                }
+            } catch (_) {}
+
+            syncCartOrderFromCompactDom();
+            renumberCompactOrderRows();
+
+            if (navigator.vibrate) navigator.vibrate(8);
+
+            setDraggingCursor(false);
+
+            draggingRow = null;
+            activeHandle = null;
+            activePointerId = null;
+        };
+
+        list.querySelectorAll('.order-sheet-reorder-handle').forEach(handle => {
+            handle.addEventListener('pointerdown', event => {
+                if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+                const row = handle.closest('.order-sheet-compact-row[data-pzn]');
+                if (!row) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                draggingRow = row;
+                activeHandle = handle;
+                activePointerId = event.pointerId;
+                lastClientY = event.clientY;
+
+                draggingRow.classList.add('is-reordering');
+                setDraggingCursor(true);
+
+                try { handle.setPointerCapture(activePointerId); } catch (_) {}
+                if (navigator.vibrate) navigator.vibrate(5);
+            });
+        });
+
+        // Слушаем движение на document, а не только на самой ручке.
+        // Так перетаскивание не теряется при быстром уходе курсора на несколько строк.
+        document.addEventListener('pointermove', event => {
+            if (!draggingRow || event.pointerId !== activePointerId) return;
+
+            event.preventDefault();
+            lastClientY = event.clientY;
+
+            placeDraggedRow(lastClientY);
+            ensureAutoScroll();
+        }, { passive: false });
+
+        document.addEventListener('pointerup', finishDrag);
+        document.addEventListener('pointercancel', finishDrag);
     }
 
     function toggleOrderSheetView(event) {
@@ -6630,7 +6850,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v117 · style v117 · база 08-21 15:55
+                index v120 · style v120 · база 08-21 15:55
             </div>
         </div>
     </footer>

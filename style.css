@@ -14433,3 +14433,167 @@ body.rxde-contact-front #quickContactButton {
 #modal .order-sheet-mini-return {
     white-space: nowrap !important;
 }
+
+
+/* ==========================================================
+   RXDE V118 — REORDER ONLY IN COMPACT ORDER VIEW
+   ========================================================== */
+
+/* Ненавязчивый захват: функция есть, но визуально не кричит о себе. */
+.order-sheet-compact-row {
+    grid-template-columns: 18px 24px minmax(0,1fr) auto !important;
+}
+
+.order-sheet-reorder-handle,
+.order-sheet-reorder-spacer {
+    width: 18px;
+    min-width: 18px;
+    height: 24px;
+    align-self: center;
+}
+
+.order-sheet-reorder-handle {
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #a5b0b6;
+    font: inherit;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 700;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.order-sheet-reorder-handle:hover {
+    color: #547184;
+    background: rgba(43,99,132,.05);
+}
+
+.order-sheet-reorder-handle:active,
+.order-sheet-compact-row.is-reordering .order-sheet-reorder-handle {
+    cursor: grabbing;
+    color: #2b6384;
+    background: rgba(43,99,132,.08);
+}
+
+.order-sheet-compact-row.is-reordering {
+    position: relative;
+    z-index: 4;
+    border-radius: 7px;
+    background: rgba(234,246,252,.84);
+    box-shadow: 0 4px 14px rgba(28,64,84,.09);
+}
+
+body.rxde-order-reordering,
+body.rxde-order-reordering * {
+    cursor: grabbing !important;
+}
+
+@media (max-width: 720px) {
+    .order-sheet-compact-row {
+        grid-template-columns: 17px 17px minmax(0,1fr) auto !important;
+    }
+
+    .order-sheet-reorder-handle,
+    .order-sheet-reorder-spacer {
+        width: 17px;
+        min-width: 17px;
+        height: 22px;
+    }
+
+    .order-sheet-reorder-handle {
+        font-size: 13px;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V119 — FASTER / FREER COMPACT REORDER
+   ========================================================== */
+
+/* Захват чуть удобнее, но по-прежнему не превращаем его в большую кнопку. */
+.order-sheet-reorder-handle {
+    width: 22px !important;
+    min-width: 22px !important;
+    height: 26px !important;
+    border-radius: 6px !important;
+    cursor: grab !important;
+    touch-action: none !important;
+}
+
+.order-sheet-reorder-handle:hover {
+    color: #2f607b !important;
+    background: rgba(43,99,132,.075) !important;
+}
+
+.order-sheet-reorder-handle:active,
+.order-sheet-compact-row.is-reordering .order-sheet-reorder-handle {
+    cursor: grabbing !important;
+}
+
+/* В момент захвата курсор становится именно "лапой". */
+html:has(body.rxde-order-reordering),
+body.rxde-order-reordering,
+body.rxde-order-reordering * {
+    cursor: grabbing !important;
+}
+
+.order-sheet-compact-row.is-reordering {
+    background: rgba(229,244,252,.92) !important;
+    outline: 1px dashed rgba(43,99,132,.42) !important;
+    outline-offset: -1px !important;
+    box-shadow: 0 6px 18px rgba(28,64,84,.12) !important;
+}
+
+/* Даем ручке отдельную колонку чуть свободнее. */
+.order-sheet-compact-row {
+    grid-template-columns: 22px 24px minmax(0,1fr) auto !important;
+}
+
+@media (max-width: 720px) {
+    .order-sheet-compact-row {
+        grid-template-columns: 21px 17px minmax(0,1fr) auto !important;
+    }
+
+    .order-sheet-reorder-handle,
+    .order-sheet-reorder-spacer {
+        width: 21px !important;
+        min-width: 21px !important;
+        height: 25px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V120 — ROBUST DOCUMENT-LEVEL REORDER
+   ========================================================== */
+
+.order-sheet-reorder-handle {
+    cursor: grab !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    touch-action: none !important;
+}
+
+.order-sheet-reorder-handle:active,
+.order-sheet-compact-row.is-reordering .order-sheet-reorder-handle,
+html.rxde-order-reordering-root,
+html.rxde-order-reordering-root *,
+body.rxde-order-reordering,
+body.rxde-order-reordering * {
+    cursor: grabbing !important;
+}
+
+.order-sheet-compact-row.is-reordering {
+    background: rgba(229,244,252,.94) !important;
+    outline: 1px dashed rgba(43,99,132,.48) !important;
+    outline-offset: -1px !important;
+    box-shadow: 0 6px 18px rgba(28,64,84,.14) !important;
+}
