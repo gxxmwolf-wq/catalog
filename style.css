@@ -12132,3 +12132,345 @@ body.rxde-mode-search #mobileSearchInput:not(:focus) {
         border-color: rgba(39, 94, 124, .30) !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V95 — COMPACT MINI RECEIPT
+   ========================================================== */
+
+#quickOrderTotal {
+    position: relative !important;
+}
+
+#quickOrderTotal.mini-receipt-open {
+    border-color: rgba(34, 91, 121, .58) !important;
+    box-shadow:
+        0 0 0 3px rgba(34, 91, 121, .08),
+        0 9px 24px rgba(12,29,40,.18) !important;
+}
+
+.rxde-mini-receipt {
+    position: absolute !important;
+    z-index: 15550 !important;
+    right: calc(100% + 10px) !important;
+    bottom: 50px !important;
+    width: min(410px, calc(100vw - 82px)) !important;
+    max-height: min(58dvh, 520px) !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(20, 37, 48, .13) !important;
+    border-radius: 15px !important;
+    background: rgba(255,255,255,.985) !important;
+    box-shadow: 0 18px 48px rgba(14, 31, 41, .20) !important;
+    color: #17242b !important;
+    text-align: left !important;
+    pointer-events: auto !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+}
+
+.rxde-mini-receipt[hidden] {
+    display: none !important;
+}
+
+.rxde-mini-receipt.is-open {
+    animation: rxdeMiniReceiptIn .14s ease-out both;
+}
+
+@keyframes rxdeMiniReceiptIn {
+    from { opacity: 0; transform: translateY(5px) scale(.992); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.rxde-mini-receipt-content {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) auto auto !important;
+    max-height: inherit !important;
+}
+
+.rxde-mini-receipt-head {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 34px !important;
+    padding: 6px 9px !important;
+    border-bottom: 1px solid #edf0f2 !important;
+    background: #fbfcfc !important;
+}
+
+.rxde-mini-receipt-brand {
+    flex: 0 0 auto !important;
+    color: #171c1f !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    letter-spacing: -.03em !important;
+}
+
+.rxde-mini-receipt-brand b {
+    color: #cf3138 !important;
+    font-weight: 900 !important;
+}
+
+.rxde-mini-date {
+    display: grid !important;
+    width: 28px !important;
+    height: 25px !important;
+    flex: 0 0 28px !important;
+    overflow: hidden !important;
+    border: 1px solid #d9dde0 !important;
+    border-radius: 6px !important;
+    background: #fff !important;
+    text-align: center !important;
+}
+
+.rxde-mini-date i {
+    height: 9px !important;
+    background: #cf3138 !important;
+    color: #fff !important;
+    font-size: 5.5px !important;
+    font-style: normal !important;
+    font-weight: 850 !important;
+    line-height: 9px !important;
+    letter-spacing: .04em !important;
+}
+
+.rxde-mini-date b {
+    color: #17242b !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    line-height: 15px !important;
+}
+
+.rxde-mini-rate {
+    margin-left: auto !important;
+    color: #7b878e !important;
+    font-size: 9.5px !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mini-rate b {
+    color: #27343b !important;
+    font-size: 10.5px !important;
+}
+
+.rxde-mini-receipt-items {
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+    scrollbar-width: thin !important;
+    padding: 5px 8px !important;
+}
+
+.rxde-mini-receipt-row {
+    display: grid !important;
+    grid-template-columns: 18px minmax(0,1fr) auto !important;
+    align-items: baseline !important;
+    gap: 3px !important;
+    min-height: 22px !important;
+    padding: 2px 0 !important;
+    border-bottom: 1px solid rgba(28,43,52,.055) !important;
+    font-size: 10.5px !important;
+    line-height: 1.2 !important;
+}
+
+.rxde-mini-receipt-num {
+    color: #9aa4aa !important;
+    font-size: 9px !important;
+    text-align: right !important;
+}
+
+.rxde-mini-receipt-name {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    color: #24323a !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mini-receipt-calc {
+    color: #11191d !important;
+    font-variant-numeric: tabular-nums !important;
+    font-weight: 650 !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mini-receipt-shipping {
+    margin-top: 2px !important;
+    border-bottom: 0 !important;
+    color: #69777f !important;
+}
+
+.rxde-mini-receipt-shipping .rxde-mini-receipt-name,
+.rxde-mini-receipt-shipping .rxde-mini-receipt-calc {
+    color: #69777f !important;
+    font-weight: 550 !important;
+}
+
+.rxde-mini-receipt-total {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding: 7px 9px 6px !important;
+    border-top: 1px dashed #cbd2d6 !important;
+    background: #fff !important;
+}
+
+.rxde-mini-receipt-total span {
+    color: #78858c !important;
+    font-size: 9.5px !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mini-receipt-total strong {
+    color: #11191d !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mini-receipt-more {
+    min-height: 31px !important;
+    padding: 0 10px !important;
+    border: 0 !important;
+    border-top: 1px solid #edf0f2 !important;
+    background: #f8fafb !important;
+    color: #2b6384 !important;
+    font: inherit !important;
+    font-size: 9.5px !important;
+    font-weight: 800 !important;
+    letter-spacing: .045em !important;
+    text-align: right !important;
+    cursor: pointer !important;
+}
+
+.rxde-mini-receipt-more span {
+    margin-left: 3px !important;
+    font-size: 15px !important;
+    vertical-align: -1px !important;
+}
+
+@media (max-width: 720px) {
+    .rxde-mini-receipt {
+        right: calc(100% + 8px) !important;
+        bottom: 48px !important;
+        width: min(360px, calc(100vw - 72px)) !important;
+        max-height: min(56dvh, 430px) !important;
+        border-radius: 14px !important;
+    }
+
+    .rxde-mini-receipt-row {
+        grid-template-columns: 16px minmax(0,1fr) auto !important;
+        gap: 2px !important;
+        min-height: 21px !important;
+        font-size: 9.7px !important;
+    }
+
+    .rxde-mini-receipt-calc {
+        font-size: 9.5px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .rxde-mini-receipt {
+        width: calc(100vw - 68px) !important;
+    }
+
+    .rxde-mini-receipt-row {
+        font-size: 9.2px !important;
+    }
+
+    .rxde-mini-receipt-calc {
+        font-size: 9px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V96 — MINI RECEIPT DESKTOP WIDTH
+   ========================================================== */
+
+/* На ноутбуке мини-чек не должен выглядеть как мобильная узкая карточка.
+   Даём названию нормальное место, сохраняя расчёт справа в одну строку. */
+@media (min-width: 721px) {
+    .rxde-mini-receipt {
+        width: min(560px, calc(100vw - 130px)) !important;
+        max-width: 560px !important;
+    }
+
+    .rxde-mini-receipt-row {
+        grid-template-columns: 20px minmax(0, 1fr) auto !important;
+        gap: 5px !important;
+        font-size: 11.5px !important;
+    }
+
+    .rxde-mini-receipt-calc {
+        font-size: 11px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V97 — DESKTOP CLEAR-ORDER CONFIRM
+   На мобильном текущая компоновка уже нормальная — не трогаем.
+   ========================================================== */
+@media (min-width: 761px) {
+    /* Во время подтверждения отдаём всю шапку вопросу + Нет/Да.
+       Курс временно не нужен; крестик остаётся справа отдельно. */
+    #modal .modal-head:has(.clear-order-confirm) {
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 6px 66px 6px 12px !important;
+        gap: 0 !important;
+    }
+
+    #modal .modal-head:has(.clear-order-confirm) .m-head-info {
+        display: none !important;
+    }
+
+    #modal .modal-head:has(.clear-order-confirm) #modalHeaderLinks {
+        display: block !important;
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        overflow: visible !important;
+    }
+
+    #modal .modal-head:has(.clear-order-confirm) .clear-order-confirm {
+        display: grid !important;
+        grid-template-columns: minmax(150px, 1fr) 62px 62px !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        gap: 8px !important;
+        padding: 4px 6px 4px 12px !important;
+        overflow: visible !important;
+    }
+
+    #modal .modal-head:has(.clear-order-confirm) .clear-order-confirm > span {
+        min-width: 0 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+
+    /* Перебиваем старое общее правило .m-head-add-more button,
+       которое на десктопе могло визуально подрезать "Нет". */
+    #modal .modal-head:has(.clear-order-confirm) .clear-order-confirm button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 62px !important;
+        min-width: 62px !important;
+        max-width: 62px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        white-space: nowrap !important;
+        line-height: 1 !important;
+    }
+}

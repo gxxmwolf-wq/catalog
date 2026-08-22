@@ -11,7 +11,7 @@
     window.RXDE_FILE_MODE = location.protocol === 'file:';
     document.write(
         '<link rel="stylesheet" href="' +
-        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v94') +
+        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v97') +
         '">'
     );
     if (window.RXDE_FILE_MODE) {
@@ -225,6 +225,9 @@
         <button id="quickContactButton" type="button" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
             <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
         </button>
+        <section id="miniReceiptPanel" class="rxde-mini-receipt" hidden aria-label="Мини-чек заказа">
+            <div id="miniReceiptContent" class="rxde-mini-receipt-content"></div>
+        </section>
         <button id="quickOrderTotal" class="quick-order-total" type="button" hidden aria-label="Открыть лист заказа">
             <span id="quickOrderEur">0 €</span>
             <strong id="quickOrderRub">0 ₽</strong>
@@ -430,7 +433,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v94';
+    const RXDE_BUILD = 'v97';
     const RXDE_DB_BUILD = '08-21 15:55';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
@@ -3036,7 +3039,7 @@ function clearAdminPanel() {
                 if (p > 0) {
                     totalEur += p * item.qty;
                     totalPacks += item.qty; 
-                    activeItems.push({ num: printIdx++, name: dbItem.Name_DE, p: Math.round(p), q: item.qty, sum: Math.round(p) * item.qty });
+                    activeItems.push({ num: printIdx++, name: dbItem.Name_DE, p: Math.round(p), pRaw: p, q: item.qty, sum: Math.round(p) * item.qty });
                 }
             }
         });
@@ -3060,6 +3063,7 @@ function clearAdminPanel() {
         if (quickOrderTotal) quickOrderTotal.hidden = totalPacks <= 0;
         if (quickOrderEur) quickOrderEur.textContent = `${grandTotalEur.toLocaleString('ru-RU')} €`;
         if (quickOrderRub) quickOrderRub.textContent = `${grandTotalRub.toLocaleString('ru-RU')} ₽`;
+        renderMiniReceipt(activeItems, totalPacks, grandTotalEur, grandTotalRub);
         if (headerOrderMeta) headerOrderMeta.textContent = totalPacks > 0
             ? `${activeItems.length} поз. · ${grandTotalRub.toLocaleString('ru-RU')} ₽`
             : 'Пока пуст';
@@ -6091,6 +6095,109 @@ function handleOrderCopyAndOpen(btnElement) {
         window.addEventListener('resize', syncQuickNavKeyboardOffset, { passive: true });
     }
 
+    function formatReceiptEuro(value) {
+        const n = Number(value || 0);
+        return n.toLocaleString('ru-RU', {
+            minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function renderMiniReceipt(activeItems = [], totalPacks = 0, grandTotalEur = 0, grandTotalRub = 0) {
+        const panel = document.getElementById('miniReceiptPanel');
+        const content = document.getElementById('miniReceiptContent');
+        if (!panel || !content) return;
+
+        if (!activeItems.length || totalPacks <= 0) {
+            panel.hidden = true;
+            panel.classList.remove('is-open');
+            content.innerHTML = '';
+            return;
+        }
+
+        const now = new Date();
+        const month = now.toLocaleDateString('ru-RU', { month: 'short' })
+            .replace('.', '')
+            .toUpperCase();
+        const day = String(now.getDate()).padStart(2, '0');
+
+        const rows = activeItems.map(item => {
+            const priceEur = Number(item.pRaw ?? item.p ?? 0);
+            const qty = Number(item.q || 1);
+            const rowRub = getRubPrice(priceEur * qty);
+
+            return `
+                <div class="rxde-mini-receipt-row">
+                    <span class="rxde-mini-receipt-num">${item.num}.</span>
+                    <span class="rxde-mini-receipt-name">${escapeUiText(String(item.name || ''))}</span>
+                    <span class="rxde-mini-receipt-calc">${formatReceiptEuro(priceEur)}€×${qty} = ${rowRub.toLocaleString('ru-RU')}₽</span>
+                </div>`;
+        }).join('');
+
+        const shipRub = totalPacks > 0 && Number(shipEur || 0) > 0
+            ? getRubPrice(Number(shipEur || 0))
+            : 0;
+
+        const shippingRow = shipRub > 0 ? `
+            <div class="rxde-mini-receipt-row rxde-mini-receipt-shipping">
+                <span class="rxde-mini-receipt-num">+</span>
+                <span class="rxde-mini-receipt-name">Логистика DHL</span>
+                <span class="rxde-mini-receipt-calc">${formatReceiptEuro(shipEur)}€ = ${shipRub.toLocaleString('ru-RU')}₽</span>
+            </div>` : '';
+
+        content.innerHTML = `
+            <div class="rxde-mini-receipt-head">
+                <span class="rxde-mini-receipt-brand"><b>RX</b>DE</span>
+                <span class="rxde-mini-date" aria-label="${now.toLocaleDateString('ru-RU')}">
+                    <i>${month}</i><b>${day}</b>
+                </span>
+                <span class="rxde-mini-rate">€/₽ <b>${Number(rateCalc || 0).toLocaleString('ru-RU')}</b></span>
+            </div>
+
+            <div class="rxde-mini-receipt-items">${rows}${shippingRow}</div>
+
+            <div class="rxde-mini-receipt-total">
+                <span>${activeItems.length} поз. · ${totalPacks} уп.</span>
+                <strong>${grandTotalRub.toLocaleString('ru-RU')} ₽</strong>
+            </div>
+
+            <button type="button" class="rxde-mini-receipt-more" onclick="event.stopPropagation(); openFullCartFromMiniReceipt();">
+                ПОДРОБНЕЕ <span aria-hidden="true">›</span>
+            </button>
+        `;
+    }
+
+    function setMiniReceiptOpen(open) {
+        const panel = document.getElementById('miniReceiptPanel');
+        const totalButton = document.getElementById('quickOrderTotal');
+        if (!panel || !totalButton || totalButton.hidden) return;
+
+        const next = !!open;
+        panel.hidden = !next;
+        panel.classList.toggle('is-open', next);
+        totalButton.classList.toggle('mini-receipt-open', next);
+        totalButton.setAttribute('aria-expanded', next ? 'true' : 'false');
+    }
+
+    function toggleMiniReceipt() {
+        const panel = document.getElementById('miniReceiptPanel');
+        if (!panel || document.getElementById('quickOrderTotal')?.hidden) return;
+
+        const opening = panel.hidden || !panel.classList.contains('is-open');
+        setMiniReceiptOpen(opening);
+    }
+
+    function closeMiniReceipt() {
+        setMiniReceiptOpen(false);
+    }
+
+    function openFullCartFromMiniReceipt() {
+        closeMiniReceipt();
+        rxdeQuickTapFeedback(document.getElementById('quickCartButton'), 8);
+        openOrTopCart();
+        requestAnimationFrame(syncQuickNavState);
+    }
+
     function rxdeQuickTapFeedback(button, vibration = 8) {
         if (navigator.vibrate && vibration) {
             try { navigator.vibrate(vibration); } catch (_) {}
@@ -6168,6 +6275,7 @@ function handleOrderCopyAndOpen(btnElement) {
         rxdeQuickTapFeedback(action, 8);
 
         if (action.id === 'quickHomeButton') {
+            closeMiniReceipt();
             rxdeDismissKeyboardNow();
             goHomeFromAnyLogo(event);
             requestAnimationFrame(syncQuickNavState);
@@ -6175,6 +6283,7 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         if (action.matches('.header-search-btn') || action.id === 'quickSearchButton') {
+            closeMiniReceipt();
             const cartModal = document.getElementById('modal');
 
             // Повторное нажатие по уже активному Поиску:
@@ -6210,18 +6319,35 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         if (action.id === 'quickContactButton') {
+            closeMiniReceipt();
             rxdeDismissKeyboardNow();
             openSmartContact();
             requestAnimationFrame(syncQuickNavState);
             return;
         }
 
-        if (action.id === 'quickCartButton' || action.id === 'quickOrderTotal') {
+        if (action.id === 'quickOrderTotal') {
+            toggleMiniReceipt();
+            return;
+        }
+
+        if (action.id === 'quickCartButton') {
+            closeMiniReceipt();
             openOrTopCart();
             requestAnimationFrame(syncQuickNavState);
         }
     }, true);
 
+
+    document.addEventListener('pointerdown', function(event) {
+        const panel = event.target.closest && event.target.closest('#miniReceiptPanel');
+        if (!panel || event.target.closest('.rxde-mini-receipt-more')) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        rxdeQuickTapFeedback(document.getElementById('quickOrderTotal'), 8);
+        closeMiniReceipt();
+    }, true);
 
     document.addEventListener('click', function(event) {
         const headerSearch = event.target.closest && event.target.closest('.header-search-btn');
@@ -6276,7 +6402,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v94 · style v94 · база 08-21 15:55
+                index v97 · style v97 · база 08-21 15:55
             </div>
         </div>
     </footer>
