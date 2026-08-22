@@ -12077,3 +12077,58 @@ body.rxde-search-front #mobileSearchOverlay {
         padding-inline: 5px 7px !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V93 — QUICK NAV: ACTIVE BUTTON = RETURN TO TOP
+   ========================================================== */
+
+/* Короткая тактильность дополняется очень маленьким визуальным откликом:
+   без прыжка кнопки и без "игрушечной" анимации. */
+.mobile-quick-actions button.rxde-nav-tap,
+.header-search-btn.rxde-nav-tap,
+#headerOrderButton.rxde-nav-tap {
+    animation: rxdeQuickNavTap .18s ease-out !important;
+}
+
+@keyframes rxdeQuickNavTap {
+    0% {
+        box-shadow: 0 0 0 0 rgba(25, 83, 112, .20), 0 8px 22px rgba(12,29,40,.15);
+    }
+    55% {
+        box-shadow: 0 0 0 5px rgba(25, 83, 112, .08), 0 10px 25px rgba(12,29,40,.20);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(25, 83, 112, 0), 0 8px 22px rgba(12,29,40,.15);
+    }
+}
+
+/* Активные режимы чуть яснее сообщают, что повторное нажатие полезно. */
+.mobile-quick-actions.nav-search-active #quickSearchButton,
+.mobile-quick-actions.nav-cart-active #quickCartButton {
+    cursor: pointer !important;
+}
+
+/* Сумма заказа — полноценный переход в лист заказа, а не пассивный индикатор. */
+#quickOrderTotal {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+}
+
+
+/* ==========================================================
+   RXDE V94 — AUTOCOMPLETE = MORE SCREEN, SEARCH = SMART FOCUS
+   ========================================================== */
+
+/* После выбора слова-подсказки поле остаётся визуально активным,
+   даже если мобильная клавиатура уже закрыта. */
+body.rxde-mode-search #mobileSearchInput:not(:focus) {
+    color: #15222a !important;
+}
+
+/* На телефоне закрытие клавиатуры не должно визуально "гасить" строку поиска. */
+@media (max-width: 720px) {
+    body.rxde-mode-search .search-field-shell {
+        border-color: rgba(39, 94, 124, .30) !important;
+    }
+}
