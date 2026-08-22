@@ -11,7 +11,7 @@
     window.RXDE_FILE_MODE = location.protocol === 'file:';
     document.write(
         '<link rel="stylesheet" href="' +
-        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v97') +
+        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v99') +
         '">'
     );
     if (window.RXDE_FILE_MODE) {
@@ -433,7 +433,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v97';
+    const RXDE_BUILD = 'v99';
     const RXDE_DB_BUILD = '08-21 15:55';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
@@ -3710,6 +3710,9 @@ function handleOrderCopyAndOpen(btnElement) {
         headerLinks.style.width = 'auto';
 
         headerLinks.innerHTML = `
+            <button class="order-sheet-mini-return" type="button" onclick="returnToMiniReceiptFromCart(event)" aria-label="Перейти к мини-чеку">
+                <span aria-hidden="true">‹</span> Мини-чек
+            </button>
             <button class="order-sheet-add" type="button" onclick="addMoreItems()"><span>+</span> Добавить товар</button>
             <button class="order-sheet-clear" type="button" onclick="requestClearOrder(event)" aria-label="Очистить весь заказ">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
@@ -4102,6 +4105,13 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         updateBar();
+
+        // Если подробный лист был открыт из мини-чека (или нажата кнопка
+        // «Мини-чек»), возвращаем живой мини-чек после закрытия листа.
+        if (miniReceiptReturnAfterCart && cart.length > 0) {
+            miniReceiptReturnAfterCart = false;
+            requestAnimationFrame(() => setMiniReceiptOpen(true));
+        }
 
         // Крестик корзины — локальное закрытие, без browser Back.
         if (!fromHistory && window.history.state && window.history.state.rxdeModal === 'cart') {
@@ -6095,6 +6105,8 @@ function handleOrderCopyAndOpen(btnElement) {
         window.addEventListener('resize', syncQuickNavKeyboardOffset, { passive: true });
     }
 
+    let miniReceiptReturnAfterCart = false;
+
     function formatReceiptEuro(value) {
         const n = Number(value || 0);
         return n.toLocaleString('ru-RU', {
@@ -6151,13 +6163,12 @@ function handleOrderCopyAndOpen(btnElement) {
                 <span class="rxde-mini-date" aria-label="${now.toLocaleDateString('ru-RU')}">
                     <i>${month}</i><b>${day}</b>
                 </span>
-                <span class="rxde-mini-rate">€/₽ <b>${Number(rateCalc || 0).toLocaleString('ru-RU')}</b></span>
             </div>
 
             <div class="rxde-mini-receipt-items">${rows}${shippingRow}</div>
 
             <div class="rxde-mini-receipt-total">
-                <span>${activeItems.length} поз. · ${totalPacks} уп.</span>
+                <span>${activeItems.length} поз. · ${totalPacks} уп. · €/₽ ${Number(rateCalc || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 <strong>${grandTotalRub.toLocaleString('ru-RU')} ₽</strong>
             </div>
 
@@ -6192,10 +6203,25 @@ function handleOrderCopyAndOpen(btnElement) {
     }
 
     function openFullCartFromMiniReceipt() {
+        // Запоминаем маршрут: подробный лист открыт именно из мини-чека.
+        // Крестик полного листа тогда вернёт пользователя к мини-чеку.
+        miniReceiptReturnAfterCart = true;
         closeMiniReceipt();
         rxdeQuickTapFeedback(document.getElementById('quickCartButton'), 8);
         openOrTopCart();
         requestAnimationFrame(syncQuickNavState);
+    }
+
+    function returnToMiniReceiptFromCart(event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        if (!cart.length) return;
+
+        miniReceiptReturnAfterCart = true;
+        rxdeQuickTapFeedback(event?.currentTarget || document.getElementById('quickOrderTotal'), 8);
+        closeModal(false);
     }
 
     function rxdeQuickTapFeedback(button, vibration = 8) {
@@ -6275,7 +6301,6 @@ function handleOrderCopyAndOpen(btnElement) {
         rxdeQuickTapFeedback(action, 8);
 
         if (action.id === 'quickHomeButton') {
-            closeMiniReceipt();
             rxdeDismissKeyboardNow();
             goHomeFromAnyLogo(event);
             requestAnimationFrame(syncQuickNavState);
@@ -6283,7 +6308,6 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         if (action.matches('.header-search-btn') || action.id === 'quickSearchButton') {
-            closeMiniReceipt();
             const cartModal = document.getElementById('modal');
 
             // Повторное нажатие по уже активному Поиску:
@@ -6319,7 +6343,6 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         if (action.id === 'quickContactButton') {
-            closeMiniReceipt();
             rxdeDismissKeyboardNow();
             openSmartContact();
             requestAnimationFrame(syncQuickNavState);
@@ -6332,6 +6355,7 @@ function handleOrderCopyAndOpen(btnElement) {
         }
 
         if (action.id === 'quickCartButton') {
+            miniReceiptReturnAfterCart = false;
             closeMiniReceipt();
             openOrTopCart();
             requestAnimationFrame(syncQuickNavState);
@@ -6372,6 +6396,8 @@ function handleOrderCopyAndOpen(btnElement) {
         event.preventDefault();
         event.stopPropagation();
         rxdeQuickTapFeedback(headerCart, 8);
+        miniReceiptReturnAfterCart = false;
+        closeMiniReceipt();
         openOrTopCart();
     }, true);
 
@@ -6402,7 +6428,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v97 · style v97 · база 08-21 15:55
+                index v99 · style v99 · база 08-21 15:55
             </div>
         </div>
     </footer>
