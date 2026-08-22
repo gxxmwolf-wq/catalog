@@ -12631,3 +12631,1263 @@ body.rxde-mode-search #mobileSearchInput:not(:focus) {
         min-width: 82px !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V100 — MOBILE MINI RECEIPT: REALLY MINI
+   Desktop remains as in v99. Mobile is intentionally much smaller.
+   ========================================================== */
+
+@media (max-width: 720px) {
+    .rxde-mini-receipt {
+        /* Не "пол-экрана": компактная плавающая квитанция рядом с навигацией. */
+        right: calc(100% + 5px) !important;
+        bottom: 44px !important;
+        width: min(286px, calc(100vw - 118px)) !important;
+        max-width: 286px !important;
+        max-height: min(42dvh, 340px) !important;
+
+        border-radius: 12px !important;
+        background: rgba(255,255,255,.90) !important;
+        border-color: rgba(29,49,61,.11) !important;
+        box-shadow: 0 10px 28px rgba(14,31,41,.13) !important;
+        backdrop-filter: blur(9px) !important;
+        -webkit-backdrop-filter: blur(9px) !important;
+    }
+
+    .rxde-mini-receipt-content {
+        grid-template-rows: auto minmax(0, 1fr) auto auto !important;
+    }
+
+    /* Служебная строка — всё в одну линию: RXDE · дата · курс. */
+    .rxde-mini-receipt-head {
+        min-height: 25px !important;
+        padding: 3px 6px !important;
+        gap: 5px !important;
+        background: rgba(250,252,252,.67) !important;
+    }
+
+    .rxde-mini-receipt-brand {
+        font-size: 9.5px !important;
+    }
+
+    .rxde-mini-date {
+        width: 23px !important;
+        height: 20px !important;
+        flex-basis: 23px !important;
+        border-radius: 5px !important;
+    }
+
+    .rxde-mini-date i {
+        height: 7px !important;
+        font-size: 4.5px !important;
+        line-height: 7px !important;
+    }
+
+    .rxde-mini-date b {
+        font-size: 8.5px !important;
+        line-height: 13px !important;
+    }
+
+    .rxde-mini-rate {
+        display: inline-flex !important;
+        align-items: baseline !important;
+        gap: 3px !important;
+        margin-left: auto !important;
+        color: #7a858b !important;
+        font-size: 8px !important;
+        white-space: nowrap !important;
+    }
+
+    .rxde-mini-rate b {
+        color: #27343b !important;
+        font-size: 8.8px !important;
+        font-variant-numeric: tabular-nums !important;
+    }
+
+    .rxde-mini-receipt-items {
+        padding: 3px 6px !important;
+        background: rgba(255,255,255,.48) !important;
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(71,91,102,.26) transparent !important;
+    }
+
+    .rxde-mini-receipt-items::-webkit-scrollbar {
+        width: 2px !important;
+    }
+
+    .rxde-mini-receipt-items::-webkit-scrollbar-thumb {
+        background: rgba(71,91,102,.26) !important;
+        border-radius: 999px !important;
+    }
+
+    /* Одна позиция = одна очень компактная строка. */
+    .rxde-mini-receipt-row {
+        grid-template-columns: 13px minmax(0,1fr) auto !important;
+        gap: 2px !important;
+        min-height: 18px !important;
+        padding: 1px 0 !important;
+        font-size: 8.3px !important;
+        line-height: 1.08 !important;
+    }
+
+    .rxde-mini-receipt-num {
+        font-size: 7.4px !important;
+    }
+
+    .rxde-mini-receipt-name {
+        font-size: 8.3px !important;
+    }
+
+    .rxde-mini-receipt-calc {
+        font-size: 8.1px !important;
+        font-weight: 680 !important;
+    }
+
+    .rxde-mini-receipt-shipping {
+        margin-top: 1px !important;
+    }
+
+    .rxde-mini-receipt-total {
+        padding: 5px 6px 4px !important;
+        gap: 6px !important;
+        background: rgba(255,255,255,.73) !important;
+    }
+
+    .rxde-mini-receipt-total span {
+        font-size: 7.8px !important;
+    }
+
+    .rxde-mini-receipt-total strong {
+        font-size: 12px !important;
+    }
+
+    /* Нормальная маленькая кнопка, не огромный "подвал". */
+    .rxde-mini-receipt-more {
+        justify-self: center !important;
+        min-width: 92px !important;
+        min-height: 24px !important;
+        margin: 3px auto 5px !important;
+        padding: 0 10px !important;
+        border-radius: 999px !important;
+        font-size: 8px !important;
+        letter-spacing: .035em !important;
+        background: rgba(248,250,251,.88) !important;
+    }
+
+    .rxde-mini-receipt-more span {
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .rxde-mini-receipt {
+        width: min(274px, calc(100vw - 106px)) !important;
+        max-width: 274px !important;
+        max-height: min(40dvh, 310px) !important;
+        right: calc(100% + 4px) !important;
+    }
+
+    .rxde-mini-receipt-row,
+    .rxde-mini-receipt-name {
+        font-size: 8px !important;
+    }
+
+    .rxde-mini-receipt-calc {
+        font-size: 7.8px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V101 — MINI RECEIPT RATE VISIBLE ON DESKTOP TOO
+   ========================================================== */
+
+/* В v98 курс был глобально скрыт и возвращён только в mobile media-query.
+   Поэтому на ноутбуке в v100 его не было видно. Возвращаем везде. */
+.rxde-mini-receipt .rxde-mini-rate {
+    display: inline-flex !important;
+    align-items: baseline !important;
+    gap: 4px !important;
+    margin-left: auto !important;
+    color: #7a858b !important;
+    font-size: 9px !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mini-receipt .rxde-mini-rate b {
+    color: #27343b !important;
+    font-size: 10px !important;
+    font-weight: 760 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+@media (min-width: 721px) {
+    .rxde-mini-receipt-head {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .rxde-mini-receipt .rxde-mini-rate {
+        font-size: 9.5px !important;
+    }
+
+    .rxde-mini-receipt .rxde-mini-rate b {
+        font-size: 10.5px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V102 — FLOATING ORDER SUMMARY + LIGHTER MINI RECEIPT
+   ========================================================== */
+
+/* Плавающий итог: слева только число упаковок в круге,
+   справа две строки — евро / рубли. */
+.mobile-quick-actions .quick-order-total {
+    display: grid !important;
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    align-items: center !important;
+    column-gap: 7px !important;
+
+    width: 108px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+
+    padding: 4px 7px !important;
+    border-radius: 13px !important;
+}
+
+.quick-order-count-circle {
+    display: grid !important;
+    place-items: center !important;
+    width: 27px !important;
+    height: 27px !important;
+    min-width: 27px !important;
+    border: 1px solid rgba(43,99,132,.28) !important;
+    border-radius: 50% !important;
+    background: rgba(255,255,255,.72) !important;
+    color: #274f67 !important;
+    font-size: 10.5px !important;
+    line-height: 1 !important;
+    font-weight: 820 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+.quick-order-sums {
+    display: flex !important;
+    min-width: 0 !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 3px !important;
+}
+
+.mobile-quick-actions .quick-order-sums > span {
+    margin: 0 !important;
+    color: #4f626d !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+    font-weight: 680 !important;
+    white-space: nowrap !important;
+}
+
+.mobile-quick-actions .quick-order-sums > strong {
+    margin: 0 !important;
+    color: #173646 !important;
+    font-size: 10.8px !important;
+    line-height: 1 !important;
+    font-weight: 850 !important;
+    white-space: nowrap !important;
+}
+
+/* Число упаковок теперь живёт в самом блоке суммы.
+   Красный дубль на синей кнопке листа больше не нужен. */
+#mobileCartCount {
+    display: none !important;
+}
+
+/* Ноутбук: мини-чек должен быть инструментом, а не вторым окном. */
+@media (min-width: 721px) {
+    .rxde-mini-receipt {
+        width: min(350px, calc(100vw - 150px)) !important;
+        max-width: 350px !important;
+        max-height: min(44dvh, 330px) !important;
+        right: calc(100% + 8px) !important;
+        bottom: 46px !important;
+
+        border-radius: 11px !important;
+        background: rgba(255,255,255,.84) !important;
+        border-color: rgba(29,49,61,.10) !important;
+        box-shadow: 0 8px 22px rgba(14,31,41,.10) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+    }
+
+    .rxde-mini-receipt-head {
+        min-height: 27px !important;
+        padding: 3px 7px !important;
+        background: rgba(250,252,252,.58) !important;
+    }
+
+    .rxde-mini-receipt-items {
+        padding: 3px 6px !important;
+        background: rgba(255,255,255,.36) !important;
+    }
+
+    .rxde-mini-receipt-row {
+        grid-template-columns: 15px minmax(0,1fr) auto !important;
+        min-height: 19px !important;
+        padding: 1px 0 !important;
+        gap: 2px !important;
+        font-size: 8.8px !important;
+        line-height: 1.08 !important;
+    }
+
+    .rxde-mini-receipt-num {
+        font-size: 7.8px !important;
+    }
+
+    .rxde-mini-receipt-name {
+        font-size: 8.8px !important;
+    }
+
+    .rxde-mini-receipt-calc {
+        font-size: 8.5px !important;
+    }
+
+    .rxde-mini-receipt-total {
+        padding: 5px 7px !important;
+        background: rgba(255,255,255,.62) !important;
+    }
+
+    .rxde-mini-receipt-total span {
+        font-size: 8px !important;
+    }
+
+    .rxde-mini-receipt-total strong {
+        font-size: 12.5px !important;
+    }
+}
+
+/* ПОДРОБНЕЕ: полностью плоская кнопка, без 3D/капсульной тени. */
+.rxde-mini-receipt-more {
+    min-width: 104px !important;
+    min-height: 27px !important;
+    margin: 4px auto 5px !important;
+    padding: 0 10px !important;
+
+    border: 0 !important;
+    border-radius: 7px !important;
+    background: rgba(236,244,248,.72) !important;
+    color: #2b6384 !important;
+    box-shadow: none !important;
+
+    font-size: 8.5px !important;
+    font-weight: 820 !important;
+}
+
+.rxde-mini-receipt-more:active {
+    transform: none !important;
+    background: rgba(224,237,244,.90) !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 720px) {
+    .mobile-quick-actions .quick-order-total {
+        width: 104px !important;
+        min-width: 104px !important;
+        max-width: 104px !important;
+        grid-template-columns: 27px minmax(0, 1fr) !important;
+        column-gap: 6px !important;
+    }
+
+    .quick-order-count-circle {
+        width: 26px !important;
+        height: 26px !important;
+        min-width: 26px !important;
+        font-size: 10px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .mobile-quick-actions .quick-order-total {
+        right: 46px !important;
+        width: 100px !important;
+        min-width: 100px !important;
+        max-width: 100px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V103 — SEMANTIC MINI/FULL VIEW ICONS
+   ========================================================== */
+
+.rxde-view-list-icon {
+    width: 28px !important;
+    height: 20px !important;
+    flex: 0 0 28px !important;
+    overflow: visible !important;
+}
+
+.rxde-view-list-lines circle {
+    fill: currentColor !important;
+    stroke: none !important;
+}
+
+.rxde-view-list-lines path,
+.rxde-view-list-arrow {
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.6 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
+}
+
+/* Мини-чек -> подробный лист */
+.rxde-mini-receipt-more {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    min-width: 132px !important;
+}
+
+.rxde-mini-receipt-more .rxde-view-list-icon {
+    width: 25px !important;
+    height: 18px !important;
+    flex-basis: 25px !important;
+}
+
+.rxde-view-action-label {
+    line-height: 1 !important;
+}
+
+/* Подробный лист -> мини-чек */
+#modal .order-sheet-mini-return {
+    gap: 6px !important;
+}
+
+#modal .order-sheet-mini-return .rxde-view-list-icon {
+    width: 25px !important;
+    height: 18px !important;
+    flex-basis: 25px !important;
+}
+
+@media (max-width: 720px) {
+    .rxde-mini-receipt-more {
+        min-width: 118px !important;
+        gap: 5px !important;
+    }
+
+    .rxde-mini-receipt-more .rxde-view-list-icon,
+    #modal .order-sheet-mini-return .rxde-view-list-icon {
+        width: 22px !important;
+        height: 16px !important;
+        flex-basis: 22px !important;
+    }
+
+    #modal .order-sheet-mini-return {
+        gap: 4px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V104 — STRONG COUNT + CONTACT AT BOTTOM
+   ========================================================== */
+
+/* Количество упаковок — главный быстрый индикатор.
+   Цифра заметнее рублёвой суммы, круг читается как отдельный счётчик. */
+.quick-order-count-circle {
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+    border: 2px solid rgba(43,99,132,.58) !important;
+    background: rgba(255,255,255,.82) !important;
+    color: #173f56 !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+}
+
+.mobile-quick-actions .quick-order-total {
+    width: 114px !important;
+    min-width: 114px !important;
+    max-width: 114px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    grid-template-columns: 31px minmax(0,1fr) !important;
+    column-gap: 8px !important;
+}
+
+/* Рублёвая сумма остаётся сильной, но число упаковок теперь доминирует. */
+.mobile-quick-actions .quick-order-sums > strong {
+    font-size: 11px !important;
+    font-weight: 850 !important;
+}
+
+/* "Написать нам" — в самый низ вертикальной панели.
+   Сводка заказа должна остаться рядом с кнопкой листа, поэтому поднимаем её
+   на один шаг выше нижней кнопки контакта. */
+#quickContactButton {
+    order: 99 !important;
+}
+
+#quickCartButton {
+    order: 98 !important;
+}
+
+#quickOrderTotal {
+    bottom: 50px !important;
+}
+
+.rxde-mini-receipt {
+    bottom: 96px !important;
+}
+
+@media (max-width: 720px) {
+    .quick-order-count-circle {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        font-size: 12.5px !important;
+        border-width: 2px !important;
+    }
+
+    .mobile-quick-actions .quick-order-total {
+        width: 110px !important;
+        min-width: 110px !important;
+        max-width: 110px !important;
+        grid-template-columns: 30px minmax(0,1fr) !important;
+        column-gap: 7px !important;
+    }
+
+    #quickOrderTotal {
+        bottom: 48px !important;
+    }
+
+    .rxde-mini-receipt {
+        bottom: 92px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .mobile-quick-actions .quick-order-total {
+        width: 106px !important;
+        min-width: 106px !important;
+        max-width: 106px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V105 — MINI RECEIPT BUTTON FLAT / INTEGRATED
+   ========================================================== */
+.rxde-mini-receipt-more {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    min-width: 116px !important;
+    min-height: 28px !important;
+    margin: 4px auto 6px !important;
+    padding: 0 12px !important;
+    border: 1px solid rgba(43,99,132,.14) !important;
+    border-radius: 10px !important;
+    background: rgba(255,255,255,.35) !important;
+    box-shadow: none !important;
+    color: #2b6384 !important;
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    letter-spacing: .01em !important;
+    text-transform: none !important;
+}
+
+.rxde-mini-receipt-more .rxde-view-list-icon {
+    width: 21px !important;
+    height: 15px !important;
+    flex: 0 0 21px !important;
+    opacity: .9 !important;
+}
+
+.rxde-view-action-label {
+    font-weight: 600 !important;
+    letter-spacing: .01em !important;
+}
+
+.rxde-mini-receipt-more:hover {
+    background: rgba(255,255,255,.46) !important;
+    box-shadow: none !important;
+}
+
+.rxde-mini-receipt-more:active {
+    transform: none !important;
+    background: rgba(247,250,251,.62) !important;
+    box-shadow: none !important;
+}
+
+@media (max-width: 720px) {
+    .rxde-mini-receipt-more {
+        min-width: 104px !important;
+        min-height: 26px !important;
+        margin: 3px auto 5px !important;
+        padding: 0 10px !important;
+        border-radius: 9px !important;
+        font-size: 8.5px !important;
+    }
+
+    .rxde-mini-receipt-more .rxde-view-list-icon {
+        width: 18px !important;
+        height: 13px !important;
+        flex-basis: 18px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V106 — MINI RECEIPT MORE BUTTON FLAT STYLE
+   ========================================================== */
+.rxde-mini-receipt-more {
+    min-width: 118px !important;
+    min-height: 24px !important;
+    margin: 2px auto 4px !important;
+    padding: 0 10px !important;
+    border: 1px solid rgba(43,99,132,.10) !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+    color: #2b6384 !important;
+    font-size: 8.8px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+}
+
+.rxde-view-action-label {
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+}
+
+.rxde-mini-receipt-more:hover,
+.rxde-mini-receipt-more:focus,
+.rxde-mini-receipt-more:active {
+    background: rgba(43,99,132,.04) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    filter: none !important;
+}
+
+@media (max-width: 720px) {
+    .rxde-mini-receipt-more {
+        min-width: 108px !important;
+        min-height: 23px !important;
+        margin: 2px auto 4px !important;
+        padding: 0 9px !important;
+        border-radius: 8px !important;
+        font-size: 8.2px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V107 — MINI RECEIPT TITLE + ACTION COPY
+   ========================================================== */
+.rxde-mini-receipt-title {
+    color: #24343e !important;
+    font-size: 9px !important;
+    font-weight: 650 !important;
+    white-space: nowrap !important;
+}
+
+.rxde-mini-receipt-head {
+    gap: 6px !important;
+}
+
+.rxde-mini-receipt-more {
+    min-width: 154px !important;
+    padding-inline: 12px !important;
+}
+
+@media (max-width: 720px) {
+    .rxde-mini-receipt-title {
+        font-size: 8.2px !important;
+    }
+
+    .rxde-mini-receipt-more {
+        min-width: 142px !important;
+        padding-inline: 10px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V108 — RIGHT DOCK / ORDER ROW / MINI RECEIPT
+   ========================================================== */
+
+/* Действия прижаты к правому краю, порядок фиксирован. */
+.mobile-quick-actions {
+    right: max(6px, env(safe-area-inset-right)) !important;
+    bottom: calc(12px + env(safe-area-inset-bottom) + var(--rxde-nav-keyboard-lift, 0px)) !important;
+    align-items: flex-end !important;
+    gap: 7px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+}
+#quickHomeButton { order: 1 !important; }
+#quickSearchButton { order: 2 !important; display: grid !important; visibility: visible !important; opacity: 1 !important; }
+.quick-order-row { order: 3 !important; }
+#quickContactButton { order: 4 !important; }
+
+/* Сводка + лист заказа теперь одна строка: ничего не перекрывает Поиск. */
+.quick-order-row {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    width: auto !important;
+    pointer-events: none !important;
+}
+.quick-order-row > button { pointer-events: auto !important; }
+#quickOrderTotal,
+#quickCartButton {
+    position: relative !important;
+    right: auto !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+}
+#quickOrderTotal { order: 1 !important; }
+#quickCartButton { order: 2 !important; }
+
+/* Количество упаковок в круге — главный быстрый показатель. */
+.mobile-quick-actions .quick-order-total {
+    display: grid !important;
+    grid-template-columns: 34px minmax(0,1fr) !important;
+    align-items: center !important;
+    column-gap: 8px !important;
+    width: 122px !important;
+    min-width: 122px !important;
+    max-width: 122px !important;
+    height: 46px !important;
+    min-height: 46px !important;
+    padding: 4px 8px !important;
+}
+.quick-order-count-circle {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border: 2.5px solid rgba(43,99,132,.68) !important;
+    background: rgba(255,255,255,.88) !important;
+    color: #123f57 !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+}
+.mobile-quick-actions .quick-order-sums > span {
+    font-size: 9.5px !important;
+    font-weight: 760 !important;
+    line-height: 1 !important;
+}
+.mobile-quick-actions .quick-order-sums > strong {
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+}
+
+/* Мини-чек — над всей колонкой, прижат к правому краю. */
+.rxde-mini-receipt {
+    right: 0 !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: calc(100% + 8px) !important;
+    width: min(330px, calc(100vw - 18px)) !important;
+    max-width: 330px !important;
+    max-height: min(42dvh, 320px) !important;
+}
+
+/* В итоговой строке количества по значимости почти как сумма. */
+.rxde-mini-receipt-total {
+    align-items: center !important;
+    gap: 10px !important;
+}
+.rxde-mini-receipt-total span {
+    color: #253b48 !important;
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: nowrap !important;
+}
+.rxde-mini-receipt-total strong {
+    font-size: 13.5px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+}
+
+/* Кнопка — только "Развернуть", плоская часть окна. */
+.rxde-mini-receipt-more {
+    min-width: 102px !important;
+    min-height: 23px !important;
+    margin: 2px auto 4px !important;
+    padding: 0 8px !important;
+    border: 0 !important;
+    border-radius: 5px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+    color: #2b6384 !important;
+    font-size: 9px !important;
+    font-weight: 560 !important;
+    letter-spacing: 0 !important;
+}
+.rxde-view-action-label { font-weight: 560 !important; letter-spacing: 0 !important; }
+.rxde-mini-receipt-more:hover,
+.rxde-mini-receipt-more:focus,
+.rxde-mini-receipt-more:active {
+    background: rgba(43,99,132,.035) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    filter: none !important;
+}
+
+@media (min-width: 721px) {
+    .mobile-quick-actions { right: 8px !important; bottom: 16px !important; }
+}
+
+@media (max-width: 720px) {
+    .mobile-quick-actions {
+        right: max(5px, env(safe-area-inset-right)) !important;
+        bottom: calc(9px + env(safe-area-inset-bottom) + var(--rxde-nav-keyboard-lift, 0px)) !important;
+        gap: 6px !important;
+    }
+    .mobile-quick-actions .quick-order-total {
+        width: 116px !important;
+        min-width: 116px !important;
+        max-width: 116px !important;
+        height: 44px !important;
+        min-height: 44px !important;
+        grid-template-columns: 32px minmax(0,1fr) !important;
+        column-gap: 7px !important;
+    }
+    .quick-order-count-circle {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        font-size: 13.5px !important;
+    }
+    .mobile-quick-actions .quick-order-sums > span { font-size: 9px !important; }
+    .mobile-quick-actions .quick-order-sums > strong { font-size: 12px !important; }
+    .rxde-mini-receipt {
+        right: 0 !important;
+        bottom: calc(100% + 7px) !important;
+        width: min(292px, calc(100vw - 12px)) !important;
+        max-width: 292px !important;
+        max-height: min(40dvh, 300px) !important;
+    }
+    .rxde-mini-receipt-total span,
+    .rxde-mini-receipt-total strong {
+        font-size: 11px !important;
+        font-weight: 900 !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .mobile-quick-actions .quick-order-total {
+        width: 112px !important;
+        min-width: 112px !important;
+        max-width: 112px !important;
+    }
+    .rxde-mini-receipt {
+        width: min(278px, calc(100vw - 10px)) !important;
+        max-width: 278px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V109 — DELETE PROMPT VISIBILITY + ORDER SUMMARY SHAPE
+   ========================================================== */
+
+/* Панель подтверждения удаления должна быть заметной и компактной:
+   вопрос + две кнопки остаются в пределах карточки. */
+#modal #cartItems .card.is-delete-pending .position-delete-bar {
+    position: relative !important;
+    z-index: 12 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    min-height: 42px !important;
+    margin: 10px -2px -2px !important;
+    padding: 6px 8px 6px 10px !important;
+    border: 1px solid #e7c1be !important;
+    border-radius: 10px !important;
+    background: #fff7f6 !important;
+    box-sizing: border-box !important;
+}
+
+#modal #cartItems .card.is-delete-pending .position-delete-bar > span {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    white-space: nowrap !important;
+}
+
+#modal #cartItems .card.is-delete-pending .position-delete-bar > div {
+    display: flex !important;
+    flex: 0 0 auto !important;
+    gap: 6px !important;
+}
+
+#modal #cartItems .card.is-delete-pending .position-delete-bar button {
+    min-width: 48px !important;
+    height: 31px !important;
+    padding: 0 9px !important;
+    border-radius: 8px !important;
+    font-size: 10px !important;
+    font-weight: 850 !important;
+}
+
+/* Возвращаем сводке заказа аккуратную самостоятельную форму:
+   компактная капсула, круг полностью внутри, без ощущения растянутого блока. */
+.mobile-quick-actions .quick-order-total {
+    width: 118px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    padding: 4px 7px !important;
+    grid-template-columns: 32px minmax(0,1fr) !important;
+    column-gap: 7px !important;
+
+    border: 1px solid rgba(43,99,132,.24) !important;
+    border-radius: 16px !important;
+    background: rgba(239,247,251,.91) !important;
+    box-shadow: 0 5px 14px rgba(25,64,87,.08) !important;
+    overflow: hidden !important;
+}
+
+.quick-order-count-circle {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    border: 2px solid rgba(43,99,132,.62) !important;
+    background: rgba(255,255,255,.92) !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+}
+
+.mobile-quick-actions .quick-order-sums > span {
+    font-size: 9px !important;
+    font-weight: 760 !important;
+}
+
+.mobile-quick-actions .quick-order-sums > strong {
+    font-size: 12px !important;
+    font-weight: 900 !important;
+}
+
+/* В корзине не раздуваем эту кнопку другим старым состоянием. */
+body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+    width: 118px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
+    height: 44px !important;
+    border-radius: 16px !important;
+}
+
+@media (max-width: 720px) {
+    #modal #cartItems .card.is-delete-pending .position-delete-bar {
+        min-height: 40px !important;
+        margin-top: 7px !important;
+        padding: 5px 6px 5px 8px !important;
+        gap: 7px !important;
+    }
+
+    #modal #cartItems .card.is-delete-pending .position-delete-bar > span {
+        font-size: 9.5px !important;
+    }
+
+    #modal #cartItems .card.is-delete-pending .position-delete-bar button {
+        min-width: 44px !important;
+        height: 29px !important;
+        padding-inline: 7px !important;
+        font-size: 9px !important;
+    }
+
+    .mobile-quick-actions .quick-order-total,
+    body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+        width: 114px !important;
+        min-width: 114px !important;
+        max-width: 114px !important;
+        height: 43px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .mobile-quick-actions .quick-order-total,
+    body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+        width: 110px !important;
+        min-width: 110px !important;
+        max-width: 110px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V110 — RESTORE RED CART BADGE + CLEAN TWO-LINE TOTAL
+   ========================================================== */
+
+/* Красный счётчик снова живёт там, куда прилетает товар — на кнопке листа.
+   Это визуально естественнее и не перегружает блок сумм. */
+#mobileCartCount {
+    display: grid !important;
+    place-items: center !important;
+    position: absolute !important;
+    top: -5px !important;
+    right: -5px !important;
+
+    min-width: 19px !important;
+    height: 19px !important;
+    padding: 0 4px !important;
+
+    border: 2px solid #fff !important;
+    border-radius: 999px !important;
+    background: #c9342f !important;
+    color: #fff !important;
+
+    font-size: 9px !important;
+    line-height: 15px !important;
+    font-weight: 900 !important;
+    text-align: center !important;
+    box-sizing: border-box !important;
+    z-index: 12 !important;
+}
+
+/* Блок рядом с листом снова только про деньги: евро + рубли. */
+.mobile-quick-actions .quick-order-total,
+body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 3px !important;
+
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+
+    padding: 5px 9px !important;
+    border: 1px solid rgba(43,99,132,.22) !important;
+    border-radius: 14px !important;
+    background: rgba(239,247,251,.91) !important;
+    box-shadow: 0 5px 14px rgba(25,64,87,.08) !important;
+    overflow: visible !important;
+}
+
+.quick-order-sums {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 3px !important;
+}
+
+.mobile-quick-actions .quick-order-sums > span {
+    margin: 0 !important;
+    color: #4f626d !important;
+    font-size: 9px !important;
+    line-height: 1 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+}
+
+.mobile-quick-actions .quick-order-sums > strong {
+    margin: 0 !important;
+    color: #173646 !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+}
+
+/* Старый круг внутри денежной кнопки окончательно не участвует в раскладке. */
+.quick-order-count-circle {
+    display: none !important;
+}
+
+/* В мини-чеке цифры остаются сильными, а "поз." и "уп." — обычного веса.
+   Для этого используем отдельное оформление через inherited text:
+   вся строка не жирная, а числа выделяются :has/псевдо нельзя надёжно,
+   поэтому уменьшаем общий вес и сохраняем крупный размер. */
+.rxde-mini-receipt-total span {
+    color: #253b48 !important;
+    font-size: 12.5px !important;
+    line-height: 1 !important;
+    font-weight: 520 !important;
+    white-space: nowrap !important;
+}
+
+/* Итоговая сумма остаётся жирной. */
+.rxde-mini-receipt-total strong {
+    font-size: 13.5px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+}
+
+@media (max-width: 720px) {
+    .mobile-quick-actions .quick-order-total,
+    body.rxde-mode-cart .mobile-quick-actions .quick-order-total {
+        width: 92px !important;
+        min-width: 92px !important;
+        max-width: 92px !important;
+        height: 41px !important;
+        min-height: 41px !important;
+    }
+
+    #mobileCartCount {
+        min-width: 18px !important;
+        height: 18px !important;
+        font-size: 8.5px !important;
+        line-height: 14px !important;
+    }
+
+    .rxde-mini-receipt-total span {
+        font-size: 11px !important;
+        font-weight: 520 !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V111 — RESTORE STABLE MONEY PILL
+   ========================================================== */
+
+/* Денежная кнопка возвращена к удачной компактной форме:
+   две строки, фиксированная геометрия, без сдвигов при открытии мини-чека. */
+.mobile-quick-actions .quick-order-total,
+body.rxde-mode-cart .mobile-quick-actions .quick-order-total,
+#quickOrderTotal.mini-receipt-open {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
+    gap: 2px !important;
+
+    width: 98px !important;
+    min-width: 98px !important;
+    max-width: 98px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    max-height: 40px !important;
+
+    padding: 5px 9px !important;
+    margin: 0 !important;
+
+    border: 1px solid rgba(43,99,132,.20) !important;
+    border-radius: 13px !important;
+    background: rgba(239,247,251,.92) !important;
+    box-shadow: 0 5px 14px rgba(25,64,87,.08) !important;
+
+    transform: none !important;
+    filter: none !important;
+    overflow: visible !important;
+}
+
+/* При открытом мини-чеке денежная кнопка не меняет размер/рамку/тень. */
+#quickOrderTotal.mini-receipt-open {
+    border-color: rgba(43,99,132,.20) !important;
+    box-shadow: 0 5px 14px rgba(25,64,87,.08) !important;
+}
+
+/* Убираем tap-анимацию именно с денежной кнопки — она индикатор/переключатель,
+   а не "прыгающая" навигационная иконка. */
+#quickOrderTotal.rxde-nav-tap {
+    animation: none !important;
+    transform: none !important;
+}
+
+#quickOrderTotal .quick-order-sums {
+    display: contents !important;
+}
+
+#quickOrderEur {
+    margin: 0 !important;
+    color: #52636c !important;
+    font-size: 8.5px !important;
+    line-height: 1 !important;
+    font-weight: 680 !important;
+    white-space: nowrap !important;
+}
+
+#quickOrderRub {
+    margin: 2px 0 0 !important;
+    color: #173646 !important;
+    font-size: 11.5px !important;
+    line-height: 1 !important;
+    font-weight: 850 !important;
+    white-space: nowrap !important;
+}
+
+/* Красный счётчик остаётся только на синей кнопке листа. */
+#mobileCartCount {
+    display: grid !important;
+    place-items: center !important;
+    top: -5px !important;
+    right: -5px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    padding: 0 4px !important;
+    border: 2px solid #fff !important;
+    border-radius: 999px !important;
+    background: #c9342f !important;
+    color: #fff !important;
+    font-size: 9px !important;
+    line-height: 14px !important;
+    font-weight: 900 !important;
+}
+
+/* Держим денежную кнопку слева от синей кнопки без растяжения. */
+.quick-order-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 6px !important;
+    width: auto !important;
+}
+
+/* На телефоне сохраняем тот же визуальный размер, только чуть компактнее по ширине. */
+@media (max-width: 720px) {
+    .mobile-quick-actions .quick-order-total,
+    body.rxde-mode-cart .mobile-quick-actions .quick-order-total,
+    #quickOrderTotal.mini-receipt-open {
+        width: 94px !important;
+        min-width: 94px !important;
+        max-width: 94px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+    }
+}
+
+@media (max-width: 390px) {
+    .mobile-quick-actions .quick-order-total,
+    body.rxde-mode-cart .mobile-quick-actions .quick-order-total,
+    #quickOrderTotal.mini-receipt-open {
+        width: 92px !important;
+        min-width: 92px !important;
+        max-width: 92px !important;
+    }
+}

@@ -11,7 +11,7 @@
     window.RXDE_FILE_MODE = location.protocol === 'file:';
     document.write(
         '<link rel="stylesheet" href="' +
-        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v99') +
+        (window.RXDE_FILE_MODE ? 'style.css' : 'style.css?build=v111') +
         '">'
     );
     if (window.RXDE_FILE_MODE) {
@@ -222,19 +222,23 @@
         <button id="quickSearchButton" type="button" aria-label="Поиск" title="Поиск" class="mobile-quick-search">
             <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="5.8"/><path d="m15 15 4.6 4.6"/></svg>
         </button>
-        <button id="quickContactButton" type="button" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
-            <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
-        </button>
         <section id="miniReceiptPanel" class="rxde-mini-receipt" hidden aria-label="Мини-чек заказа">
             <div id="miniReceiptContent" class="rxde-mini-receipt-content"></div>
         </section>
-        <button id="quickOrderTotal" class="quick-order-total" type="button" hidden aria-label="Открыть лист заказа">
-            <span id="quickOrderEur">0 €</span>
-            <strong id="quickOrderRub">0 ₽</strong>
-        </button>
-        <button id="quickCartButton" type="button" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
-            <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
-            <span id="mobileCartCount" class="mobile-cart-count">0</span>
+        <div class="quick-order-row" aria-label="Текущий заказ">
+            <button id="quickOrderTotal" class="quick-order-total" type="button" hidden aria-label="Открыть мини-чек заказа">
+                <span class="quick-order-sums">
+                    <span id="quickOrderEur">0 €</span>
+                    <strong id="quickOrderRub">0 ₽</strong>
+                </span>
+            </button>
+            <button id="quickCartButton" type="button" aria-label="Лист заказа" title="Лист заказа" class="mobile-cart-action mobile-quick-cart">
+                <svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-7-3-7 3V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h6"/></svg>
+                <span id="mobileCartCount" class="mobile-cart-count">0</span>
+            </button>
+        </div>
+        <button id="quickContactButton" type="button" aria-label="Написать нам" title="Написать нам" class="mobile-quick-chat">
+            <svg viewBox="0 0 24 24"><path d="M5 5h14v10H9l-4 4V5Z"/><path d="M8 9h8M8 12h5"/></svg>
         </button>
     </nav>
 
@@ -433,7 +437,7 @@
         /* =========================================
     BLOCK 1: ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
     ========================================= */
-    const RXDE_BUILD = 'v99';
+    const RXDE_BUILD = 'v111';
     const RXDE_DB_BUILD = '08-21 15:55';
     console.info('[RXDE build]', RXDE_BUILD);
     document.documentElement.dataset.rxdeBuild = RXDE_BUILD;
@@ -2487,11 +2491,22 @@ function clearAdminPanel() {
     ========================================= */
 
     function cancelPositionDelete() {
+        const pzn = pendingDeletePzn;
         pendingDeletePzn = null;
+
         const pending = document.querySelector('#cartItems .card.is-delete-pending');
         if (!pending) return;
 
         pending.classList.remove('is-delete-pending');
+
+        // Если пользователь ввёл 0 вручную, а потом нажал «Нет»,
+        // возвращаем в поле фактическое количество из корзины.
+        if (pzn) {
+            const item = cart.find(item => item.pzn === pzn);
+            const qtyInput = pending.querySelector('.qty-input');
+            if (item && qtyInput) qtyInput.value = item.qty;
+        }
+
         const bar = pending.querySelector('.position-delete-bar');
         if (bar) bar.remove();
     }
@@ -2523,6 +2538,33 @@ function clearAdminPanel() {
                 <button type="button" class="position-delete-confirm-yes" onclick="confirmPositionDelete(event)">Да</button>
             </div>`;
         card.appendChild(bar);
+
+        // Вопрос «Удалить позицию?» должен сразу оказаться на экране,
+        // даже если строка находится у нижней границы списка.
+        requestAnimationFrame(() => {
+            const scrollArea = card.closest('.m-scroll-area');
+            if (!scrollArea || !bar.isConnected) return;
+
+            const areaRect = scrollArea.getBoundingClientRect();
+            const barRect = bar.getBoundingClientRect();
+            const safeTop = areaRect.top + 12;
+            const safeBottom = areaRect.bottom - 12;
+
+            if (barRect.top < safeTop || barRect.bottom > safeBottom) {
+                const currentTop = scrollArea.scrollTop;
+                const relativeTop = barRect.top - areaRect.top;
+                const desiredTop = Math.max(
+                    0,
+                    currentTop + relativeTop - Math.max(14, (areaRect.height - barRect.height) / 2)
+                );
+
+                try {
+                    scrollArea.scrollTo({ top: desiredTop, behavior: 'smooth' });
+                } catch (_) {
+                    scrollArea.scrollTop = desiredTop;
+                }
+            }
+        });
     }
 
     function confirmPositionDelete(event) {
@@ -3710,8 +3752,19 @@ function handleOrderCopyAndOpen(btnElement) {
         headerLinks.style.width = 'auto';
 
         headerLinks.innerHTML = `
-            <button class="order-sheet-mini-return" type="button" onclick="returnToMiniReceiptFromCart(event)" aria-label="Перейти к мини-чеку">
-                <span aria-hidden="true">‹</span> Мини-чек
+            <button class="order-sheet-mini-return" type="button" onclick="returnToMiniReceiptFromCart(event)" aria-label="Вернуться к мини-чеку">
+                <svg class="rxde-view-list-icon rxde-view-list-icon-back" viewBox="0 0 28 20" aria-hidden="true">
+                    <path class="rxde-view-list-arrow" d="M6 7l-4 3 4 3"></path>
+                    <g class="rxde-view-list-lines">
+                        <circle cx="11" cy="4" r="1.2"></circle>
+                        <path d="M15 4h11"></path>
+                        <circle cx="11" cy="10" r="1.2"></circle>
+                        <path d="M15 10h11"></path>
+                        <circle cx="11" cy="16" r="1.2"></circle>
+                        <path d="M15 16h11"></path>
+                    </g>
+                </svg>
+                <span>Мини-чек</span>
             </button>
             <button class="order-sheet-add" type="button" onclick="addMoreItems()"><span>+</span> Добавить товар</button>
             <button class="order-sheet-clear" type="button" onclick="requestClearOrder(event)" aria-label="Очистить весь заказ">
@@ -6159,21 +6212,34 @@ function handleOrderCopyAndOpen(btnElement) {
 
         content.innerHTML = `
             <div class="rxde-mini-receipt-head">
+                <span class="rxde-mini-receipt-title">Мини-чек</span>
                 <span class="rxde-mini-receipt-brand"><b>RX</b>DE</span>
                 <span class="rxde-mini-date" aria-label="${now.toLocaleDateString('ru-RU')}">
                     <i>${month}</i><b>${day}</b>
                 </span>
+                <span class="rxde-mini-rate">€/₽ <b>${Number(rateCalc || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></span>
             </div>
 
             <div class="rxde-mini-receipt-items">${rows}${shippingRow}</div>
 
             <div class="rxde-mini-receipt-total">
-                <span>${activeItems.length} поз. · ${totalPacks} уп. · €/₽ ${Number(rateCalc || 0).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>${activeItems.length} поз. · ${totalPacks} уп.</span>
                 <strong>${grandTotalRub.toLocaleString('ru-RU')} ₽</strong>
             </div>
 
-            <button type="button" class="rxde-mini-receipt-more" onclick="event.stopPropagation(); openFullCartFromMiniReceipt();">
-                ПОДРОБНЕЕ <span aria-hidden="true">›</span>
+            <button type="button" class="rxde-mini-receipt-more" onclick="event.stopPropagation(); openFullCartFromMiniReceipt();" aria-label="Открыть подробный лист заказа">
+                <svg class="rxde-view-list-icon" viewBox="0 0 28 20" aria-hidden="true">
+                    <g class="rxde-view-list-lines">
+                        <circle cx="3" cy="4" r="1.2"></circle>
+                        <path d="M7 4h13"></path>
+                        <circle cx="3" cy="10" r="1.2"></circle>
+                        <path d="M7 10h13"></path>
+                        <circle cx="3" cy="16" r="1.2"></circle>
+                        <path d="M7 16h13"></path>
+                    </g>
+                    <path class="rxde-view-list-arrow" d="M22 7l4 3-4 3"></path>
+                </svg>
+                <span class="rxde-view-action-label">Развернуть</span>
             </button>
         `;
     }
@@ -6428,7 +6494,7 @@ function handleOrderCopyAndOpen(btnElement) {
             <div class="footer-copy">© 2026 RXDE.online</div>
 
             <div class="build-version-stamp" aria-label="Версия сборки">
-                index v99 · style v99 · база 08-21 15:55
+                index v111 · style v111 · база 08-21 15:55
             </div>
         </div>
     </footer>
