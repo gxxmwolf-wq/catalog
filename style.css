@@ -13891,3 +13891,545 @@ body.rxde-mode-cart .mobile-quick-actions .quick-order-total,
         max-width: 92px !important;
     }
 }
+
+
+/* ==========================================================
+   RXDE V112 — LIGHTER MINI RECEIPT OVER CATALOG / SEARCH
+   ========================================================== */
+
+/* Идея: мини-чек менее тяжёлый в обычном состоянии,
+   но при наведении/фокусе становится почти непрозрачным. */
+.rxde-mini-receipt {
+    transition:
+        background-color .18s ease,
+        border-color .18s ease,
+        box-shadow .18s ease,
+        backdrop-filter .18s ease,
+        -webkit-backdrop-filter .18s ease !important;
+}
+
+@media (min-width: 721px) {
+    .rxde-mini-receipt {
+        background: rgba(255,255,255,.79) !important;
+        border-color: rgba(29,49,61,.09) !important;
+        box-shadow: 0 8px 22px rgba(14,31,41,.09) !important;
+        backdrop-filter: blur(7px) !important;
+        -webkit-backdrop-filter: blur(7px) !important;
+    }
+
+    .rxde-mini-receipt-head {
+        background: rgba(250,252,252,.54) !important;
+    }
+
+    .rxde-mini-receipt-items {
+        background: rgba(255,255,255,.20) !important;
+    }
+
+    .rxde-mini-receipt-total {
+        background: rgba(255,255,255,.72) !important;
+    }
+
+    .rxde-mini-receipt-more {
+        background: rgba(255,255,255,.20) !important;
+    }
+
+    .rxde-mini-receipt:hover,
+    .rxde-mini-receipt:focus-within {
+        background: rgba(255,255,255,.95) !important;
+        border-color: rgba(29,49,61,.13) !important;
+        box-shadow: 0 12px 28px rgba(14,31,41,.12) !important;
+        backdrop-filter: blur(9px) !important;
+        -webkit-backdrop-filter: blur(9px) !important;
+    }
+
+    .rxde-mini-receipt:hover .rxde-mini-receipt-head,
+    .rxde-mini-receipt:focus-within .rxde-mini-receipt-head {
+        background: rgba(250,252,252,.80) !important;
+    }
+
+    .rxde-mini-receipt:hover .rxde-mini-receipt-items,
+    .rxde-mini-receipt:focus-within .rxde-mini-receipt-items {
+        background: rgba(255,255,255,.46) !important;
+    }
+
+    .rxde-mini-receipt:hover .rxde-mini-receipt-total,
+    .rxde-mini-receipt:focus-within .rxde-mini-receipt-total,
+    .rxde-mini-receipt:hover .rxde-mini-receipt-more,
+    .rxde-mini-receipt:focus-within .rxde-mini-receipt-more {
+        background: rgba(255,255,255,.88) !important;
+    }
+}
+
+@media (max-width: 720px) {
+    .rxde-mini-receipt {
+        background: rgba(255,255,255,.92) !important;
+        border-color: rgba(29,49,61,.11) !important;
+        box-shadow: 0 9px 24px rgba(14,31,41,.11) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+    }
+
+    .rxde-mini-receipt-head {
+        background: rgba(250,252,252,.68) !important;
+    }
+
+    .rxde-mini-receipt-items {
+        background: rgba(255,255,255,.34) !important;
+    }
+
+    .rxde-mini-receipt-total,
+    .rxde-mini-receipt-more {
+        background: rgba(255,255,255,.80) !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V113 — CONTACT BUTTON = OPEN / CLOSE TOGGLE
+   ========================================================== */
+
+/* Повторное нажатие по активной кнопке связи закрывает верхний слой.
+   Геометрию кнопки не меняем — только состояние. */
+body.rxde-contact-front #quickContactButton {
+    cursor: pointer !important;
+}
+
+
+/* ==========================================================
+   RXDE V114 — MINI-CHECK MOVED INSIDE ORDER SHEET
+   ========================================================== */
+
+/* Нависающего мини-чека больше нет. */
+#miniReceiptPanel,
+.rxde-mini-receipt {
+    display: none !important;
+}
+
+/* Плавающая сумма остаётся только индикатором/кнопкой входа в общий лист. */
+#quickOrderTotal.mini-receipt-open {
+    border-color: rgba(43,99,132,.20) !important;
+    box-shadow: 0 5px 14px rgba(25,64,87,.08) !important;
+}
+
+/* Внутренний компактный режим общего листа заказа. */
+.order-sheet-compact {
+    width: min(100%, 820px);
+    margin: 4px auto 14px;
+    border: 1px solid rgba(32,55,68,.10);
+    border-radius: 14px;
+    overflow: hidden;
+    background: rgba(255,255,255,.96);
+    box-shadow: 0 8px 24px rgba(24,48,62,.06);
+}
+
+.order-sheet-compact-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(32,55,68,.08);
+    background: rgba(248,251,252,.95);
+}
+
+.order-sheet-compact-head > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.order-sheet-compact-head strong {
+    font-size: 13px;
+    font-weight: 850;
+    color: #173646;
+}
+
+.order-sheet-compact-head span {
+    font-size: 9px;
+    color: #7a888f;
+}
+
+.order-sheet-compact-rate {
+    white-space: nowrap;
+    font-size: 10px !important;
+    font-weight: 760 !important;
+    color: #445a66 !important;
+}
+
+.order-sheet-compact-list {
+    padding: 5px 10px;
+}
+
+.order-sheet-compact-row {
+    display: grid;
+    grid-template-columns: 24px minmax(0,1fr) auto;
+    align-items: baseline;
+    gap: 5px;
+    min-height: 28px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(32,55,68,.055);
+}
+
+.order-sheet-compact-row:last-child {
+    border-bottom: 0;
+}
+
+.order-sheet-compact-num {
+    color: #9aa5aa;
+    font-size: 10px;
+    text-align: right;
+}
+
+.order-sheet-compact-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #26363f;
+    font-size: 11px;
+    font-weight: 560;
+}
+
+.order-sheet-compact-calc {
+    white-space: nowrap;
+    color: #18282f;
+    font-size: 10.5px;
+    font-weight: 720;
+    font-variant-numeric: tabular-nums;
+}
+
+.order-sheet-compact-shipping .order-sheet-compact-name,
+.order-sheet-compact-shipping .order-sheet-compact-calc {
+    color: #697980;
+    font-weight: 560;
+}
+
+.order-sheet-compact-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border-top: 1px dashed rgba(32,55,68,.18);
+    background: rgba(250,252,252,.96);
+}
+
+.order-sheet-compact-total span {
+    color: #53656f;
+    font-size: 12px;
+    font-weight: 520;
+    white-space: nowrap;
+}
+
+.order-sheet-compact-total span b {
+    color: #233b47;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.order-sheet-compact-total strong {
+    color: #11191d;
+    font-size: 15px;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+#modal .order-sheet-mini-return {
+    min-width: 94px !important;
+}
+
+@media (max-width: 720px) {
+    .order-sheet-compact {
+        margin: 2px 4px 10px;
+        border-radius: 11px;
+        box-shadow: none;
+    }
+
+    .order-sheet-compact-head {
+        padding: 7px 8px;
+    }
+
+    .order-sheet-compact-head strong {
+        font-size: 11px;
+    }
+
+    .order-sheet-compact-head span {
+        font-size: 8px;
+    }
+
+    .order-sheet-compact-rate {
+        font-size: 8.5px !important;
+    }
+
+    .order-sheet-compact-list {
+        padding: 3px 7px;
+    }
+
+    .order-sheet-compact-row {
+        grid-template-columns: 17px minmax(0,1fr) auto;
+        gap: 3px;
+        min-height: 23px;
+        padding: 3px 0;
+    }
+
+    .order-sheet-compact-num {
+        font-size: 8px;
+    }
+
+    .order-sheet-compact-name {
+        font-size: 9px;
+    }
+
+    .order-sheet-compact-calc {
+        font-size: 8.7px;
+    }
+
+    .order-sheet-compact-total {
+        padding: 7px 8px;
+    }
+
+    .order-sheet-compact-total span {
+        font-size: 9.5px;
+    }
+
+    .order-sheet-compact-total span b {
+        font-size: 10.5px;
+    }
+
+    .order-sheet-compact-total strong {
+        font-size: 12.5px;
+    }
+
+    #modal .order-sheet-mini-return {
+        min-width: 82px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V115 — COMPACT MOBILE ORDER TOOLBAR
+   ========================================================== */
+
+.order-add-short {
+    display: none;
+}
+
+/* Desktop untouched. Mobile: one compact service row below document title. */
+@media (max-width: 720px) {
+    #modal .modal-head {
+        display: grid !important;
+        grid-template-columns: minmax(0,1fr) auto 42px !important;
+        align-items: center !important;
+        gap: 6px !important;
+
+        min-height: 46px !important;
+        height: 46px !important;
+        padding: 4px 7px !important;
+        padding-right: 7px !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+
+    #modal #modalHeaderLinks.m-head-add-more {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 5px !important;
+        min-width: 0 !important;
+        width: auto !important;
+        overflow: visible !important;
+    }
+
+    #modal .order-sheet-mini-return,
+    #modal .order-sheet-add,
+    #modal .order-sheet-clear {
+        flex: 0 0 auto !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        margin: 0 !important;
+        border-radius: 9px !important;
+        box-sizing: border-box !important;
+    }
+
+    #modal .order-sheet-mini-return {
+        min-width: 0 !important;
+        padding: 0 7px !important;
+        gap: 3px !important;
+        font-size: 9px !important;
+    }
+
+    #modal .order-sheet-mini-return .rxde-view-list-icon {
+        width: 18px !important;
+        height: 13px !important;
+        flex-basis: 18px !important;
+    }
+
+    #modal .order-sheet-mini-return > span {
+        font-size: 9px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+    }
+
+    #modal .order-sheet-add {
+        padding: 0 8px !important;
+        gap: 3px !important;
+        font-size: 9px !important;
+        white-space: nowrap !important;
+    }
+
+    #modal .order-sheet-add > span:first-child {
+        font-size: 14px !important;
+        line-height: 1 !important;
+    }
+
+    #modal .order-add-long {
+        display: none !important;
+    }
+
+    #modal .order-add-short {
+        display: inline !important;
+        font-size: 9px !important;
+        line-height: 1 !important;
+    }
+
+    #modal .order-sheet-clear {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 3px !important;
+        padding: 0 7px !important;
+        border: 1px solid rgba(125,83,83,.13) !important;
+        background: rgba(255,255,255,.64) !important;
+        color: #8b5d5d !important;
+        font-size: 8.5px !important;
+        white-space: nowrap !important;
+    }
+
+    #modal .order-sheet-clear svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    #modal .order-sheet-clear span {
+        display: none !important;
+    }
+
+    /* Course becomes a tiny one-line service indicator. */
+    #modal .m-head-info {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        width: auto !important;
+        min-width: 64px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    #modal .order-course {
+        display: flex !important;
+        align-items: baseline !important;
+        justify-content: flex-end !important;
+        gap: 2px !important;
+        min-width: 0 !important;
+        white-space: nowrap !important;
+    }
+
+    #modal .order-course > span {
+        display: none !important;
+    }
+
+    #modal .order-course strong {
+        font-size: 11px !important;
+        line-height: 1 !important;
+        font-weight: 850 !important;
+    }
+
+    #modal .order-course small {
+        font-size: 7.5px !important;
+        line-height: 1 !important;
+        color: #7b878e !important;
+    }
+
+    /* Close button is now a normal grid cell, not a floating absolute block. */
+    #modal .close-x {
+        position: relative !important;
+        right: auto !important;
+        top: auto !important;
+        transform: none !important;
+        width: 38px !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        margin: 0 !important;
+        justify-self: end !important;
+        align-self: center !important;
+        border-radius: 10px !important;
+    }
+
+    #modal .close-x:active {
+        transform: scale(.94) !important;
+    }
+
+    /* No extra vertical space created by legacy wrapping rules. */
+    body.rxde-mode-cart #modal .modal-head {
+        min-height: 46px !important;
+        height: 46px !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+    }
+}
+
+/* Very narrow phones: preserve one row by removing text from the mini/full toggle. */
+@media (max-width: 390px) {
+    #modal .modal-head {
+        grid-template-columns: minmax(0,1fr) auto 38px !important;
+        gap: 4px !important;
+        padding-inline: 5px !important;
+    }
+
+    #modal #modalHeaderLinks.m-head-add-more {
+        gap: 4px !important;
+    }
+
+    #modal .order-sheet-mini-return {
+        padding-inline: 6px !important;
+    }
+
+    #modal .order-sheet-mini-return > span {
+        font-size: 8.5px !important;
+    }
+
+    #modal .order-sheet-add {
+        padding-inline: 6px !important;
+    }
+
+    #modal .m-head-info {
+        min-width: 55px !important;
+    }
+
+    #modal .order-course strong {
+        font-size: 10px !important;
+    }
+
+    #modal .close-x {
+        width: 36px !important;
+        min-width: 36px !important;
+        height: 36px !important;
+    }
+}
+
+
+/* ==========================================================
+   RXDE V116 — UNIFIED FLOATING BUTTON TOGGLE
+   Functional change only; floating button geometry is unchanged.
+   ========================================================== */
+
+
+/* ==========================================================
+   RXDE V117 — DETAILED ORDER SHEET IS PRIMARY
+   ========================================================== */
+
+/* Краткий режим теперь вторичный. Основной вход — редактируемый подробный лист.
+   Геометрию плавающих кнопок и мобильной панели не меняем. */
+#modal .order-sheet-mini-return {
+    white-space: nowrap !important;
+}
