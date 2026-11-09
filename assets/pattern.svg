@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="420" height="420" viewBox="0 0 420 420">
+  <rect width="420" height="420" fill="#eaf5fb"/>
+  <g fill="none" stroke="#7ba9bd" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity=".27">
+    <!-- RX mark -->
+    <rect x="28" y="28" width="44" height="44" rx="10"/><path d="M40 52h20M50 42v20"/>
+    <!-- airplane -->
+    <path d="M155 38l34 12-34 12 6-12zM151 50h-24"/>
+    <!-- parcel -->
+    <path d="M300 28h48v38h-48zM300 40h48M324 28v38"/>
+    <!-- checklist -->
+    <path d="M58 156h44v52H58zM68 169l5 5 9-10M87 171h7M68 188l5 5 9-10M87 190h7"/>
+    <!-- flask -->
+    <path d="M171 154v16l-17 29a9 9 0 0 0 8 13h38a9 9 0 0 0 8-13l-17-29v-16M165 154h32M161 194h40"/>
+    <!-- microscope -->
+    <path d="M317 153l15 15-20 20-15-15zM304 185c-8 8-8 20 0 28s20 8 28 0M286 220h67M327 179l15 15"/>
+    <!-- RXDE small -->
+    <rect x="35" y="294" width="50" height="38" rx="9"/><path d="M46 318l10-12 10 12M56 306v19"/><path d="M92 304h28M92 316h22M92 328h28"/>
+    <!-- pill -->
+    <path d="M168 292a14 14 0 0 1 20 0l18 18a14 14 0 0 1-20 20l-18-18a14 14 0 0 1 0-20zM178 302l18 18"/>
+    <!-- parcel + route -->
+    <path d="M296 288h42v34h-42zM296 299h42M317 288v34M282 340c22-11 48-10 70 1"/>
+    <!-- tiny stars/dots -->
+    <circle cx="112" cy="92" r="2"/><circle cx="247" cy="101" r="2"/><circle cx="373" cy="132" r="2"/>
+    <circle cx="132" cy="252" r="2"/><circle cx="263" cy="245" r="2"/><circle cx="372" cy="260" r="2"/>
+    <circle cx="106" cy="371" r="2"/><circle cx="245" cy="378" r="2"/>
+  </g>
+</svg>

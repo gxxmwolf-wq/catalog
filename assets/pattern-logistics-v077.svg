@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="760" viewBox="0 0 760 760">
+  <rect width="760" height="760" fill="#eaf5fb"/>
+  <g fill="none" stroke="#5d96b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".28">
+    <!-- large airplane -->
+    <g transform="translate(108 108) rotate(-18)">
+      <path d="M-68 5 12-30 47-26 18-5 72 7 62 18 8 10-13 48-27 44-15 9-61 22z"/>
+      <path d="M-7-5 13-15M-4 11 18 17"/>
+    </g>
+    <!-- parcel -->
+    <g transform="translate(116 330)">
+      <path d="M-54-38h108v76H-54zM-54-38 0-7l54-31M0-7v45M-27-22l54 31"/>
+      <path d="M-12-31h24v18h-24z"/>
+    </g>
+    <!-- delivery van -->
+    <g transform="translate(115 600)">
+      <path d="M-68-26h76l31 29v34h-112v-52z"/>
+      <path d="M8-26v29h31M-56-14h38v29h-38z"/>
+      <circle cx="-48" cy="38" r="13"/><circle cx="24" cy="38" r="13"/>
+      <path d="M-33 38h44M-2-17h8"/>
+    </g>
+    <!-- clipboard -->
+    <g transform="translate(652 112) rotate(7)">
+      <rect x="-38" y="-50" width="76" height="100" rx="8"/>
+      <path d="M-16-54h32v16h-32zM-22-20l8 8 15-18M8-17h18M-22 7l8 8L1-3M8 10h18M-22 34h48"/>
+    </g>
+    <!-- map pin -->
+    <g transform="translate(651 378)"><path d="M0 46s-34-38-34-65a34 34 0 0 1 68 0C34 8 0 46 0 46z"/><circle cy="-19" r="11"/></g>
+    <!-- stacked parcel -->
+    <g transform="translate(650 600)"><path d="M-54-4h60v52h-60zM6 0h48v48H6zM-24-52h56v48h-56zM-54-4-24 14 6-4M-24 14v34M6 0 30 14 54 0M30 14v34M-24-52 4-36 32-52M4-36v32"/></g>
+    <!-- route lines -->
+    <path d="M38 190c86 24 10 92 79 111s-8 104-77 95M32 468c81-39 122 43 84 88s-41 78-8 124" stroke-dasharray="8 11"/>
+    <path d="M720 210c-83 36-93 95-40 128s55 92-20 122M722 510c-70-27-109 30-77 65s24 73-20 108" stroke-dasharray="8 11"/>
+  </g>
+  <g fill="#5d96b3" opacity=".22" font-family="Arial,sans-serif" font-weight="700">
+    <text x="676" y="465" font-size="32">€</text>
+    <text x="63" y="470" font-size="30">₽</text>
+  </g>
+</svg>
