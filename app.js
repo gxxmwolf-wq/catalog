@@ -156,14 +156,18 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       C.RATE_FETCHED_AT=String(rates.fetchedAt||'');
       C.RATE_STALE=Boolean(rates.stale);
       lastSuccess=Date.now();
+      if(sourceCode==='G'){
+        try{localStorage.setItem('rxde:rate:verified:v1',JSON.stringify({
+          source:'GOOGLE',cbrRate:cbr,effectiveDate:C.RATE_EFFECTIVE_DATE,
+          fetchedAt:C.RATE_FETCHED_AT,savedAt:Date.now()
+        }))}catch(_){}
+      }
       const changedRate=calc!==beforeRate || Math.abs(cbr-beforeCbr)>.00001 || S.get().rateSource!==sourceCode;
       S.set({cbrRate:cbr,rate:calc,rateSource:sourceCode});
       R.UI?.refreshRateDisplay?.(changedRate);
       if(changedRate)calendarPulse();
-      if(calc!==beforeRate){
-        U.sound?.(calc>beforeRate?'add':'down');
-        U.toast(`Курс обновлён: ${beforeRate} → ${calc} ₽/€ · заказ пересчитан`);
-      }else if(opts.reason==='manual') U.toast('Курс проверен — без изменений');
+      // No customer-facing toast or sound on passive rate synchronization.
+      if(opts.reason==='manual') U.toast(calc!==beforeRate?'Курс проверен и актуализирован':'Курс проверен — без изменений');
       return true;
     }catch(err){
       if(notifyError)U.toast('Не удалось обновить курс · используется последнее значение');
@@ -173,7 +177,9 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
 
   function init(){
     clearInterval(timer);
-    refresh({reason:'startup',force:true});
+    const snapshot=window.RXDE_RATES||{};
+    const cachedFresh=snapshot.verifiedCache && Number(snapshot.verifiedCacheAge)<15*60*1000;
+    if(!cachedFresh)refresh({reason:'startup',force:true});
     timer=setInterval(()=>refresh({reason:'timer'}),CHECK_MS);
     document.addEventListener('visibilitychange',()=>{if(!document.hidden && Date.now()-lastAttempt>=STALE_CHECK_MS)refresh({reason:'visible'})});
     window.addEventListener('focus',()=>{if(Date.now()-lastAttempt>=STALE_CHECK_MS)refresh({reason:'focus'})},{passive:true});
@@ -2524,6 +2530,9 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
   function openOrder(pzn,fromDock=false){
     R.RateGuard?.refresh({reason:'order'});
     blurSearch();
+    if(isMobile() && !S.get().orderOpen){
+      try{history.pushState(Object.assign({},history.state||{}, {rxdeCartOverlay:true}),'',location.href)}catch(_){}
+    }
     S.set({orderOpen:true});
     if(isMobile())setMobileMode('order');
     el.orderBackdrop.hidden=false;
@@ -2533,7 +2542,11 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     if(pzn)setTimeout(()=>pulseOrderTarget(pzn),80);
     if(fromDock)setTimeout(pulseManagerSubmit,140);
   }
-  function closeOrder(){
+  function closeOrder(options={}){
+    if(!options.fromPopstate && isMobile() && history.state?.rxdeCartOverlay){
+      // Consume our artificial overlay entry rather than navigating away from RXDE.
+      try{history.back()}catch(_){}
+    }
     S.set({orderOpen:false});
     el.orderBackdrop.hidden=true;
     el.orderSheet?.classList.remove('manager-target-active');
@@ -4032,7 +4045,31 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
         else U.toast('Вопрос не подтверждён сервером. Повторите попытку или отправьте его на email ниже.');
       }
       finally{el.sendQuestion.disabled=false;}
-    };el.closeOrder.onclick=closeOrder;el.orderBackdrop.onclick=e=>{
+    };
+    el.closeOrder.onclick=()=>closeOrder();
+    document.getElementById('rxdeReturnCatalog')?.addEventListener('click',()=>closeOrder());
+    // Android browser/system Back: first close the cart, remain on the catalog.
+    window.addEventListener('popstate',()=>{
+      if(S.get().orderOpen && isMobile() && !history.state?.rxdeCartOverlay){
+        closeOrder({fromPopstate:true});
+      }
+    });
+    // Swipe RIGHT over the cart header, away from interactive buttons.
+    // A wide center gesture prevents collision with Android edge navigation.
+    {
+      const header=el.orderSheet?.querySelector('.sheet-header');
+      let gesture=null;
+      header?.addEventListener('touchstart',e=>{
+        if(!isMobile() || !S.get().orderOpen || e.touches.length!==1 || e.target.closest('button,input,a')){gesture=null;return;}
+        const t=e.touches[0];gesture={x:t.clientX,y:t.clientY};
+      },{passive:true});
+      header?.addEventListener('touchend',e=>{
+        if(!gesture || !S.get().orderOpen || !e.changedTouches.length)return;
+        const t=e.changedTouches[0],dx=t.clientX-gesture.x,dy=t.clientY-gesture.y;gesture=null;
+        if(dx>=85 && Math.abs(dy)<55)closeOrder();
+      },{passive:true});
+    }
+    el.orderBackdrop.onclick=e=>{
       if(e.target!==el.orderBackdrop)return;
       // Soft keyboards may resize the visual viewport and send a stray backdrop tap.
       const recentInput=Number(window.__rxdeContactEditingUntil||0)>Date.now();

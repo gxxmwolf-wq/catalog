@@ -17,7 +17,7 @@ document.documentElement.classList.add("rxde-fast-start");
   }catch(e){}
 })();
 </script>
-<link rel="stylesheet" href="styles.css?v=V3.13.154">
+<link rel="stylesheet" href="styles.css?v=20261109-r1">
   <style>
   /* Fast start: image-heavy decoration waits until the catalog can accept input. */
   html.rxde-fast-start .notebook-index-tab,
@@ -32,8 +32,8 @@ document.documentElement.classList.add("rxde-fast-start");
   <script>
     window.RXDE_PRODUCT_PAGES = window.RXDE_PRODUCT_PAGES || {};
   </script>
-  <script src="config.js?v=V3.13.29"></script>
-  <script src="rates.js?v=V3.13.29"></script>
+  <script src="config.js?v=20261109-r1"></script>
+  <script src="rates.js?v=20261109-r1"></script>
   <!-- Catalog data loads adjacent to app code, after page structure. -->
 </head>
 <body>
@@ -54,7 +54,7 @@ document.documentElement.classList.add("rxde-fast-start");
 <div class="rxde-pencil-planner" aria-label="Дата, время в Москве и курсы евро"><div class="rxde-planner-rings" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="rxde-planner-data"><span class="rxde-planner-cell"><small>Дата</small><b data-rxde-day>—</b></span><span class="rxde-planner-cell"><small>Москва</small><b data-rxde-time>—</b></span><span class="rxde-planner-cell"><small>ЦБ ₽/€</small><b data-rxde-cbr>—</b></span><span class="rxde-planner-cell"><small>Расч. ₽/€</small><b data-rxde-calc>—</b></span></div></div>
         <div class="status-cluster">
           <div class="rate-stack">
-            <div><span>Расчётный курс</span><strong><b id="headerCalcRate">101.00</b> ₽/€</strong></div>
+            <div><span>Расчётный курс</span><strong><b id="headerCalcRate">—</b> ₽/€</strong></div>
             <div><span>EUR/RUB <i id="headerCbrDate"></i> <i class="rate-source-badge source-b" id="rateSourceBadge" title="Источник курса">(B)</i></span><strong><b id="headerCbrRate">—</b> ₽/€</strong></div>
           </div>
           <div class="mobile-rate-summary" id="mobileRateSummary" aria-label="Курсы валют"></div>
@@ -171,17 +171,18 @@ document.documentElement.classList.add("rxde-fast-start");
             <span class="brand-rx">RX</span><span class="brand-de">DE</span>
           </button>
           <div class="sheet-title-block order-title-with-mark">
-            <h2 id="orderTitle">Курс <b id="rxdeOrderRateHeadline">101.00</b> ₽/€</h2>
+            <h2 id="orderTitle">Курс <b id="rxdeOrderRateHeadline">—</b> ₽/€</h2>
             <p id="orderSubtitle" hidden>Составьте заказ и отправьте менеджеру</p>
           </div>
         </div>
         <div class="rxde-header-tools"><button id="addOrderProduct" class="text-button order-add-product" type="button">+ Добавить</button>
           <button id="clearOrder" class="text-button danger-soft" type="button" aria-label="Очистить список позиций" title="Очистить список позиций"><svg viewBox="0 0 24 24" class="rxde-trash-svg" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 10v7m4-7v7"/></svg><span class="rxde-clear-label">Очистить</span></button><button id="restoreOrder" type="button" class="rxde-restore-order" hidden title="Восстановить удалённый заказ">↶ Восстановить заказ</button></div>
-        <span class="rate-note rxde-order-header-rate" hidden aria-hidden="true">Курс <b id="rateValue">101.00</b> ₽/€</span>
+        <span class="rate-note rxde-order-header-rate" hidden aria-hidden="true">Курс <b id="rateValue">—</b> ₽/€</span>
         <div class="order-header-status order-status-standard" id="orderHeaderStatus" hidden aria-hidden="true">
           <span id="orderHeaderMeta">0 поз. · 0 уп.</span><strong id="orderHeaderTotal">0 ₽</strong>
         </div>
         <button id="soundToggle" class="sound-toggle" type="button" aria-pressed="true" hidden tabindex="-1">Звук: вкл</button>
+        <button class="rxde-return-catalog" id="rxdeReturnCatalog" type="button" aria-label="Закрыть корзину и вернуться в каталог">← В каталог</button>
         <button class="sheet-close" id="closeOrder" type="button" aria-label="Закрыть">×</button>
       </header>
       <div class="rxde-order-list-area">
@@ -535,6 +536,13 @@ document.documentElement.classList.add("rxde-fast-start");
   function init(){
     syncClock();
     syncRates();
+    // The main app updates hidden rate fields asynchronously after db.csv loads.
+    // Mirror every change instantly into the visible notebook; never wait for the minute timer.
+    var rateObserver=new MutationObserver(function(){ syncRates(); });
+    ['headerCbrRate','headerCalcRate'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el) rateObserver.observe(el,{subtree:true,childList:true,characterData:true});
+    });
     schedule();
     document.addEventListener('visibilitychange',function(){ if(!document.hidden){ syncClock(); syncRates(); schedule(); } });
     window.addEventListener('pageshow',function(){ syncClock(); syncRates(); schedule(); });
