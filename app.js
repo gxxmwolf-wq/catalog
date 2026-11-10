@@ -156,18 +156,14 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       C.RATE_FETCHED_AT=String(rates.fetchedAt||'');
       C.RATE_STALE=Boolean(rates.stale);
       lastSuccess=Date.now();
-      if(sourceCode==='G'){
-        try{localStorage.setItem('rxde:rate:verified:v1',JSON.stringify({
-          source:'GOOGLE',cbrRate:cbr,effectiveDate:C.RATE_EFFECTIVE_DATE,
-          fetchedAt:C.RATE_FETCHED_AT,savedAt:Date.now()
-        }))}catch(_){}
-      }
       const changedRate=calc!==beforeRate || Math.abs(cbr-beforeCbr)>.00001 || S.get().rateSource!==sourceCode;
       S.set({cbrRate:cbr,rate:calc,rateSource:sourceCode});
       R.UI?.refreshRateDisplay?.(changedRate);
       if(changedRate)calendarPulse();
-      // No customer-facing toast or sound on passive rate synchronization.
-      if(opts.reason==='manual') U.toast(calc!==beforeRate?'Курс проверен и актуализирован':'Курс проверен — без изменений');
+      if(calc!==beforeRate){
+        U.sound?.(calc>beforeRate?'add':'down');
+        U.toast(`Курс обновлён: ${beforeRate} → ${calc} ₽/€ · заказ пересчитан`);
+      }else if(opts.reason==='manual') U.toast('Курс проверен — без изменений');
       return true;
     }catch(err){
       if(notifyError)U.toast('Не удалось обновить курс · используется последнее значение');
@@ -177,9 +173,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
 
   function init(){
     clearInterval(timer);
-    const snapshot=window.RXDE_RATES||{};
-    const cachedFresh=snapshot.verifiedCache && Number(snapshot.verifiedCacheAge)<15*60*1000;
-    if(!cachedFresh)refresh({reason:'startup',force:true});
+    refresh({reason:'startup',force:true});
     timer=setInterval(()=>refresh({reason:'timer'}),CHECK_MS);
     document.addEventListener('visibilitychange',()=>{if(!document.hidden && Date.now()-lastAttempt>=STALE_CHECK_MS)refresh({reason:'visible'})});
     window.addEventListener('focus',()=>{if(Date.now()-lastAttempt>=STALE_CHECK_MS)refresh({reason:'focus'})},{passive:true});
@@ -2530,9 +2524,6 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
   function openOrder(pzn,fromDock=false){
     R.RateGuard?.refresh({reason:'order'});
     blurSearch();
-    if(isMobile() && !S.get().orderOpen){
-      try{history.pushState(Object.assign({},history.state||{}, {rxdeCartOverlay:true}),'',location.href)}catch(_){}
-    }
     S.set({orderOpen:true});
     if(isMobile())setMobileMode('order');
     el.orderBackdrop.hidden=false;
@@ -2542,11 +2533,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     if(pzn)setTimeout(()=>pulseOrderTarget(pzn),80);
     if(fromDock)setTimeout(pulseManagerSubmit,140);
   }
-  function closeOrder(options={}){
-    if(!options.fromPopstate && isMobile() && history.state?.rxdeCartOverlay){
-      // Consume our artificial overlay entry rather than navigating away from RXDE.
-      try{history.back()}catch(_){}
-    }
+  function closeOrder(){
     S.set({orderOpen:false});
     el.orderBackdrop.hidden=true;
     el.orderSheet?.classList.remove('manager-target-active');
@@ -3382,7 +3369,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
   function restoreCurrentViewOnRefresh(){
     try{
       if(sessionStorage.getItem('rxde:navRestore')||sessionStorage.getItem('rxde:returnNow')==='1')return false;
-      const params=new URLSearchParams(location.search);if(params.get('q')||params.get('openOrder')==='1'||params.get('c'))return false;
+      const params=new URLSearchParams(location.search);if(params.get('q')||params.get('category')||params.get('openOrder')==='1'||params.get('c'))return false;
       const raw=sessionStorage.getItem(CURRENT_VIEW_KEY);if(!raw)return false;
       const x=JSON.parse(raw);if(!x?.state)return false;
       S.set({...x.state,expanded:new Set(x.state.expanded||[])});
@@ -3423,6 +3410,21 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     }catch(_){}
   }
 
+  // Public deep links for a search/category, independent of browser's sessionStorage.
+  function syncCatalogShareUrl(view){
+    try{
+      const url=new URL(location.href);
+      ['q','category','subcategory','product'].forEach(k=>url.searchParams.delete(k));
+      if(view?.query)url.searchParams.set('q',String(view.query));
+      else{
+        if(view?.category)url.searchParams.set('category',String(view.category));
+        if(view?.subcategory)url.searchParams.set('subcategory',String(view.subcategory));
+      }
+      history.replaceState(history.state,'',url.pathname+url.search+url.hash);
+      window.__rxdeMobileExitLastUrl=location.href;
+    }catch(err){console.warn('RXDE catalog link:',err)}
+  }
+
   function commitSearch(){
     const typed=el.searchInput.value.trim();if(!typed)return;
     if(favoritesOnly){favoritesOnly=false;syncFavoritesUI()}
@@ -3433,6 +3435,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     el.searchInput.value=query;
     const before=S.get();
     S.set({home:false,query,category:'',subcategory:'',mobileSearchScope:'global',searchScrollCategory:0,searchScrollGlobal:0,limit:R.Constants.PAGE_SIZE,categoryLimit:20,globalLimit:R.Constants.PAGE_SIZE,expanded:new Set(exact?[exact.pzn]:[])});
+    syncCatalogShareUrl({query});
     recentRecord(navSnapshot(`Поиск «${query}»`));
     hideSuggestions();
     syncHome();
@@ -3511,6 +3514,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
         categoryLimit:6,
         globalLimit:R.Constants.PAGE_SIZE
       });
+      syncCatalogShareUrl({category:S.get().category,subcategory:S.get().subcategory});
       syncHome();
       renderProducts();
       renderSearchScope();
@@ -3627,8 +3631,8 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     if(el.homeCategories)el.homeCategories.onclick=e=>{clearFormBadgeReturnContext();const b=e.target.closest('[data-home-category]');if(!b)return;if(favoritesOnly){favoritesOnly=false;syncFavoritesUI()}navPush(navSnapshot());S.set({home:false,category:b.dataset.homeCategory,subcategory:'',query:'',limit:R.Constants.PAGE_SIZE,expanded:new Set()});el.searchInput.value='';renderProducts();renderSearchScope();recentRecord(navSnapshot(b.dataset.homeCategory));requestAnimationFrame(scrollResultsTop)};
     if(el.homeOpenCatalog)el.homeOpenCatalog.onclick=()=>{if(favoritesOnly){favoritesOnly=false;syncFavoritesUI()}clearFormBadgeReturnContext();navPush(navSnapshot());S.set({home:false,category:'',subcategory:'',query:'',limit:R.Constants.PAGE_SIZE,expanded:new Set()});renderProducts();renderSearchScope();recentRecord(navSnapshot('Весь каталог'));requestAnimationFrame(scrollResultsTop)};
 
-    el.categoryStrip.onclick=e=>{clearFormBadgeReturnContext();leaveBridgeIfNeeded();const b=e.target.closest('[data-category],[data-category-clear]');if(!b)return;if(favoritesOnly){favoritesOnly=false;syncFavoritesUI()}navPush(navSnapshot());const cat=b.hasAttribute('data-category-clear')?'':b.dataset.category;activeFormFilters.clear();activeFormFilter='';activeFormKey='';formFilterEngaged=false;activeDoseFilter='';activeDoseKey='';closeFormChooser();el.searchInput.value='';hideSuggestions();S.set({home:false,query:'',category:cat,subcategory:'',mobileSearchScope:'category',searchScrollCategory:0,searchScrollGlobal:0,limit:R.Constants.PAGE_SIZE,categoryLimit:20,globalLimit:20,expanded:new Set()});renderProducts();renderSearchScope();renderFlowNav();recentRecord(navSnapshot(cat||'Весь каталог'));scrollCatalogHeroTop()};
-    el.subcategoryStrip.onclick=e=>{clearFormBadgeReturnContext();leaveBridgeIfNeeded();const b=e.target.closest('[data-subcategory],[data-subcategory-clear]');if(!b)return;if(favoritesOnly){favoritesOnly=false;syncFavoritesUI()}const sub=b.hasAttribute('data-subcategory-clear')?'':b.dataset.subcategory;activeFormFilters.clear();activeFormFilter='';activeFormKey='';formFilterEngaged=false;activeDoseFilter='';activeDoseKey='';closeFormChooser();el.searchInput.value='';hideSuggestions();S.set({query:'',subcategory:sub,mobileSearchScope:'category',searchScrollCategory:0,searchScrollGlobal:0,categoryLimit:20,globalLimit:20,limit:R.Constants.PAGE_SIZE,expanded:new Set()});renderProducts();renderFlowNav();recentRecord(navSnapshot(sub||S.get().category||'Весь каталог'));requestAnimationFrame(()=>requestAnimationFrame(scrollResultsTop))};
+    el.categoryStrip.onclick=e=>{clearFormBadgeReturnContext();leaveBridgeIfNeeded();const b=e.target.closest('[data-category],[data-category-clear]');if(!b)return;if(favoritesOnly){favoritesOnly=false;syncFavoritesUI()}navPush(navSnapshot());const cat=b.hasAttribute('data-category-clear')?'':b.dataset.category;activeFormFilters.clear();activeFormFilter='';activeFormKey='';formFilterEngaged=false;activeDoseFilter='';activeDoseKey='';closeFormChooser();el.searchInput.value='';hideSuggestions();S.set({home:false,query:'',category:cat,subcategory:'',mobileSearchScope:'category',searchScrollCategory:0,searchScrollGlobal:0,limit:R.Constants.PAGE_SIZE,categoryLimit:20,globalLimit:20,expanded:new Set()});syncCatalogShareUrl({category:cat});renderProducts();renderSearchScope();renderFlowNav();recentRecord(navSnapshot(cat||'Весь каталог'));scrollCatalogHeroTop()};
+    el.subcategoryStrip.onclick=e=>{clearFormBadgeReturnContext();leaveBridgeIfNeeded();const b=e.target.closest('[data-subcategory],[data-subcategory-clear]');if(!b)return;if(favoritesOnly){favoritesOnly=false;syncFavoritesUI()}const sub=b.hasAttribute('data-subcategory-clear')?'':b.dataset.subcategory;activeFormFilters.clear();activeFormFilter='';activeFormKey='';formFilterEngaged=false;activeDoseFilter='';activeDoseKey='';closeFormChooser();el.searchInput.value='';hideSuggestions();S.set({query:'',subcategory:sub,mobileSearchScope:'category',searchScrollCategory:0,searchScrollGlobal:0,categoryLimit:20,globalLimit:20,limit:R.Constants.PAGE_SIZE,expanded:new Set()});syncCatalogShareUrl({category:S.get().category,subcategory:sub});renderProducts();renderFlowNav();recentRecord(navSnapshot(sub||S.get().category||'Весь каталог'));requestAnimationFrame(()=>requestAnimationFrame(scrollResultsTop))};
     if(el.formFilterStrip)el.formFilterStrip.onclick=e=>{
       const reset=e.target.closest('[data-form-reset-search]');
       if(reset){
@@ -4045,31 +4049,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
         else U.toast('Вопрос не подтверждён сервером. Повторите попытку или отправьте его на email ниже.');
       }
       finally{el.sendQuestion.disabled=false;}
-    };
-    el.closeOrder.onclick=()=>closeOrder();
-    document.getElementById('rxdeReturnCatalog')?.addEventListener('click',()=>closeOrder());
-    // Android browser/system Back: first close the cart, remain on the catalog.
-    window.addEventListener('popstate',()=>{
-      if(S.get().orderOpen && isMobile() && !history.state?.rxdeCartOverlay){
-        closeOrder({fromPopstate:true});
-      }
-    });
-    // Swipe RIGHT over the cart header, away from interactive buttons.
-    // A wide center gesture prevents collision with Android edge navigation.
-    {
-      const header=el.orderSheet?.querySelector('.sheet-header');
-      let gesture=null;
-      header?.addEventListener('touchstart',e=>{
-        if(!isMobile() || !S.get().orderOpen || e.touches.length!==1 || e.target.closest('button,input,a')){gesture=null;return;}
-        const t=e.touches[0];gesture={x:t.clientX,y:t.clientY};
-      },{passive:true});
-      header?.addEventListener('touchend',e=>{
-        if(!gesture || !S.get().orderOpen || !e.changedTouches.length)return;
-        const t=e.changedTouches[0],dx=t.clientX-gesture.x,dy=t.clientY-gesture.y;gesture=null;
-        if(dx>=85 && Math.abs(dy)<55)closeOrder();
-      },{passive:true});
-    }
-    el.orderBackdrop.onclick=e=>{
+    };el.closeOrder.onclick=closeOrder;el.orderBackdrop.onclick=e=>{
       if(e.target!==el.orderBackdrop)return;
       // Soft keyboards may resize the visual viewport and send a stray backdrop tap.
       const recentInput=Number(window.__rxdeContactEditingUntil||0)>Date.now();
@@ -4115,7 +4095,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       openProductLightbox(img);
     },true);
 
-    el.brandHome.onclick=()=>{if(!S.get().home)navPush(navSnapshot());if(S.get().orderOpen)closeOrder();if(el.confirmBackdrop)el.confirmBackdrop.hidden=true;if(el.questionBackdrop)el.questionBackdrop.hidden=true;S.set({home:true,query:'',category:'',subcategory:'',mobileSearchScope:'category',searchScrollCategory:0,searchScrollGlobal:0,limit:R.Constants.PAGE_SIZE,categoryLimit:20,globalLimit:20,expanded:new Set()});el.searchInput.value='';history.replaceState(null,'',location.pathname);scrollTo({top:0,behavior:'smooth'});renderProducts();recentRecord(navSnapshot('Главная'))};
+    el.brandHome.onclick=()=>{if(!S.get().home)navPush(navSnapshot());if(S.get().orderOpen)closeOrder();if(el.confirmBackdrop)el.confirmBackdrop.hidden=true;if(el.questionBackdrop)el.questionBackdrop.hidden=true;S.set({home:true,query:'',category:'',subcategory:'',mobileSearchScope:'category',searchScrollCategory:0,searchScrollGlobal:0,limit:R.Constants.PAGE_SIZE,categoryLimit:20,globalLimit:20,expanded:new Set()});el.searchInput.value='';history.replaceState(history.state||{},'',location.pathname);window.__rxdeMobileExitLastUrl=location.href;scrollTo({top:0,behavior:'smooth'});renderProducts();recentRecord(navSnapshot('Главная'))};
     const brandHomeZone=el.brandHome?.closest('.brand-cluster');
     if(brandHomeZone)brandHomeZone.onclick=e=>{if(e.target.closest('#brandHome'))return;el.brandHome.click()};
     if(el.orderBrandHome)el.orderBrandHome.onclick=()=>el.brandHome.click();
@@ -5020,7 +5000,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     const params=new URLSearchParams(location.search);
     const categoryFromLink=params.get('category');
     if(categoryFromLink && R.Products.all.some(p=>p.category===categoryFromLink)){
-      R.Store.set({home:false,category:categoryFromLink,subcategory:'',query:'',mobileSearchScope:'category',limit:R.Constants.PAGE_SIZE,categoryLimit:20,expanded:new Set()});
+      R.Store.set({home:false,category:categoryFromLink,subcategory:params.get('subcategory')||'',query:'',mobileSearchScope:'category',limit:R.Constants.PAGE_SIZE,categoryLimit:20,expanded:new Set()});
       R.UI.renderAll();
     }
     const query=params.get('q');
@@ -5642,3 +5622,74 @@ document.addEventListener('click',async e=>{
  catch(_){const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();btn.title='Скопировано'}
  clearTimeout(btn._toastTimer);btn._toastTimer=setTimeout(()=>btn.title='Скопировать заказ',1800);
 },true);
+
+
+/* RXDE V2 — mobile browser Back exit confirmation.
+   Uses one same-URL history guard; existing product Quick View entries remain above it.
+   Only the user's explicit 'Выйти' action navigates past the guard. */
+(()=>{
+  'use strict';
+  const KEY='__rxdeMobileExitGuard';
+  const isMobile=()=>{
+    try{return window.matchMedia('(max-width: 720px)').matches &&
+      (window.matchMedia('(pointer: coarse)').matches || document.documentElement.classList.contains('rxde-mobile-ui'));}
+    catch(_){return false;}
+  };
+  let dialog=null;
+  let leaving=false;
+  let ready=false;
+  const hide=()=>{if(!dialog)return;dialog.hidden=true;document.body.classList.remove('rxde-mobile-exit-open')};
+  const show=()=>{
+    if(!dialog){
+      dialog=document.createElement('div');
+      dialog.id='rxdeMobileExitConfirm';
+      dialog.hidden=true;
+      dialog.innerHTML='<section class="rxde-mobile-exit-card" role="alertdialog" aria-modal="true" aria-labelledby="rxdeMobileExitTitle" aria-describedby="rxdeMobileExitDescription"><h2 id="rxdeMobileExitTitle">Покинуть RXDE?</h2><p id="rxdeMobileExitDescription">Корзина останется сохранённой.</p><div class="rxde-mobile-exit-actions"><button type="button" data-rxde-exit-stay>Остаться</button><button type="button" data-rxde-exit-leave>Выйти</button></div></section>';
+      const css=document.createElement('style');
+      css.textContent='#rxdeMobileExitConfirm:not([hidden]){position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;background:rgba(13,33,44,.55);padding:20px}#rxdeMobileExitConfirm .rxde-mobile-exit-card{box-sizing:border-box;width:min(100%,390px);border-radius:18px;background:#fff;color:#203543;padding:23px 20px 18px;box-shadow:0 18px 55px rgba(0,0,0,.24);font:inherit}#rxdeMobileExitConfirm h2{font-size:20px;margin:0 0 9px;font-weight:700}#rxdeMobileExitConfirm p{font-size:14px;line-height:1.5;margin:0 0 22px;color:#52636a}#rxdeMobileExitConfirm .rxde-mobile-exit-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}#rxdeMobileExitConfirm button{min-height:46px;border-radius:11px;border:1px solid #cbd8dd;font:inherit;font-size:15px;font-weight:650;background:#fff;color:#244659}#rxdeMobileExitConfirm [data-rxde-exit-stay]{background:#317da5;color:#fff;border-color:#317da5}';
+      document.head.appendChild(css);
+      document.body.appendChild(dialog);
+      dialog.querySelector('[data-rxde-exit-stay]').addEventListener('click',hide);
+      dialog.querySelector('[data-rxde-exit-leave]').addEventListener('click',()=>{
+        leaving=true;hide();
+        // After re-arming, the guarded entry and original entry are adjacent.
+        // Going back twice reaches the prior browser page, if one exists.
+        history.go(-2);
+      });
+      dialog.addEventListener('click',e=>{if(e.target===dialog)hide()});
+    }
+    dialog.hidden=false;
+    document.body.classList.add('rxde-mobile-exit-open');
+    dialog.querySelector('[data-rxde-exit-stay]')?.focus({preventScroll:true});
+  };
+  function arm(){
+    if(!isMobile()||leaving)return;
+    if(history.state?.[KEY])return;
+    history.pushState({...history.state,[KEY]:true},'',window.__rxdeMobileExitLastUrl||location.href);
+  }
+  function onBack(e){
+    if(!ready||!isMobile()||leaving)return;
+    // Returning from an internal Quick View history entry to our guard
+    // is a normal app navigation, not an attempt to exit the site.
+    if(e.state?.[KEY])return;
+    // Restore the guard before displaying UI or collapsing an overlay.
+    arm();
+    if(dialog && !dialog.hidden){hide();return;}
+    if(!document.getElementById('orderBackdrop')?.hidden){document.getElementById('closeOrder')?.click();return;}
+    if(!document.getElementById('questionBackdrop')?.hidden){document.getElementById('closeQuestion')?.click();return;}
+    if(!document.getElementById('confirmBackdrop')?.hidden){document.getElementById('closeConfirm')?.click();return;}
+    if(!document.getElementById('adminBackdrop')?.hidden){document.getElementById('closeAdmin')?.click();return;}
+    if(!document.getElementById('productQuickBackdrop')?.hidden){document.getElementById('closeProductQuick')?.click();return;}
+    show();
+  }
+  function init(){
+    if(!isMobile())return;
+    ready=true;
+    window.__rxdeMobileExitLastUrl=location.href;
+    arm();
+    window.addEventListener('popstate',onBack);
+    window.addEventListener('pageshow',()=>{if(!leaving)arm()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dialog&&!dialog.hidden){e.preventDefault();hide()}});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
