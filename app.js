@@ -395,7 +395,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
   function index(pzn){return S.get().cart.findIndex(x=>x.pzn===U.pzn(pzn))}
   function qty(pzn){const i=index(pzn);return i<0?0:S.get().cart[i].qty}
   function setQty(pzn,q){pzn=U.pzn(pzn);q=Math.max(0,Math.min(999,parseInt(q,10)||0));const cart=[...S.get().cart];const i=cart.findIndex(x=>x.pzn===pzn);if(q===0){if(i>=0)cart.splice(i,1)}else if(i>=0)cart[i]={...cart[i],qty:q};else if(P.byPzn.has(pzn))cart.push({pzn,qty:q});S.set({cart});R.OrderExpiry?.prune(cart);save();}
-  function totals(){let eur=0,packs=0,itemsRub=0;const rate=S.get().rate;for(const it of S.get().cart){const p=P.byPzn.get(it.pzn);if(!p)continue;eur+=p.eur*it.qty;packs+=it.qty;itemsRub+=U.rub(p.eur,rate)*it.qty}const shipping=packs?C.SHIPPING_EUR:0,totalEur=eur+shipping,shippingRub=packs?U.rub(shipping,rate):0,totalRub=U.rubFinal(totalEur,rate);return{positions:S.get().cart.length,packs,itemsEur:eur,shippingEur:shipping,shippingRub,eur:totalEur,rubExact:totalRub,rub:totalRub}}
+  function totals(){let eur=0,packs=0,itemsRub=0;const rate=S.get().rate;for(const it of S.get().cart){const p=P.byPzn.get(it.pzn);if(!p)continue;eur+=p.eur*it.qty;packs+=it.qty;itemsRub+=U.rub(p.eur,rate)*it.qty}const shipping=packs?(R.Admin?.cartShippingEur?.()??C.SHIPPING_EUR):0,totalEur=eur+shipping,shippingRub=packs?U.rub(shipping,rate):0,totalRub=U.rubFinal(totalEur,rate);return{positions:S.get().cart.length,packs,itemsEur:eur,shippingEur:shipping,shippingRub,eur:totalEur,rubExact:totalRub,rub:totalRub}}
   function move(pzn,toIndex){const cart=[...S.get().cart];const i=cart.findIndex(x=>x.pzn===U.pzn(pzn));if(i<0)return;const [x]=cart.splice(i,1);cart.splice(Math.max(0,Math.min(cart.length,toIndex)),0,x);S.set({cart});save();}
   function fromUrl(){
     try{
@@ -505,7 +505,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     set(pzn,value){if(value&&((value.mode==='months'&&Number(value.months)>0)||(value.mode==='date'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(value.date))||String(value.comment||'').trim()))data[String(pzn)]=value;else delete data[String(pzn)];store()},
     remove(pzn){delete data[String(pzn)];store()},
     prune(cart){const keep=new Set(cart.map(x=>String(x.pzn)));for(const k of Object.keys(data))if(!keep.has(k))delete data[k];store()},
-    line(pzn){const x=data[String(pzn)];if(!x)return '';const expiry=x.months>0?(x.mode==='date'?'Пожелание: срок годности не ранее '+x.date.slice(5,7)+'/'+x.date.slice(0,4):'Пожелание: срок годности ≥ '+x.months+' мес. ('+expiryMonthLabel(x.months)+')'):'';return [expiry,x.comment?'Пожелание по упаковке: '+x.comment:''].filter(Boolean).join('\n')}
+    line(pzn){const x=data[String(pzn)];if(!x)return '';const expiry=x.months>0?(x.mode==='date'?'!! срок годности не ранее '+x.date.slice(5,7)+'/'+x.date.slice(0,4):'!! срок годности '+x.months+' мес. ('+expiryMonthLabel(x.months)+')'):'';return [expiry,x.comment?'Пожелание по упаковке: '+x.comment:''].filter(Boolean).join('\n')}
   };
 })(window.RXDE);
 
@@ -4682,12 +4682,13 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
   function privateShareText(){
     const cart=S.get().cart;
     if(!cart.length)return template(null,cart,'');
-    const address=session.parsed?.items?.length?composeAddress():'';
+    const address=session.applied&&session.parsed?.items?.length?composeAddress():'';
     return template(null,cart,address);
   }
-  A.importAddress=()=>session.parsed?.items?.length?composeAddress():'';
+  A.importAddress=()=>session.applied&&session.parsed?.items?.length?composeAddress():'';
+  A.cartShippingEur=()=>session.applied?(session.shippingEur??R.Constants.SHIPPING_EUR):R.Constants.SHIPPING_EUR;
   function clearPrivateClient(){
-    session.parsed=null;session.address='';session.addressParts={};session.useRawAddress=false;
+    session.parsed=null;session.applied=false;session.shippingEur=null;session.address='';session.addressParts={};session.useRawAddress=false;
     const ids=['adminSourceText','adminAddress','adminPreview','adminOriginalPreview'];
     ids.forEach(id=>{const n=$(id);if(n){if('value' in n)n.value='';else n.textContent='';}});
     const result=$('adminResultBlock');if(result)result.hidden=true;
@@ -4709,7 +4710,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
   }
   function updateAdminPreview(){
     if(!session.parsed)return;
-    const items=session.parsed.inputMode==='pzn-list'?session.parsed.items:(S.get().cart.length?S.get().cart:session.parsed.items);
+    const items=session.applied?S.get().cart:session.parsed.items;
     $('adminPreview').textContent=template(session.parsed,items,composeAddress());
   }
   function fillAddressFields(){
@@ -4775,24 +4776,32 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     $('adminResultBlock').hidden=false;
   }
   function applyCart(){
-    const p=session.parsed;if(!p||!p.items.length){U.toast('Сначала разберите чек');return}
-    const items=p.items.filter(x=>P.byPzn.has(x.pzn)).map(x=>({pzn:x.pzn,qty:x.qty}));
-    S.set({cart:items});Cart.save();session.address=$('adminAddress').value.trim();
+    const p=session.parsed;if(!p||!p.items.length){U.toast('Сначала разберите чек');return false}
+    const items=p.items.filter(x=>P.byPzn.has(x.pzn)&&x.qty>0).map(x=>({pzn:x.pzn,qty:x.qty}));
+    if(!items.length){U.toast('Ни один PZN не найден в каталоге. Корзина не изменена');return false}
+    const previous=S.get().cart;
+    const different=previous.length!==items.length||previous.some((x,i)=>x.pzn!==items[i]?.pzn||x.qty!==items[i]?.qty);
+    if(previous.length&&different&&!window.confirm('Заменить текущую корзину импортированным заказом?\nНесохранённый состав текущей корзины будет заменён.'))return false;
+    // Transfer the imported order to the SAME working cart used by the catalogue.
+    // The address stays private in the admin session and is used by "Копировать".
+    const addr=$('adminAddress');if(addr&&session.useRawAddress)session.address=addr.value.trim();
+    session.applied=true;
+    S.set({cart:items});Cart.save();R.OrderExpiry?.prune(items);
     $('adminPreview').textContent=template(p,items,composeAddress());
     R.UI.renderAll();
     U.beep(true);
-    U.toast(`Корзина собрана: ${items.length} поз.`);
     close();
     requestAnimationFrame(()=>{R.UI.openOrder();U.toast(`Готово: ${items.length} поз. · ${items.reduce((n,x)=>n+x.qty,0)} уп. — корзина открыта`)});
+    return true;
   }
   async function copyTemplate(useCurrentCart=false){
-    if(!useCurrentCart && session.parsed?.items?.length)applyCart();
+    // Copy must never silently replace the working cart or discard post-import edits.
     const cart=S.get().cart;
     if(!cart.length && !session.parsed?.items?.length){U.toast('Заказ пуст');return}
     const addressEl=$('adminAddress');
-    if(addressEl)session.address=addressEl.value.trim();
+    if(addressEl&&session.useRawAddress)session.address=addressEl.value.trim();
     const items=useCurrentCart?cart:(session.parsed?.items||cart);
-    const text=template(useCurrentCart?null:session.parsed,items,useCurrentCart?'':composeAddress());
+    const text=template(useCurrentCart?null:session.parsed,items,composeAddress());
     const preview=$('adminPreview');
     if(preview)preview.textContent=text;
     try{await navigator.clipboard.writeText(text);U.beep(true);U.toast('Счёт клиенту скопирован')}
@@ -4829,6 +4838,17 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     if(q==='ADMIN'||q==='АДМИН'){unlock();return true}
     return false;
   }
+  // Parsing is a preview operation; it does NOT change the existing cart.
+  function parseReceipt(){
+      const raw=$('adminSourceText').value;
+      if(!raw.trim()){U.toast('Вставьте старый чек');return false}
+      if(session.parsed?.raw===cleanLines(raw))return true;
+      session.parsed=parse(raw);session.applied=false;session.shippingEur=null;session.address=session.parsed.address.value||'';session.addressParts={...(session.parsed.address.parts||{})};session.useRawAddress=true;session.baseRate=S.get().rate;session.manualRate=null;session.priceOverrides.clear();session.basePrices.clear();session.changes.clear();['adminItemsDetails','adminSettingsDetails','adminPreviewDetails'].forEach(id=>{const el=$(id);if(el)el.open=false});renderParsed();
+      if(session.parsed.items.length){
+        U.toast(`Найдено ${session.parsed.items.length} поз. — проверьте сравнение и соберите корзину`);
+      }else U.toast('PZN не найдены в тексте');
+      return true;
+    }
   async function paste(){
     const input=$('adminSourceText');if(!input)return;
     let value='';
@@ -4858,7 +4878,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       input.value=value;
       input.dispatchEvent(new Event('input',{bubbles:true}));
       input.focus({preventScroll:true});
-      $('adminParse')?.click();
+      parseReceipt();
     }else{
       input.focus({preventScroll:true});
       U.toast('Браузер не разрешил чтение буфера. Нажмите поле и вставьте текст через меню клавиатуры.');
@@ -4887,30 +4907,24 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     $('closeAdmin').onclick=close;
     $('adminBackdrop').onclick=e=>{if(e.target===$('adminBackdrop'))close()};
     $('adminPaste').onclick=paste;
-    $('adminPaste').textContent='Вставить';
-    $('adminParse').onclick=()=>{
-      const raw=$('adminSourceText').value;
-      if(!raw.trim()){U.toast('Вставьте старый чек');return}
-      session.parsed=parse(raw);session.shippingEur=null;session.address=session.parsed.address.value||'';session.addressParts={...(session.parsed.address.parts||{})};session.useRawAddress=true;session.baseRate=S.get().rate;session.manualRate=null;session.priceOverrides.clear();session.basePrices.clear();session.changes.clear();['adminItemsDetails','adminSettingsDetails','adminPreviewDetails'].forEach(id=>{const el=$(id);if(el)el.open=false});renderParsed();
-      if(session.parsed.items.length){
-        const n=session.parsed.items.length;
-        $('adminQuickOverview')?.scrollIntoView({block:'nearest',behavior:'smooth'});
-        U.toast(`Найдено ${n} поз. — нажмите «Собрать корзину»`);
-      }else U.toast('PZN не найдены в тексте');
-    };
+    $('adminPaste').textContent='Вставить и сравнить';
+    $('adminParse').textContent='Собрать корзину';
+    $('adminApply').textContent='Собрать корзину';
+    // The button labelled "Собрать корзину" now actually builds and opens the cart.
+    $('adminParse').onclick=()=>{if(parseReceipt())applyCart()};
     $('adminShippingInput')?.addEventListener('change',()=>{
       const input=$('adminShippingInput'),v=U.num(input.value);
       if(!Number.isFinite(v)||v<0||v>10000){U.toast('Проверьте тариф доставки');input.value=String(session.shippingEur??R.Constants.SHIPPING_EUR);return}
       session.shippingEur=v;[...session.changes].filter(x=>x.startsWith('Тариф доставки:')).forEach(x=>session.changes.delete(x));
       markChange(`Тариф доставки: ${U.money(v)} €`,v!==R.Constants.SHIPPING_EUR);
       if($('adminSettingsSummary'))$('adminSettingsSummary').textContent=`· доставка ${U.money(v)} €`;
-      updateAdminPreview();
+      updateAdminPreview();if(session.applied)R.UI.renderAll();
     });
     $('adminShippingReset')?.addEventListener('click',()=>{
       session.shippingEur=null;$('adminShippingInput').value=String(R.Constants.SHIPPING_EUR);
       [...session.changes].filter(x=>x.startsWith('Тариф доставки:')).forEach(x=>session.changes.delete(x));renderChangeLog();
       if($('adminSettingsSummary'))$('adminSettingsSummary').textContent=`· доставка ${U.money(R.Constants.SHIPPING_EUR)} €`;
-      updateAdminPreview();
+      updateAdminPreview();if(session.applied)R.UI.renderAll();
     });
     $('adminAddress').addEventListener('input',()=>{
       session.address=$('adminAddress').value;session.useRawAddress=true;
@@ -4958,7 +4972,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       catch(_){const ta=document.createElement('textarea');ta.value=value;document.body.appendChild(ta);ta.select();const ok=document.execCommand('copy');ta.remove();U.toast(ok?'Список PZN скопирован':'Не удалось скопировать: выделите номера вручную')}
     });
     $('adminApply').onclick=applyCart;
-    $('adminCopyTemplate').onclick=copyTemplate;
+    $('adminCopyTemplate').onclick=()=>copyTemplate(!session.parsed?.items?.length || session.applied);
     const amount=$('orderHeaderTotal');
     if(amount){
       amount.title='Дважды нажмите, чтобы скопировать шаблон клиента';
@@ -4984,6 +4998,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       const html=(e.clipboardData||window.clipboardData)?.getData('text/html')||'';
       const plain=(e.clipboardData||window.clipboardData)?.getData('text/plain')||'';
       if(html){e.preventDefault();$('adminSourceText').value=htmlToText(html,plain)}
+      setTimeout(parseReceipt,0);
     });
   }
 
