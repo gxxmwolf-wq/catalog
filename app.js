@@ -4132,7 +4132,12 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       const b=e.target.closest('[data-mobile-recent-index]');if(!b)return;const visits=recentLoad(),x=visits[Number(b.dataset.mobileRecentIndex)];if(!x)return;navGo(x,false);
     };
     if(el.flowHistoryMenu)el.flowHistoryMenu.onclick=e=>{const b=e.target.closest('[data-recent-index]');if(!b)return;const visits=recentLoad(),x=visits[Number(b.dataset.recentIndex)];if(!x)return;el.flowHistoryMenu.hidden=true;navGo(x,false)};
-    if(el.orderFlowBack)el.orderFlowBack.onclick=()=>closeOrder();
+    if(el.orderFlowBack)el.orderFlowBack.onclick=e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      // Both exits use the same verified catalog-return action.
+      el.addOrderProduct?.click();
+    };
     el.addOrderProduct.onclick=e=>{
       e?.preventDefault?.();
       e?.stopPropagation?.();
@@ -4361,6 +4366,23 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     const acceptedEmailInput=document.getElementById('acceptedEmailInput');
     const acceptedEmailStatus=document.getElementById('acceptedEmailStatus');
     let acceptedReceipt='';
+    // A successfully accepted order must exit ALL order overlays and restore
+    // the catalog; hiding the accepted dialog alone leaves mobile locked.
+    function finishAcceptedOrder(){
+      acceptedBackdrop.hidden=true;
+      el.confirmBackdrop.hidden=true;
+      closeOrder();
+      if(isMobile())restoreSearchMode();
+      if(favoritesOnly){favoritesOnly=false;syncFavoritesUI();}
+      activeFormFilters.clear();activeFormFilter='';activeFormKey='';formFilterEngaged=false;
+      activeDoseFilter='';activeDoseKey='';
+      el.searchInput.value='';hideSuggestions();
+      S.set({home:false,query:'',category:'',subcategory:'',mobileSearchScope:'global',
+        searchScrollCategory:0,searchScrollGlobal:0,limit:R.Constants.PAGE_SIZE,
+        categoryLimit:20,globalLimit:R.Constants.PAGE_SIZE,expanded:new Set()});
+      renderAll();
+      requestAnimationFrame(()=>requestAnimationFrame(scrollResultsTop));
+    }
     document.querySelectorAll('input[name="acceptedChoice"]').forEach(r=>r.addEventListener('change',()=>{
       document.getElementById('acceptedEmailEntry').hidden=document.querySelector('input[name="acceptedChoice"]:checked')?.value!=='yes';
       acceptedEmailStatus.textContent='';
@@ -4374,12 +4396,12 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
         try{
           const reply=await window.RXDE_DELIVERY.addClientEmail(acceptedReceipt,email);
           acceptedEmailStatus.textContent=reply.clientMailStatus==='ОТПРАВЛЕНО'?'Копия отправлена на email.':'Email сохранён. Письмо будет отправлено при первой возможности.';
-          acceptedOk.textContent='Закрыть';acceptedOk.onclick=()=>{acceptedBackdrop.hidden=true;};
+          acceptedOk.textContent='Закрыть';acceptedOk.onclick=()=>{finishAcceptedOrder();};
         }catch(e){acceptedEmailStatus.textContent='Не удалось подтвердить сохранение email. Повторите попытку.';}
         finally{acceptedOk.disabled=false;}
         return;
       }
-      acceptedBackdrop.hidden=true;
+      finishAcceptedOrder();
     };
     el.submitOrder.onclick=async()=>{
       if(!S.get().cart.length){U.toast?.('Сначала добавьте товар в корзину');return;}
@@ -4414,11 +4436,11 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
         acceptedOk.onclick=null;
         // Install a fresh handler after each successful receipt, allowing repeat orders.
         acceptedOk.onclick=async()=>{
-          if(document.querySelector('input[name="acceptedChoice"]:checked')?.value!=='yes'){acceptedBackdrop.hidden=true;return;}
+          if(document.querySelector('input[name="acceptedChoice"]:checked')?.value!=='yes'){finishAcceptedOrder();return;}
           const email=String(acceptedEmailInput.value||'').trim();
           if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){acceptedEmailInput.focus();acceptedEmailStatus.textContent='Введите корректный email.';return;}
           acceptedOk.disabled=true;acceptedEmailStatus.textContent='Сохраняем email…';
-          try{const r=await window.RXDE_DELIVERY.addClientEmail(acceptedReceipt,email);acceptedEmailStatus.textContent=r.clientMailStatus==='ОТПРАВЛЕНО'?'Копия отправлена на email.':'Email сохранён, отправка письма ожидается.';acceptedOk.textContent='Закрыть';acceptedOk.onclick=()=>{acceptedBackdrop.hidden=true;};}
+          try{const r=await window.RXDE_DELIVERY.addClientEmail(acceptedReceipt,email);acceptedEmailStatus.textContent=r.clientMailStatus==='ОТПРАВЛЕНО'?'Копия отправлена на email.':'Email сохранён, отправка письма ожидается.';acceptedOk.textContent='Закрыть';acceptedOk.onclick=()=>{finishAcceptedOrder();};}
           catch(_){acceptedEmailStatus.textContent='Не удалось подтвердить сохранение email. Повторите попытку.';}
           finally{acceptedOk.disabled=false;}
         };
@@ -5101,25 +5123,39 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     return best;
   };
   const setVisible=visible=>{
+    const mobile=window.matchMedia('(max-width:760px)').matches;
+    if(mobile){
+      // On mobile do not re-apply layout properties on every scroll tick.
+      if(state===(visible?'visible':'hidden'))return;
+      state=visible?'visible':'hidden';
+      document.body.classList.toggle('mobile-header-scrolling',!visible);
+      document.body.classList.toggle('mobile-header-hidden',!visible);
+      document.body.classList.toggle('mobile-header-visible',visible);
+      const stack=document.getElementById('stickyStack');
+      if(stack){
+        stack.classList.add('rxde-mobile-floating-header');
+        stack.style.setProperty('transform',visible?'translate3d(0,0,0)':'translate3d(0,calc(-100% - 24px),0)','important');
+        stack.style.setProperty('opacity',visible?'1':'0','important');
+        stack.style.setProperty('visibility','visible','important');
+        stack.style.setProperty('pointer-events',visible?'auto':'none','important');
+        stack.style.setProperty('clip-path','none','important');
+      }
+      const head=document.getElementById('appHeader');
+      if(head){head.style.removeProperty('top');head.style.removeProperty('visibility');head.style.removeProperty('opacity');}
+      return;
+    }
     state=visible?'visible':'hidden';
     document.body.classList.toggle('mobile-header-scrolling',!visible);
     document.body.classList.toggle('mobile-header-hidden',!visible);
     document.body.classList.toggle('mobile-header-visible',visible);
     const stack=document.getElementById('stickyStack');
     if(stack){
-      const mobile=document.documentElement.classList.contains('rxde-mobile-ui')||window.matchMedia('(max-width:760px)').matches;
-      stack.classList.toggle('rxde-mobile-floating-header',mobile && (window.scrollY||0)>64);
+      stack.classList.remove('rxde-mobile-floating-header');
       stack.style.setProperty('transform',visible?'translate3d(0,0,0)':'translate3d(0,calc(-100% - 30px),0)','important');
       stack.style.setProperty('opacity',visible?'1':'0','important');
       stack.style.setProperty('visibility',visible?'visible':'hidden','important');
       stack.style.setProperty('pointer-events',visible?'auto':'none','important');
       stack.style.setProperty('clip-path',visible?'inset(0)':'inset(0 0 100% 0)','important');
-    }
-    const head=document.getElementById('appHeader');
-    if(head && document.documentElement.classList.contains('rxde-mobile-ui')){
-      head.style.setProperty('top',visible?'0':'-70px','important');
-      head.style.setProperty('visibility',visible?'visible':'hidden','important');
-      head.style.setProperty('opacity',visible?'1':'0','important');
     }
   };
   const attachCurrent=()=>{anchorRow=topVisibleRow()||firstRow();};
@@ -5144,6 +5180,10 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
   const goDown=()=>{
     expandingMore=false;
     lastDir=1;
+    if(window.matchMedia('(max-width:760px)').matches){
+      setVisible((window.scrollY||0)<=64 || searchActive());
+      return;
+    }
     if(searchActive()){
       attachCurrent();
       setVisible(true);
@@ -5712,5 +5752,81 @@ document.addEventListener('click',async e=>{
     window.addEventListener('pageshow',()=>{if(!leaving)arm()});
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&dialog&&!dialog.hidden){e.preventDefault();hide()}});
   }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+
+
+/* RXDE v2 10.11.2026-02 — independent mobile header + reliable build stamp.
+   The header never switches positioning on scroll. Its spacer occupies the
+   original document slot; only GPU-composited transform/opacity are animated. */
+(()=>{
+  'use strict';
+  const BUILD='v2 · 10.11.2026-02';
+  const DETAILS='Возврат в каталог после заказа · мобильная плавность · кнопки каталога · размер упаковки';
+  window.RXDE_CLIENT_BUILD=BUILD;
+  const style=document.createElement('style');
+  style.id='rxde-v2-20261110-mobile-header';
+  style.textContent=`
+    @media(max-width:760px){
+      html #stickyStack.sticky-stack,
+      html.rxde-mobile-ui #stickyStack.sticky-stack,
+      html.rxde-mobile-ui #stickyStack.rxde-mobile-floating-header.sticky-stack{
+        position:fixed!important;top:0!important;left:0!important;right:0!important;
+        width:100%!important;max-width:none!important;margin:0!important;
+        z-index:2147481500!important;
+        transition:transform .22s cubic-bezier(.2,.65,.24,1),opacity .22s ease!important;
+        will-change:transform,opacity!important;
+        clip-path:none!important;visibility:visible!important;
+        contain:layout style!important;
+      }
+      html body.mobile-header-hidden #stickyStack.sticky-stack,
+      html body.mobile-header-scrolling #stickyStack.sticky-stack{
+        visibility:visible!important;clip-path:none!important;
+        pointer-events:none!important;
+      }
+      html body.mobile-header-hidden #stickyStack.sticky-stack *,
+      html body.mobile-header-scrolling #stickyStack.sticky-stack *{
+        visibility:visible!important;
+      }
+      html #stickyStack > #appHeader,
+      html.rxde-mobile-ui #stickyStack > #appHeader{
+        position:relative!important;top:auto!important;left:auto!important;
+        right:auto!important;transform:none!important;transition:none!important;
+      }
+      #rxdeMobileHeaderSpace{display:block!important;pointer-events:none!important;
+        flex:none!important;overflow-anchor:none!important;}
+      html .paper-shell > .workspace{padding-top:0!important;transition:none!important;}
+    }
+    @media(min-width:761px){#rxdeMobileHeaderSpace{display:none!important}}
+  `;
+  document.head.appendChild(style);
+  const mobile=()=>matchMedia('(max-width:760px)').matches;
+  const stamp=()=>{
+    const el=document.getElementById('rxdeFooterVersion');
+    if(!el)return;
+    if(el.textContent!==BUILD)el.textContent=BUILD;
+    el.title=DETAILS;
+  };
+  const init=()=>{
+    const stack=document.getElementById('stickyStack');
+    if(stack){
+      let spacer=document.getElementById('rxdeMobileHeaderSpace');
+      if(!spacer){spacer=document.createElement('div');spacer.id='rxdeMobileHeaderSpace';
+        stack.parentElement.insertBefore(spacer,stack);}
+      const measure=()=>{
+        if(!mobile()){spacer.style.height='0px';return;}
+        stack.classList.add('rxde-mobile-floating-header');
+        // offsetHeight is transform-independent. Never change spacer during scrolling.
+        spacer.style.height=Math.ceil(stack.offsetHeight)+'px';
+      };
+      measure();
+      addEventListener('resize',measure,{passive:true});
+      addEventListener('orientationchange',measure,{passive:true});
+      if('ResizeObserver'in window)new ResizeObserver(()=>{if(mobile())measure()}).observe(stack);
+    }
+    stamp();
+    const foot=document.getElementById('rxdeFooterVersion');
+    if(foot)new MutationObserver(stamp).observe(foot,{characterData:true,childList:true,subtree:true});
+  };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
