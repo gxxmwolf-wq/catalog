@@ -1510,7 +1510,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
         <div class="mn-line mn-line-name">${title}${p.rx?'<span class="rx-badge mn-rx">RX</span>':''}</div>
         <div class="mn-line mn-line-med" title="${U.escape(line2)}">${U.escape(line2||'—')}</div>
         <div class="mn-line mn-line-maker" title="${U.escape(line3)}">${U.escape(line3||'—')}</div>
-        <div class="mn-line mn-line-pzn">PZN ${U.escape(p.pzn)}</div>
+        <div class="mn-line mn-line-pzn">PZN ${U.escape(p.pzn)}${p.size?` · ${U.escape(p.size)}`:''}</div>
       </div>
       <div class="mn-commerce">
         <div class="mn-price"><strong>${U.money(rub)} ₽</strong><small>${U.money(p.eur)} €</small></div>
@@ -1593,7 +1593,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
         <div class="r2-line"><b>МНН:</b><span>${U.escape(p.substance||'')}</span></div>
         <div class="r2-line"><b>Form:</b><span>${U.escape(p.form||'')}${p.dosage?` · ${U.escape(p.dosage)}`:''}</span></div>
         <div class="r2-line"><b>Hersteller:</b><span>${U.escape(p.maker||'')}${p.size?` · ${U.escape(p.size)}`:''}</span></div>
-        <div class="r2-line"><b>PZN:</b><span>${U.escape(p.pzn)}</span></div>
+        <div class="r2-line"><b>PZN:</b><span>${U.escape(p.pzn)}${p.size?` · ${U.escape(p.size)}`:''}</span></div>
       </div>
       <div class="r2-footer" style="height:calc(var(--rxde-card-commerce-v250) + var(--rxde-card-picked-v250))!important;min-height:calc(var(--rxde-card-commerce-v250) + var(--rxde-card-picked-v250))!important;max-height:calc(var(--rxde-card-commerce-v250) + var(--rxde-card-picked-v250))!important;">
         <div class="r2-bottom" style="height:var(--rxde-card-commerce-v250)!important;min-height:var(--rxde-card-commerce-v250)!important;max-height:var(--rxde-card-commerce-v250)!important;">
@@ -4133,12 +4133,18 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     };
     if(el.flowHistoryMenu)el.flowHistoryMenu.onclick=e=>{const b=e.target.closest('[data-recent-index]');if(!b)return;const visits=recentLoad(),x=visits[Number(b.dataset.recentIndex)];if(!x)return;el.flowHistoryMenu.hidden=true;navGo(x,false)};
     if(el.orderFlowBack)el.orderFlowBack.onclick=()=>closeOrder();
-    el.addOrderProduct.onclick=()=>{
+    el.addOrderProduct.onclick=e=>{
+      e?.preventDefault?.();
+      e?.stopPropagation?.();
       closeOrder();
-      setTimeout(()=>{
-        el.searchInput?.focus();
-        try{el.searchInput?.select()}catch(_){}
-      },70);
+      // Returning to the catalog must work even after deleting the final item.
+      // Keep the user's current search when available; otherwise show all products.
+      if(!S.get().query && !S.get().category && !S.get().subcategory){
+        S.set({home:false,query:'',category:'',subcategory:'',limit:R.Constants.PAGE_SIZE,expanded:new Set()});
+      }
+      renderProducts();
+      if(el.searchInput)el.searchInput.blur();
+      requestAnimationFrame(scrollResultsTop);
     };if(el.clearOrder)el.clearOrder.onclick=clearWholeOrder;
     const restoreOrderBtn=document.getElementById('restoreOrder');if(restoreOrderBtn)restoreOrderBtn.onclick=restoreClearedReceipt;
     // Read-only receipt preview: only shown by explicit click, never uploaded.
