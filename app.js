@@ -160,10 +160,8 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       S.set({cbrRate:cbr,rate:calc,rateSource:sourceCode});
       R.UI?.refreshRateDisplay?.(changedRate);
       if(changedRate)calendarPulse();
-      if(calc!==beforeRate){
-        U.sound?.(calc>beforeRate?'add':'down');
-        U.toast(`Курс обновлён: ${beforeRate} → ${calc} ₽/€ · заказ пересчитан`);
-      }else if(opts.reason==='manual') U.toast('Курс проверен — без изменений');
+      // Automatic exchange-rate updates stay silent; totals and visible rate still refresh.
+      if(opts.reason==='manual') U.toast('Курс проверен — без изменений');
       return true;
     }catch(err){
       if(notifyError)U.toast('Не удалось обновить курс · используется последнее значение');
@@ -5756,13 +5754,13 @@ document.addEventListener('click',async e=>{
 })();
 
 
-/* RXDE v2 10.11.2026-02 — independent mobile header + reliable build stamp.
+/* RXDE v2 10.11.2026-03 — independent mobile header + reliable build stamp.
    The header never switches positioning on scroll. Its spacer occupies the
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 10.11.2026-02';
-  const DETAILS='Возврат в каталог после заказа · мобильная плавность · кнопки каталога · размер упаковки';
+  const BUILD='v2 · 10.11.2026-03';
+  const DETAILS='Тихое обновление курса · возврат в каталог · мобильная плавность · кнопки каталога · размер упаковки';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
   style.id='rxde-v2-20261110-mobile-header';
