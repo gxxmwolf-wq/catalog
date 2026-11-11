@@ -6,7 +6,7 @@ function boot(){
  if(!R?.Cart||!sheet||!btn)return;
  const foot=sheet.querySelector('.sheet-footer');
  const buildLabel=document.getElementById('rxdeFooterVersion');
- if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-17';
+ if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-18';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
@@ -158,8 +158,8 @@ function boot(){
  const confirmOverlay=document.createElement('div');
  confirmOverlay.id='rxdeContactConfirm';confirmOverlay.className='rxde-confirm-overlay';confirmOverlay.hidden=true;
  confirmOverlay.innerHTML=`<div class="rxde-confirm-card" role="dialog" aria-modal="true" aria-labelledby="rxdeConfirmTitle">
- <h2 id="rxdeConfirmTitle">Проверьте ваши контакты</h2>
- <p>Мы свяжемся с ВАМИ по указанным контактам. Проверьте, пожалуйста, всё ли верно.</p>
+ <h2 id="rxdeConfirmTitle">Подтверждение заказа</h2>
+ <p>У нас будут только эти данные для связи. Всё верно?</p>
  <label class="rxde-confirm-label" for="rxdeConfirmPhoneInput">ТЕЛЕФОН ИЛИ НИК</label>
  <input id="rxdeConfirmPhoneInput" class="rxde-confirm-input" type="text" autocomplete="off" placeholder="Номер или @username">
  <div class="rxde-confirm-apps"><span>Мессенджеры:</span><label><input type="checkbox" value="Telegram"> Telegram</label><label><input type="checkbox" value="WhatsApp"> WhatsApp</label><label><input type="checkbox" value="MAX"> MAX</label></div>
@@ -167,7 +167,7 @@ function boot(){
  <input id="rxdeConfirmEmailInput" class="rxde-confirm-input" type="email" autocomplete="email" placeholder="name@example.com">
  <p class="rxde-confirm-note">Проверьте оба контакта и галочки. Их можно исправить прямо здесь.</p>
  <p id="rxdeConfirmError" class="rxde-confirm-error" hidden></p>
- <div class="rxde-confirm-actions"><button type="button" id="rxdeConfirmBack">Назад</button><button type="button" id="rxdeConfirmOk">ОК</button></div>
+ <div class="rxde-confirm-actions"><button type="button" id="rxdeConfirmBack">Назад</button><button type="button" id="rxdeConfirmOk">Отправить заказ</button></div>
  </div>`;
  document.body.appendChild(confirmOverlay);
  let confirmed=false;
@@ -243,7 +243,7 @@ function boot(){
  additional.addEventListener('input',()=>{error.hidden=true;pendingPayload=null;contactSummary()});
 
  updateHint(additional,extraMethod);syncAppChecks();contactSummary();
- btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Проверить контакты →</span>';btn.classList.add('rxde-inline-submit');btn.removeAttribute('aria-hidden');btn.removeAttribute('tabindex');btn.disabled=false;btn.setAttribute('aria-disabled','true');
+ btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Отправить</span>';btn.classList.add('rxde-inline-submit');btn.removeAttribute('aria-hidden');btn.removeAttribute('tabindex');btn.disabled=false;btn.setAttribute('aria-disabled','true');
  document.getElementById('rxdeSendingClose').addEventListener('click',closeSending);
  // Direct email option is shown inside the checkout, beneath the main action.
  mailLink.addEventListener('click',event=>{
@@ -302,7 +302,7 @@ function boot(){
     $('orderBackdrop').hidden=true;R.Store.set({orderOpen:false});document.body.style.overflow='';done.hidden=false;
     error.hidden=true;closeSending();
   }catch(err){prepareFallback();sending.dataset.status='error';sendingStatus.textContent='Отправка не удалась';sendingDetail.textContent='Напишите нам напрямую — обязательно свяжемся с вами.';document.getElementById('rxdeSendingClose').hidden=false;error.classList.remove('neutral');error.textContent='Напишите нам напрямую по ссылке.';error.hidden=false;}
-  finally{busy=false;btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Проверить контакты →</span>';contactSummary();}
+  finally{busy=false;btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Отправить</span>';contactSummary();}
  };
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);

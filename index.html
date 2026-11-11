@@ -160,7 +160,7 @@ document.documentElement.classList.add("rxde-fast-start");
           <div class="footer-actions">
             <button class="footer-question" id="footerQuestion" type="button">Задать вопрос →</button>
             <a class="footer-direct-mail" href="mailto:med.zakaz.de@gmail.com" aria-label="Написать RXDE напрямую на электронную почту">✉ Написать напрямую на email</a>
-            <small class="footer-build">Сборка <b id="rxdeFooterVersion">v2 · 11.11.2026-17</b> · база <b id="rxdeFooterDatabase">b260905</b></small>
+            <small class="footer-build">Сборка <b id="rxdeFooterVersion">v2 · 11.11.2026-18</b> · база <b id="rxdeFooterDatabase">b260905</b></small>
           </div>
         </footer>
   </div>
@@ -217,7 +217,7 @@ document.documentElement.classList.add("rxde-fast-start");
           <small id="orderTotalEur" hidden></small><em class="order-footer-note">включая обязательную логистику DHL</em>
         </div>
         <button class="rxde-mobile-contacts-toggle" id="rxdeMobileContactsToggle" type="button" aria-expanded="false" style="display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:48px!important;background:#2788c2!important;background-image:none!important;color:#fff!important;border:1px solid #2179ae!important;border-radius:12px!important;font:650 16px system-ui,sans-serif!important;cursor:pointer!important">Оформить заказ →</button>
-        <button class="primary-action" id="submitOrder" type="button" disabled aria-hidden="true" tabindex="-1" style="display:none!important">Проверить контакты →</button>
+        <button class="primary-action" id="submitOrder" type="button" disabled aria-hidden="true" tabindex="-1" style="display:none!important">Отправить</button>
         <script>
         (function(){
           var entry=document.getElementById('rxdeMobileContactsToggle');
@@ -434,7 +434,7 @@ document.documentElement.classList.add("rxde-fast-start");
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="db-live.js?v=20261111-17"></script>
+  <script src="db-live.js?v=20261111-18"></script>
 <div id="rxdeSendingOverlay" class="rxde-sending-overlay" data-status="pending" hidden role="dialog" aria-modal="true" aria-labelledby="rxdeSendingStatus">
  <div class="rxde-sending-card">
   <div class="rxde-sending-graphic" aria-hidden="true">
@@ -585,7 +585,7 @@ document.documentElement.classList.add("rxde-fast-start");
   })();
   </script>
   <script>
-    document.getElementById('rxdeFooterVersion').textContent = 'v2 · 11.11.2026-17';
+    document.getElementById('rxdeFooterVersion').textContent = 'v2 · 11.11.2026-18';
     document.getElementById('rxdeFooterDatabase').textContent = window.RXDE_CONFIG?.dbVersion || '—';
   </script>
 
