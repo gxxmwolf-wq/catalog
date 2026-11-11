@@ -14,34 +14,75 @@ function boot(){
   <div class="rxde-phone-apps"><span>Мессенджеры:</span><label><input type="checkbox" value="Telegram">Telegram</label><label><input type="checkbox" value="WhatsApp">WhatsApp</label><label><input type="checkbox" value="MAX">MAX</label></div>
   <p id="rxdeInlineError" class="rxde-inline-error" role="status" hidden></p>
  </div><p class="rxde-contact-help">Для связи укажите номер телефона, Telegram @username и/или email. Для доставки адрес и телефон уточним отдельно.</p>`;
- foot.insertBefore(area,btn);
- // Mobile-first contacts drawer. The order list stays in view until explicitly opened.
+ // Two real mutually exclusive steps: cart -> contact sheet. Existing fields
+ // and submit button are moved, not cloned, keeping all validation/send handlers.
  const contactToggle=document.createElement('button');
  contactToggle.type='button';contactToggle.id='rxdeMobileContactsToggle';
  contactToggle.className='rxde-mobile-contacts-toggle';
- contactToggle.setAttribute('aria-controls','rxdeInlineCheckout');
- contactToggle.setAttribute('aria-expanded','false');
- contactToggle.innerHTML='<span class="rxde-mobile-contacts-title">Контакты для заказа</span><span class="rxde-mobile-contacts-action">Показать контакты <span aria-hidden="true">▾</span></span>';
- foot.insertBefore(contactToggle,area);
- function setMobileContacts(open){
-   sheet.classList.toggle('rxde-mobile-contacts-open',!!open);
-   contactToggle.setAttribute('aria-expanded',open?'true':'false');
-   sheet.classList.toggle('rxde-contacts-collapsed',!open);
-   contactToggle.querySelector('.rxde-mobile-contacts-action').innerHTML=open?'Скрыть <span aria-hidden="true">▴</span>':'Оформить заказ <span aria-hidden="true">▾</span>';
+ contactToggle.textContent='Оформить заказ →';
+ foot.insertBefore(contactToggle,btn);
+ const flow=document.createElement('div');
+ flow.id='rxdeCheckoutFlow10';flow.hidden=true;
+ flow.innerHTML='<section class="rxde-checkout-card10" role="dialog" aria-modal="true" aria-label="Оформление заказа"><button type="button" id="rxdeCheckoutBack10" class="rxde-checkout-back10">← Проверить состав заказа <small id="rxdeCheckoutSummary10"></small></button><h2>Контакты для заказа</h2><div id="rxdeCheckoutContent10" class="rxde-checkout-content10"></div><div class="rxde-checkout-actions10" id="rxdeCheckoutActions10"></div></section>';
+ document.body.appendChild(flow);
+ flow.querySelector('#rxdeCheckoutContent10').appendChild(area);
+ flow.querySelector('#rxdeCheckoutActions10').appendChild(btn);
+ const flowCss=document.createElement('style');flowCss.id='rxdeCheckoutStyles10';
+ flowCss.textContent=`
+ #rxdeCheckoutFlow10[hidden]{display:none!important}
+ html body #rxdeCheckoutFlow10:not([hidden]){display:flex!important;position:fixed!important;left:0!important;right:0!important;bottom:auto!important;top:var(--rxde-flow-top,0px)!important;height:var(--rxde-flow-height,100dvh)!important;z-index:2147483400!important;align-items:flex-end!important;justify-content:center!important;background:rgba(20,40,50,.58)!important;box-sizing:border-box!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-card10{display:flex!important;flex-direction:column!important;position:relative!important;box-sizing:border-box!important;width:min(100%,540px)!important;height:90%!important;max-height:90%!important;min-height:0!important;overflow:hidden!important;margin:0!important;background:#fff!important;color:#254050!important;border-radius:18px 18px 0 0!important;box-shadow:0 12px 36px #14263144!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-back10{display:flex!important;flex:0 0 auto!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:54px!important;width:100%!important;padding:11px 15px!important;background:#edf7fb!important;color:#24536a!important;border:0!important;border-bottom:1px solid #cbdde5!important;font:600 15px system-ui,sans-serif!important;text-align:left!important;cursor:pointer!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-back10 small{font-size:12px!important;font-weight:500!important;white-space:nowrap!important}
+ html body #rxdeCheckoutFlow10 h2{font:700 20px/1.25 system-ui,sans-serif!important;margin:0!important;padding:14px 16px 8px!important;color:#28536a!important;flex:0 0 auto!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-content10{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:5px 16px 12px!important}
+ html body #rxdeCheckoutFlow10 #rxdeInlineCheckout{display:block!important;position:static!important;width:100%!important;max-height:none!important;height:auto!important;overflow:visible!important;padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
+ html body #rxdeCheckoutFlow10 .rxde-contact-head{display:none!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-fields{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;width:100%!important;max-height:none!important;overflow:visible!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-pair{display:block!important;width:100%!important;margin:0!important;padding:0!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-pair label{display:block!important;font-size:14px!important;line-height:1.35!important;margin-bottom:5px!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-pair input{display:block!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:48px!important;min-height:48px!important;padding:9px 12px!important;font:16px system-ui,sans-serif!important}
+ html body #rxdeCheckoutFlow10 .rxde-phone-apps{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px 16px!important;width:100%!important;margin:0!important;padding:3px 0!important}
+ html body #rxdeCheckoutFlow10 .rxde-phone-apps>span{flex-basis:100%!important;font-size:14px!important}
+ html body #rxdeCheckoutFlow10 .rxde-phone-apps label{display:inline-flex!important;align-items:center!important;gap:5px!important;font-size:14px!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-separator{margin:0!important;font-size:12px!important;text-align:center!important}
+ html body #rxdeCheckoutFlow10 .rxde-contact-help{font-size:12px!important;line-height:1.4!important;margin:8px 0!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-actions10{flex:0 0 auto!important;box-sizing:border-box!important;padding:10px 16px max(10px,env(safe-area-inset-bottom))!important;border-top:1px solid #d5e3ea!important;background:#fff!important}
+ html body #rxdeCheckoutFlow10 #submitOrder{display:flex!important;position:static!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:50px!important;min-height:50px!important;margin:0!important;padding:8px 14px!important;justify-content:center!important;visibility:visible!important}
+ html body #rxdeContactConfirm:not([hidden]){z-index:2147483450!important}
+ html body #rxdeSendingOverlay:not([hidden]){z-index:2147483500!important}
+ html body #orderSheet #rxdeMobileContactsToggle{display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px!important;width:100%!important;padding:8px 12px!important}
+ html body #orderSheet .sheet-footer #submitOrder{display:none!important}
+ @media(min-width:761px){html body #rxdeCheckoutFlow10:not([hidden]){align-items:center!important}html body #rxdeCheckoutFlow10 .rxde-checkout-card10{height:min(90%,650px)!important;max-height:min(90%,650px)!important;border-radius:18px!important}}
+ `;
+ document.head.appendChild(flowCss);
+ function syncCheckoutViewport(){
+   const v=window.visualViewport;
+   if(v){flow.style.setProperty('--rxde-flow-height',Math.round(v.height)+'px');flow.style.setProperty('--rxde-flow-top',Math.round(v.offsetTop)+'px');}
+   else{flow.style.setProperty('--rxde-flow-height','100dvh');flow.style.setProperty('--rxde-flow-top','0px');}
  }
- // Contact and submit actions share one compact row; no duplicated guidance.
- contactToggle.querySelector('.rxde-mobile-contacts-title').textContent='Контакты для заказа';
- contactToggle.querySelector('.rxde-mobile-contacts-action').innerHTML='Оформить заказ <span aria-hidden="true">▾</span>';
- contactToggle.addEventListener('click',()=>{
-   const opening=!sheet.classList.contains('rxde-mobile-contacts-open');
-   setMobileContacts(opening);
-   if(opening){
-     // Focus during the user gesture so the mobile keyboard opens as expected.
-     // Keep the form readable first; do not summon the mobile keyboard automatically.
+ const isCheckoutOpen=()=>!flow.hidden;
+ function setMobileContacts(open){
+   if(open){
+     const t=R.Cart.totals();
+     flow.querySelector('#rxdeCheckoutSummary10').textContent=t.positions+' поз. · '+t.packs+' уп. · '+R.Utils.money(t.rub)+' ₽';
+     syncCheckoutViewport();
+     flow.hidden=false;
+     contactToggle.setAttribute('aria-expanded','true');
+     sheet.classList.remove('rxde-mobile-contacts-open');
+   }else{
+     flow.hidden=true;
+     contactToggle.setAttribute('aria-expanded','false');
+     document.activeElement?.blur?.();
    }
- });
- // When a card is targeted, return to the generous list viewport.
+ }
+ contactToggle.addEventListener('click',()=>setMobileContacts(true));
+ flow.querySelector('#rxdeCheckoutBack10').addEventListener('click',()=>{if(!busy)setMobileContacts(false)});
  sheet.addEventListener('rxde:focus-product',()=>setMobileContacts(false));
+ window.visualViewport?.addEventListener('resize',()=>{if(isCheckoutOpen())syncCheckoutViewport()},{passive:true});
+ window.visualViewport?.addEventListener('scroll',()=>{if(isCheckoutOpen())syncCheckoutViewport()},{passive:true});
+ // Expose only a close method for successful receipt/other navigation.
+ window.RXDE_CHECKOUT_FLOW10={close:()=>setMobileContacts(false)};
 
  const $=id=>document.getElementById(id);
  const primary=$('rxdePrimaryValue'), method={value:'phone'}, additional=$('rxdeExtraValue'), extraMethod={value:'email'};
@@ -177,17 +218,11 @@ function boot(){
     const done=$('orderAcceptedBackdrop');$('orderAcceptedId').textContent='Номер заявки: '+result.id;
     $('acceptedEmailChoice').hidden=true;$('acceptedEmailStatus').textContent='';
     $('acceptedOk').textContent='Вернуться в каталог';$('acceptedOk').onclick=()=>{
-      done.hidden=true;
-      // Return to the product grid without losing the already confirmed order.
-      R.Store.set({orderOpen:false});
-      document.body.style.overflow='';
-      const search=document.querySelector('#searchInput');
-      // Clear only the category selection if it is empty; keep the user's browsing context.
-      const grid=document.querySelector('#catalogGrid, #productsGrid, #productGrid, .products-grid, .catalog-products, #catalogResults, #catalog') || document.querySelector('.catalog-hero');
-      if(grid){const top=grid.getBoundingClientRect().top+window.scrollY-140;window.scrollTo({top:Math.max(0,top),behavior:'auto'});}
-      else window.scrollTo({top:0,behavior:'auto'});
-      window.dispatchEvent(new Event('resize'));
+      // Reinitialise the catalogue cleanly after confirmed delivery.
+      // Avoid stale mobile-mode locks and hidden product lists.
+      location.replace(location.pathname);
     };
+    setMobileContacts(false);
     $('orderBackdrop').hidden=true;R.Store.set({orderOpen:false});document.body.style.overflow='';done.hidden=false;
     error.hidden=true;closeSending();
   }catch(err){prepareFallback();sending.dataset.status='error';sendingStatus.textContent='Отправка не удалась';sendingDetail.textContent='Напишите нам напрямую — обязательно свяжемся с вами.';document.getElementById('rxdeSendingClose').hidden=false;error.classList.remove('neutral');error.textContent='Напишите нам напрямую по ссылке.';error.hidden=false;}
