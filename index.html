@@ -17,8 +17,6 @@ document.documentElement.classList.add("rxde-fast-start");
   }catch(e){}
 })();
 </script>
-  <!-- Hide legacy checkout action BEFORE db-live.js asynchronously initializes the new UI. -->
-  <style id="rxde-checkout-boot14">html body #orderSheet .sheet-footer > #submitOrder{display:none!important}</style>
   <!-- Retired checkout is never presented; current checkout35.js owns the only contact flow. -->
   <style id="rxde-retired-checkout">#confirmBackdrop{display:none!important}</style>
 <link rel="stylesheet" href="styles.css?v=20261109-r1">
@@ -161,7 +159,7 @@ document.documentElement.classList.add("rxde-fast-start");
           <div class="footer-actions">
             <button class="footer-question" id="footerQuestion" type="button">Задать вопрос →</button>
             <a class="footer-direct-mail" href="mailto:med.zakaz.de@gmail.com" aria-label="Написать RXDE напрямую на электронную почту">✉ Написать напрямую на email</a>
-            <small class="footer-build">Сборка <b id="rxdeFooterVersion">v2 · 11.11.2026-14</b> · база <b id="rxdeFooterDatabase">b260905</b></small>
+            <small class="footer-build">Сборка <b id="rxdeFooterVersion">v2 · 11.11.2026-13</b> · база <b id="rxdeFooterDatabase">b260905</b></small>
           </div>
         </footer>
   </div>
@@ -571,7 +569,7 @@ document.documentElement.classList.add("rxde-fast-start");
   })();
   </script>
   <script>
-    document.getElementById('rxdeFooterVersion').textContent = 'v2 · 11.11.2026-14';
+    document.getElementById('rxdeFooterVersion').textContent = 'v2 · 11.11.2026-13';
     document.getElementById('rxdeFooterDatabase').textContent = window.RXDE_CONFIG?.dbVersion || '—';
   </script>
 

@@ -6,7 +6,7 @@ function boot(){
  if(!R?.Cart||!sheet||!btn)return;
  const foot=sheet.querySelector('.sheet-footer');
  const buildLabel=document.getElementById('rxdeFooterVersion');
- if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-14';
+ if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-15';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
@@ -63,6 +63,22 @@ function boot(){
  html body #rxdeContactConfirm:not([hidden]){z-index:2147483450!important}
  html body #rxdeSendingOverlay:not([hidden]){z-index:2147483500!important}
  @media(min-width:761px){html body #rxdeCheckoutFlow10:not([hidden]){align-items:center!important;background:rgba(18,37,45,.70)!important}html body #rxdeCheckoutFlow10 .rxde-checkout-card10{border-radius:16px!important;box-shadow:0 15px 50px #11263140!important;max-height:calc(100% - 12px)!important;overflow-y:auto!important}}
+ /* Mobile must have one opaque screen even when the visual viewport shrinks
+    for the Android keyboard. The backing order/cart cannot peek through below it. */
+ @media(max-width:760px){
+   html body.rxde-checkout-active15::before{content:""!important;display:block!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;background:#fff!important;z-index:2147483300!important;pointer-events:auto!important}
+   html body #rxdeCheckoutFlow10:not([hidden]){background:#fff!important}
+   html body #rxdeCheckoutFlow10 .rxde-checkout-content10{padding:9px 20px 0!important}
+   html body #rxdeCheckoutFlow10 .rxde-inline-fields{gap:12px!important}
+   html body #rxdeCheckoutFlow10 .rxde-inline-pair input{min-height:44px!important;height:44px!important;padding:8px 12px!important}
+   html body #rxdeCheckoutFlow10 .rxde-checkout-actions10{padding:15px 20px max(15px,env(safe-area-inset-bottom))!important;gap:11px!important}
+   html body #rxdeCheckoutFlow10 #submitOrder{min-height:44px!important;height:44px!important}
+   html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 .rxde-checkout-content10{padding:6px 17px 0!important}
+   html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 .rxde-inline-fields{gap:9px!important}
+   html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 .rxde-inline-pair input{min-height:40px!important;height:40px!important}
+   html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 .rxde-checkout-actions10{padding:10px 17px 13px!important;gap:8px!important}
+   html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 #submitOrder{min-height:40px!important;height:40px!important}
+ }
  /* Keyboard-visible area can be short: no fixed footer, scroll the single outer surface. */
  html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 h2{font-size:17px!important;padding-top:6px!important;padding-bottom:1px!important}
  html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 .rxde-checkout-back10{min-height:34px!important;padding:5px 10px!important}
@@ -85,11 +101,13 @@ function boot(){
      flow.querySelector('#rxdeCheckoutSummary10').textContent=t.positions+' поз. · '+t.packs+' уп. · '+R.Utils.money(t.rub)+' ₽';
      syncCheckoutViewport();
      flow.hidden=false;
+     document.body.classList.add('rxde-checkout-active15');
      flow.classList.remove('rxde-editing11');
      contactToggle.setAttribute('aria-expanded','true');
      sheet.classList.remove('rxde-mobile-contacts-open');
    }else{
      flow.hidden=true;
+     document.body.classList.remove('rxde-checkout-active15');
      flow.classList.remove('rxde-editing11');
      contactToggle.setAttribute('aria-expanded','false');
      document.activeElement?.blur?.();
