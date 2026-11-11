@@ -6,7 +6,7 @@ function boot(){
  if(!R?.Cart||!sheet||!btn)return;
  const foot=sheet.querySelector('.sheet-footer');
  const buildLabel=document.getElementById('rxdeFooterVersion');
- if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-15';
+ if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-16';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
@@ -56,6 +56,18 @@ function boot(){
  html body #rxdeCheckoutFlow10 .rxde-contact-help{display:none!important}
  html body #rxdeCheckoutFlow10 .rxde-checkout-actions10{display:flex!important;flex-direction:column!important;flex:0 0 auto!important;box-sizing:border-box!important;gap:4px!important;padding:8px 13px max(8px,env(safe-area-inset-bottom))!important;border:0!important;background:#fff!important;position:static!important;margin:0!important}
  html body #rxdeCheckoutFlow10 #submitOrder{display:flex!important;position:static!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:39px!important;min-height:39px!important;margin:0!important;padding:5px 10px!important;justify-content:center!important;align-items:center!important;visibility:visible!important;font:650 15px system-ui,sans-serif!important}
+ html body #rxdeCheckoutFlow10 #submitOrder,
+ html body #rxdeCheckoutFlow10 #submitOrder.rxde-inline-submit,
+ html body #rxdeCheckoutFlow10 #submitOrder.rxde-contact-ready,
+ html body #rxdeCheckoutFlow10 #submitOrder[aria-disabled="true"]{
+   background:#2788c2!important;background-image:none!important;
+   border:1px solid #237cac!important;color:#fff!important;
+   opacity:1!important;box-shadow:0 3px 10px rgba(22,112,166,.16)!important;
+   -webkit-text-fill-color:#fff!important;
+ }
+ html body #rxdeCheckoutFlow10 #submitOrder:focus-visible{outline:2px solid #145c8a!important;outline-offset:2px!important}
+ html body #rxdeCheckoutFlow10 #submitOrder:disabled{background:#84b6d0!important;border-color:#84b6d0!important;opacity:1!important}
+ html body #rxdeCheckoutFlow10 #submitOrder span{color:inherit!important;-webkit-text-fill-color:inherit!important}
  html body #rxdeCheckoutFlow10 #submitOrder .rxde-parcel-mark{display:none!important}
  html body #rxdeCheckoutFlow10 .rxde-checkout-mail13{display:block!important;margin:0 auto!important;padding:3px 2px!important;text-align:center!important;font:500 12px/1.25 system-ui,sans-serif!important;color:#22617b!important;text-decoration:underline!important;text-underline-offset:2px!important}
  html body #orderSheet #rxdeMobileContactsToggle{display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px!important;width:100%!important;padding:8px 12px!important}
@@ -226,7 +238,7 @@ function boot(){
  additional.addEventListener('input',()=>{error.hidden=true;pendingPayload=null;contactSummary()});
 
  updateHint(additional,extraMethod);syncAppChecks();contactSummary();
- btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Проверить контакты →</span>';btn.classList.add('rxde-inline-submit');btn.disabled=false;btn.setAttribute('aria-disabled','true');
+ btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Проверить контакты →</span>';btn.classList.add('rxde-inline-submit');btn.removeAttribute('aria-hidden');btn.removeAttribute('tabindex');btn.disabled=false;btn.setAttribute('aria-disabled','true');
  document.getElementById('rxdeSendingClose').addEventListener('click',closeSending);
  // Direct email option is shown inside the checkout, beneath the main action.
  mailLink.addEventListener('click',event=>{

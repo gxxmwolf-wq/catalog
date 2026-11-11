@@ -2133,10 +2133,9 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       el.addOrderProduct.textContent='+ Добавить товар';
       el.addOrderProduct.title='Вернуться к поиску и добавить ещё позицию';
     }
-    if(el.submitOrder){
-      el.submitOrder.innerHTML=st.cart.length
-        ? '<span class="submit-order-copy"><b>Отправить менеджеру</b></span><span aria-hidden="true">→</span>'
-        : '<span class="submit-order-copy"><b>Отправить менеджеру</b></span><span aria-hidden="true">→</span>';
+    // Checkout35 owns this button; renderOrder must never restore the retired label/icon.
+    if(el.submitOrder && !el.submitOrder.closest('#rxdeCheckoutFlow10')){
+      el.submitOrder.textContent='Проверить контакты →';
     }
     el.orderPositions.textContent=`${t.positions} поз. · ${t.packs} уп.`;
     el.orderTotalRub.textContent=`${U.money(t.rub)} ₽`;
@@ -5816,7 +5815,7 @@ document.addEventListener('click',async e=>{
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 11.11.2026-15';
+  const BUILD='v2 · 11.11.2026-16';
   const DETAILS='Компактное окно срока годности · доступные кнопки при клавиатуре · предыдущие исправления';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
