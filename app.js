@@ -4151,36 +4151,26 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       const b=e.target.closest('[data-mobile-recent-index]');if(!b)return;const visits=recentLoad(),x=visits[Number(b.dataset.mobileRecentIndex)];if(!x)return;navGo(x,false);
     };
     if(el.flowHistoryMenu)el.flowHistoryMenu.onclick=e=>{const b=e.target.closest('[data-recent-index]');if(!b)return;const visits=recentLoad(),x=visits[Number(b.dataset.recentIndex)];if(!x)return;el.flowHistoryMenu.hidden=true;navGo(x,false)};
-    function returnToCatalogFromOrder(e){
+    // v2 11.11.2026-06: exact original working add-product navigation.
+    // Do not overwrite home/category/query state: closeOrder() already restores
+    // mobile search mode and any previous search bridge.
+    const returnToCatalogFromOrder = e => {
       e?.preventDefault?.();
       e?.stopPropagation?.();
-      const hadBridge=Boolean(navBridge.fromOrder && navBridge.searchSnapshot);
       closeOrder();
-      // When the cart contained the last item, always restore the catalog surface.
-      S.set({orderOpen:false,home:false,mobileMode:'search'});
-      if(!hadBridge)renderProducts();
-      if(el.searchInput)el.searchInput.blur();
-      if(el.orderBackdrop)el.orderBackdrop.hidden=true;
-      document.body.style.overflow='';
-    }
-    // The single visible «В каталог» control executes exactly the same action as
-    // the historically reliable «+ Добавить товар» button.  The latter is kept
-    // in the DOM as an action target, but never displayed to the customer.
-    if(el.addOrderProduct)el.addOrderProduct.onclick=returnToCatalogFromOrder;
-    const useAddProductAction=e=>{
-      e?.preventDefault?.();
-      e?.stopImmediatePropagation?.();
-      const addButton=document.getElementById('addOrderProduct');
-      if(addButton){addButton.click();return;}
-      // Defensive fallback if an older template omitted the add button.
-      returnToCatalogFromOrder(e);
+      // Keep the original + button action available internally (hidden in UI).
+      // No automatic keyboard opening on mobile.
     };
-    // Capture survives navigation re-renders and overrides older click handlers.
+    if(el.addOrderProduct)el.addOrderProduct.onclick=returnToCatalogFromOrder;
+    if(el.orderFlowBack)el.orderFlowBack.onclick=returnToCatalogFromOrder;
+    // Capture clicks from the header even if an older listener is still bound.
     document.addEventListener('click',e=>{
-      if(!e.target.closest?.('#orderFlowBack'))return;
-      useAddProductAction(e);
+      const btn=e.target.closest?.('#orderFlowBack');
+      if(!btn)return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      returnToCatalogFromOrder();
     },true);
-    if(el.orderFlowBack)el.orderFlowBack.onclick=useAddProductAction;
     if(el.clearOrder)el.clearOrder.onclick=clearWholeOrder;
     const restoreOrderBtn=document.getElementById('restoreOrder');if(restoreOrderBtn)restoreOrderBtn.onclick=restoreClearedReceipt;
     // Read-only receipt preview: only shown by explicit click, never uploaded.
@@ -5815,7 +5805,7 @@ document.addEventListener('click',async e=>{
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 11.11.2026-05';
+  const BUILD='v2 · 11.11.2026-06';
   const DETAILS='Компактное окно срока годности · доступные кнопки при клавиатуре · предыдущие исправления';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
