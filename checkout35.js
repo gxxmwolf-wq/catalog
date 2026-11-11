@@ -6,7 +6,7 @@ function boot(){
  if(!R?.Cart||!sheet||!btn)return;
  const foot=sheet.querySelector('.sheet-footer');
  const buildLabel=document.getElementById('rxdeFooterVersion');
- if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-12';
+ if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-13';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
@@ -28,43 +28,48 @@ function boot(){
  document.body.appendChild(flow);
  flow.querySelector('#rxdeCheckoutContent10').appendChild(area);
  flow.querySelector('#rxdeCheckoutActions10').appendChild(btn);
+ const mailLink=document.createElement('a');
+ mailLink.id='rxdeCheckoutMail13';mailLink.className='rxde-checkout-mail13';mailLink.href='mailto:med.zakaz.de@gmail.com';
+ mailLink.textContent='Напишу письмо сам — без заполнения контактов';
+ flow.querySelector('#rxdeCheckoutActions10').appendChild(mailLink);
  const flowCss=document.createElement('style');flowCss.id='rxdeCheckoutStyles10';
  flowCss.textContent=`
  #rxdeCheckoutFlow10[hidden]{display:none!important}
  html body #rxdeCheckoutFlow10:not([hidden]){display:flex!important;position:fixed!important;left:0!important;right:0!important;bottom:auto!important;top:var(--rxde-flow-top,0px)!important;height:var(--rxde-flow-height,100dvh)!important;z-index:2147483400!important;align-items:flex-end!important;justify-content:center!important;background:rgba(20,40,50,.58)!important;box-sizing:border-box!important}
- html body #rxdeCheckoutFlow10 .rxde-checkout-card10{display:flex!important;flex-direction:column!important;position:relative!important;box-sizing:border-box!important;width:min(100%,540px)!important;height:90%!important;max-height:90%!important;min-height:0!important;overflow:hidden!important;margin:0!important;background:#fff!important;color:#254050!important;border-radius:18px 18px 0 0!important;box-shadow:0 12px 36px #14263144!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-card10{display:flex!important;flex-direction:column!important;position:relative!important;box-sizing:border-box!important;width:min(100%,540px)!important;height:auto!important;max-height:calc(100% - 10px)!important;min-height:0!important;overflow:hidden!important;margin:0!important;background:#fff!important;color:#254050!important;border-radius:18px 18px 0 0!important;box-shadow:0 12px 36px #14263144!important}
  html body #rxdeCheckoutFlow10 .rxde-checkout-back10{display:flex!important;flex:0 0 auto!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:54px!important;width:100%!important;padding:11px 15px!important;background:#edf7fb!important;color:#24536a!important;border:0!important;border-bottom:1px solid #cbdde5!important;font:600 15px system-ui,sans-serif!important;text-align:left!important;cursor:pointer!important}
  html body #rxdeCheckoutFlow10 .rxde-checkout-back10 small{font-size:12px!important;font-weight:500!important;white-space:nowrap!important}
- html body #rxdeCheckoutFlow10 h2{font:700 20px/1.25 system-ui,sans-serif!important;margin:0!important;padding:14px 16px 8px!important;color:#28536a!important;flex:0 0 auto!important}
- html body #rxdeCheckoutFlow10 .rxde-checkout-content10{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:5px 16px 12px!important}
+ html body #rxdeCheckoutFlow10 h2{font:700 20px/1.25 system-ui,sans-serif!important;margin:0!important;padding:10px 16px 5px!important;color:#28536a!important;flex:0 0 auto!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-content10{flex:0 1 auto!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;padding:5px 16px 12px!important}
  html body #rxdeCheckoutFlow10 #rxdeInlineCheckout{display:block!important;position:static!important;width:100%!important;max-height:none!important;height:auto!important;overflow:visible!important;padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;background:transparent!important}
  html body #rxdeCheckoutFlow10 .rxde-contact-head{display:none!important}
- html body #rxdeCheckoutFlow10 .rxde-inline-fields{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important;width:100%!important;max-height:none!important;overflow:visible!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-fields{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:6px!important;width:100%!important;max-height:none!important;overflow:visible!important}
  html body #rxdeCheckoutFlow10 .rxde-inline-pair{display:block!important;width:100%!important;margin:0!important;padding:0!important}
  html body #rxdeCheckoutFlow10 .rxde-inline-pair label{display:block!important;font-size:14px!important;line-height:1.35!important;margin-bottom:5px!important}
- html body #rxdeCheckoutFlow10 .rxde-inline-pair input{display:block!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:48px!important;min-height:48px!important;padding:9px 12px!important;font:16px system-ui,sans-serif!important}
- html body #rxdeCheckoutFlow10 .rxde-phone-apps{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px 16px!important;width:100%!important;margin:0!important;padding:3px 0!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-pair input{display:block!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:42px!important;min-height:42px!important;padding:7px 12px!important;font:16px system-ui,sans-serif!important}
+ html body #rxdeCheckoutFlow10 .rxde-phone-apps{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:4px 14px!important;width:100%!important;margin:0!important;padding:3px 0!important}
  html body #rxdeCheckoutFlow10 .rxde-phone-apps>span{flex-basis:100%!important;font-size:14px!important}
  html body #rxdeCheckoutFlow10 .rxde-phone-apps label{display:inline-flex!important;align-items:center!important;gap:5px!important;font-size:14px!important}
  html body #rxdeCheckoutFlow10 .rxde-inline-separator{display:none!important}
- html body #rxdeCheckoutFlow10 .rxde-contact-help{font-size:12px!important;line-height:1.4!important;margin:8px 0!important}
- html body #rxdeCheckoutFlow10 .rxde-checkout-actions10{flex:0 0 auto!important;box-sizing:border-box!important;padding:10px 16px max(10px,env(safe-area-inset-bottom))!important;border-top:1px solid #d5e3ea!important;background:#fff!important}
- html body #rxdeCheckoutFlow10 #submitOrder{display:flex!important;position:static!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:50px!important;min-height:50px!important;margin:0!important;padding:8px 14px!important;justify-content:center!important;visibility:visible!important}
+ html body #rxdeCheckoutFlow10 .rxde-contact-help{display:none!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-actions10{flex:0 0 auto!important;box-sizing:border-box!important;padding:7px 16px max(8px,env(safe-area-inset-bottom))!important;border-top:1px solid #d5e3ea!important;background:#fff!important}
+ html body #rxdeCheckoutFlow10 #submitOrder{display:flex!important;position:static!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:44px!important;min-height:44px!important;margin:0!important;padding:8px 14px!important;justify-content:center!important;visibility:visible!important}
  /* While an on-screen keyboard is active, make the WHOLE form scroll normally.
     CTA must follow messenger choices and email, never cover the next field. */
  @media(max-width:760px){
-   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-card10{overflow-y:auto!important;overscroll-behavior:contain!important}
+   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-card10{overflow-y:auto!important;overscroll-behavior:contain!important;max-height:100%!important}
    html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-back10{position:sticky!important;top:0!important;z-index:3!important}
    html body #rxdeCheckoutFlow10.rxde-editing11 h2{flex:0 0 auto!important}
-   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-content10{flex:0 0 auto!important;min-height:auto!important;overflow:visible!important}
+   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-content10{flex:0 1 auto!important;min-height:0!important;overflow-y:auto!important}
    html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-actions10{flex:0 0 auto!important;position:static!important;margin-top:6px!important}
  }
 
  html body #rxdeContactConfirm:not([hidden]){z-index:2147483450!important}
  html body #rxdeSendingOverlay:not([hidden]){z-index:2147483500!important}
+ html body #rxdeCheckoutFlow10 .rxde-checkout-mail13{display:block!important;margin:6px auto 0!important;padding:3px 8px!important;text-align:center!important;font:500 13px system-ui,sans-serif!important;line-height:1.25!important;color:#22617b!important;text-decoration:underline!important;text-underline-offset:3px!important}
  html body #orderSheet #rxdeMobileContactsToggle{display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px!important;width:100%!important;padding:8px 12px!important}
  html body #orderSheet .sheet-footer #submitOrder{display:none!important}
- @media(min-width:761px){html body #rxdeCheckoutFlow10:not([hidden]){align-items:center!important}html body #rxdeCheckoutFlow10 .rxde-checkout-card10{height:min(90%,650px)!important;max-height:min(90%,650px)!important;border-radius:18px!important}}
+ @media(min-width:761px){html body #rxdeCheckoutFlow10:not([hidden]){align-items:center!important}html body #rxdeCheckoutFlow10 .rxde-checkout-card10{height:auto!important;max-height:min(90%,600px)!important;border-radius:18px!important}}
  `;
  document.head.appendChild(flowCss);
  function syncCheckoutViewport(){
@@ -203,7 +208,15 @@ function boot(){
  updateHint(additional,extraMethod);syncAppChecks();contactSummary();
  btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Проверить контакты →</span>';btn.classList.add('rxde-inline-submit');btn.disabled=false;btn.setAttribute('aria-disabled','true');
  document.getElementById('rxdeSendingClose').addEventListener('click',closeSending);
- const direct=document.createElement('a');direct.className='rxde-inline-direct';direct.href='mailto:med.zakaz.de@gmail.com';direct.textContent='Задать вопрос по email';direct.title='Вопрос или обращение без оформления заявки';foot.appendChild(direct);
+ // Direct email option is shown inside the checkout, beneath the main action.
+ mailLink.addEventListener('click',event=>{
+   const t=R.Cart.totals();
+   if(!t.positions){event.preventDefault();R.Utils.toast?.('Сначала добавьте товары в корзину');return;}
+   const receipt=R.Admin?.template?.(null,R.Store.get().cart,'');
+   if(!receipt){event.preventDefault();R.Utils.toast?.('Не удалось подготовить текст заказа');return;}
+   const subject='RXDE · Заказ клиента';
+   mailLink.href='mailto:med.zakaz.de@gmail.com?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(receipt);
+ });
  btn.onclick=async()=>{
   if(busy)return;
    if(!contactSummary()){setMobileContacts(true);requestAnimationFrame(()=>primary.focus({preventScroll:true}));return;}
