@@ -6,7 +6,7 @@ function boot(){
  if(!R?.Cart||!sheet||!btn)return;
  const foot=sheet.querySelector('.sheet-footer');
  const buildLabel=document.getElementById('rxdeFooterVersion');
- if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-16';
+ if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-17';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
@@ -17,17 +17,18 @@ function boot(){
  </div><p class="rxde-contact-help">Для связи укажите номер телефона, Telegram @username и/или email. Для доставки адрес и телефон уточним отдельно.</p>`;
  // Two real mutually exclusive steps: cart -> contact sheet. Existing fields
  // and submit button are moved, not cloned, keeping all validation/send handlers.
- const contactToggle=document.createElement('button');
- contactToggle.type='button';contactToggle.id='rxdeMobileContactsToggle';
- contactToggle.className='rxde-mobile-contacts-toggle';
+ // The entry button exists in index.html from the first paint. Never replace it.
+ const contactToggle=document.getElementById('rxdeMobileContactsToggle');
+ if(!contactToggle)return;
  contactToggle.textContent='Оформить заказ →';
- foot.insertBefore(contactToggle,btn);
  const flow=document.createElement('div');
  flow.id='rxdeCheckoutFlow10';flow.hidden=true;
  flow.innerHTML='<section class="rxde-checkout-card10" role="dialog" aria-modal="true" aria-label="Оформление заказа"><button type="button" id="rxdeCheckoutBack10" class="rxde-checkout-back10">← Проверить состав заказа <small id="rxdeCheckoutSummary10"></small></button><h2>Контакты для заказа</h2><div id="rxdeCheckoutContent10" class="rxde-checkout-content10"></div><div class="rxde-checkout-actions10" id="rxdeCheckoutActions10"></div></section>';
  document.body.appendChild(flow);
  flow.querySelector('#rxdeCheckoutContent10').appendChild(area);
  flow.querySelector('#rxdeCheckoutActions10').appendChild(btn);
+ // The legacy button is hidden in the initial document; reveal only inside the real checkout.
+ btn.style.removeProperty('display');
  const mailLink=document.createElement('a');
  mailLink.id='rxdeCheckoutMail13';mailLink.className='rxde-checkout-mail13';mailLink.href='mailto:med.zakaz.de@gmail.com';
  mailLink.textContent='Напишу письмо сам — без заполнения контактов';
@@ -125,7 +126,11 @@ function boot(){
      document.activeElement?.blur?.();
    }
  }
- contactToggle.addEventListener('click',()=>setMobileContacts(true));
+ window.__rxdeOpenCheckoutFromCart=()=>setMobileContacts(true);
+ if(window.__rxdeCheckoutOpenRequested){
+   window.__rxdeCheckoutOpenRequested=false;
+   setMobileContacts(true);
+ }
  flow.querySelector('#rxdeCheckoutBack10').addEventListener('click',()=>{if(!busy)setMobileContacts(false)});
  sheet.addEventListener('rxde:focus-product',()=>setMobileContacts(false));
  window.visualViewport?.addEventListener('resize',()=>{if(isCheckoutOpen())syncCheckoutViewport()},{passive:true});

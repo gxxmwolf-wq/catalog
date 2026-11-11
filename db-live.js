@@ -53,7 +53,7 @@ function primaryCategory(r){
  return 'Другие препараты';
 }
 function loadScript(file){return new Promise((yes,no)=>{
- let script=document.createElement('script');script.src=file+'?v=20261111-16';
+ let script=document.createElement('script');script.src=file+'?v=20261111-17';
  script.onload=()=>yes();script.onerror=()=>no(new Error('Cannot load '+file));document.body.appendChild(script);
 })}
 async function start(){
