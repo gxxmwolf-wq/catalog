@@ -5808,7 +5808,7 @@ document.addEventListener('click',async e=>{
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 11.11.2026-07';
+  const BUILD='v2 · 11.11.2026-08';
   const DETAILS='Компактное окно срока годности · доступные кнопки при клавиатуре · предыдущие исправления';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
@@ -6022,142 +6022,138 @@ document.addEventListener('click',async e=>{
 (function(){
   const style=document.createElement('style');
   style.id='rxde-hide-duplicate-add-order';
-  style.textContent='#addOrderProduct{display:inline-flex!important}';
+  style.textContent='#addOrderProduct{display:none!important}';
   document.head.appendChild(style);
 })();
 
 
-/* RXDE v2 · 11.11.2026-07 — real buttons, force full checkout over legacy styles. */
+/* RXDE v2 · 11.11.2026-08: checkout actually above the cart; one visible flow. */
 (()=>{
- 'use strict';
- const id='rxde-checkout-v207';
- const style=document.createElement('style');style.id=id;
- style.textContent=`
-   html body #confirmBackdrop.confirm-backdrop[hidden]{display:none!important}
-   html body #confirmBackdrop.confirm-backdrop:not([hidden]){
-     position:fixed!important;inset:0!important;z-index:2147483000!important;
-     display:flex!important;justify-content:center!important;align-items:flex-end!important;
-     height:var(--rxde-checkout-height,100dvh)!important;width:100vw!important;
-     padding:0!important;margin:0!important;overflow:hidden!important;
-     background:rgba(27,46,58,.28)!important;box-sizing:border-box!important;
-   }
-   html body #confirmBackdrop.confirm-backdrop .confirm-card{
-     position:relative!important;inset:auto!important;transform:none!important;
-     display:flex!important;flex-direction:column!important;
-     box-sizing:border-box!important;overflow:hidden!important;
-     width:min(100%,580px)!important;max-width:580px!important;
-     height:90%!important;max-height:90%!important;min-height:0!important;
-     margin:0!important;padding:0!important;border-radius:18px 18px 0 0!important;
-     background:white!important;box-shadow:0 10px 35px rgba(30,50,60,.18)!important;
-   }
-   html body #confirmBackdrop .confirm-card #rxdeCheckoutReturn207{
-     display:flex!important;flex:none!important;justify-content:space-between!important;
-     align-items:center!important;gap:8px!important;
-     min-height:58px!important;width:100%!important;margin:0!important;
-     padding:10px 16px!important;border:0!important;border-bottom:1px solid #dce8ef!important;
-     background:#eef6fa!important;color:#26546b!important;border-radius:0!important;
-     text-align:left!important;cursor:pointer!important;
-   }
-   #rxdeCheckoutReturn207 span{line-height:1.25}
-   #rxdeCheckoutReturn207 small{display:block;margin-top:4px;font-size:12px;color:#5b7786}
-   html body #confirmBackdrop .confirm-card #confirmTitle{
-     display:block!important;flex:none!important;font-size:20px!important;
-     line-height:1.2!important;padding:11px 18px 6px!important;margin:0!important;
-     border:0!important;color:#284e63!important;
-   }
-   html body #confirmBackdrop .confirm-card #closeConfirm,
-   html body #confirmBackdrop .confirm-card #miniReceipt,
-   html body #confirmBackdrop .confirm-card #rxdeExitConfirm{display:none!important}
-   html body #confirmBackdrop .confirm-card #rxdeContactDetails{
-     display:block!important;flex:1 1 auto!important;min-height:0!important;
-     max-height:none!important;overflow:auto!important;
-     margin:0!important;padding:8px 18px 15px!important;
-     border:0!important;box-shadow:none!important;background:white!important;
-     overscroll-behavior:contain!important;
-   }
-   html body #confirmBackdrop .confirm-card #rxdeContactDetails>summary{display:none!important}
-   html body #confirmBackdrop .confirm-card .rxde-contact-body.rxde-compact-grid{
-     display:flex!important;flex-direction:column!important;gap:8px!important;
-     grid-template-columns:1fr!important;padding:0!important;
-   }
-   html body #confirmBackdrop .confirm-card .rxde-contact-tip{display:none!important}
-   html body #confirmBackdrop .confirm-card .rxde-contact-row{
-     display:grid!important;grid-template-columns:minmax(95px,32%) minmax(0,1fr)!important;
-     align-items:center!important;gap:8px!important;min-height:43px!important;
-     width:100%!important;margin:0!important;padding:0!important;
-   }
-   html body #confirmBackdrop .confirm-card .rxde-contact-row input:not([type=checkbox]){
-     width:100%!important;min-width:0!important;box-sizing:border-box!important;
-     height:42px!important;min-height:42px!important;font-size:16px!important;
-     padding:7px 9px!important;
-   }
-   html body #confirmBackdrop .confirm-card #rxdeCheckoutActions207{
-     display:flex!important;flex:none!important;align-items:center!important;
-     padding:10px 16px max(10px,env(safe-area-inset-bottom))!important;
-     border-top:1px solid #e0eaf0!important;background:#fff!important;
-     box-sizing:border-box!important;min-height:65px!important;
-   }
-   html body #confirmBackdrop .confirm-card #rxdeCheckoutActions207 #confirmSubmit{
-     position:static!important;display:block!important;flex:1!important;
-     width:100%!important;min-height:48px!important;margin:0!important;
-     padding:8px 12px!important;border-radius:10px!important;
-     font-size:16px!important;
-   }
-   html body #confirmBackdrop .confirm-card .rxde-mail-fallback{
-     display:none!important;
-   }
-   @media(min-width:761px){
-     html body #confirmBackdrop.confirm-backdrop .confirm-card{
-       border-radius:17px!important;height:min(90%,640px)!important;max-width:560px!important;
-       margin:auto!important;
-     }
-   }
-   @media(max-height:500px){
-     html body #confirmBackdrop .confirm-card #confirmTitle{padding:6px 14px 4px!important;font-size:17px!important}
-     html body #confirmBackdrop .confirm-card #rxdeCheckoutReturn207{min-height:43px!important;padding:6px 14px!important}
-     html body #confirmBackdrop .confirm-card #rxdeCheckoutActions207{min-height:53px!important;padding:5px 14px!important}
-   }
- `;
- document.head.appendChild(style);
- function init(){
-   const backdrop=document.getElementById('confirmBackdrop');
-   const card=backdrop?.querySelector('.confirm-card');
-   const send=document.getElementById('confirmSubmit');
-   const open=document.getElementById('submitOrder');
-   const close=document.getElementById('closeConfirm');
-   const contacts=document.getElementById('rxdeContactDetails');
-   if(!backdrop||!card||!send||!open||!close||!contacts)return;
-   // Avoid attaching twice in a hot reload.
-   let bar=document.getElementById('rxdeCheckoutReturn207');
-   if(!bar){
-     bar=document.createElement('button');bar.type='button';bar.id='rxdeCheckoutReturn207';
-     bar.innerHTML='<span><strong>← Проверить состав заказа</strong><small id="rxdeCheckoutMeta207"></small></span><span aria-hidden="true">⌃</span>';
-     card.insertBefore(bar,card.firstChild);
-   }
-   bar.onclick=()=>{if(send.dataset.busy==='1')return;document.activeElement?.blur?.();close.click()};
-   let actions=document.getElementById('rxdeCheckoutActions207');
-   if(!actions){actions=document.createElement('div');actions.id='rxdeCheckoutActions207';card.appendChild(actions)}
-   actions.appendChild(send);
-   // Leave messenger checkboxes, email, phone validation and send callback unchanged.
-   const sync=()=>{
-     if(backdrop.hidden)return;
-     const vv=window.visualViewport;
-     const h=Math.max(180,Math.round(vv?.height||window.innerHeight));
-     backdrop.style.setProperty('--rxde-checkout-height',h+'px');
-     backdrop.style.top=(vv?Math.max(0,Math.round(vv.offsetTop)):0)+'px';
-     const count=document.getElementById('orderPositions')?.textContent?.trim()||'';
-     const sum=document.getElementById('orderTotalRub')?.textContent?.trim()||'';
-     const meta=document.getElementById('rxdeCheckoutMeta207');
-     if(meta)meta.textContent=[count,sum].filter(Boolean).join(' · ');
-     const title=document.getElementById('confirmTitle');if(title)title.textContent='Оформление заказа';
-     contacts.open=true;
-   };
-   open.addEventListener('click',()=>requestAnimationFrame(sync));
-   new MutationObserver(()=>{if(!backdrop.hidden)requestAnimationFrame(sync)})
-     .observe(backdrop,{attributes:true,attributeFilter:['hidden']});
-   if(window.visualViewport){visualViewport.addEventListener('resize',sync,{passive:true});visualViewport.addEventListener('scroll',sync,{passive:true})}
-   addEventListener('resize',sync,{passive:true});
-   sync();
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+  'use strict';
+  const css=document.createElement('style');
+  css.id='rxde-checkout-v208';
+  css.textContent=`
+    #addOrderProduct{display:none!important}
+    html body.rxde-checkout-active #orderBackdrop{visibility:hidden!important;pointer-events:none!important}
+    html body #confirmBackdrop.confirm-backdrop[hidden]{display:none!important}
+    html body #confirmBackdrop.confirm-backdrop:not([hidden]){
+      display:flex!important;position:fixed!important;left:0!important;right:0!important;
+      top:var(--rxde-visual-top,0px)!important;bottom:auto!important;
+      width:100vw!important;height:var(--rxde-visual-height,100dvh)!important;
+      margin:0!important;padding:0!important;z-index:2147483001!important;
+      overflow:hidden!important;align-items:flex-end!important;justify-content:center!important;
+      box-sizing:border-box!important;background:rgba(24,46,57,.33)!important;
+    }
+    html body #confirmBackdrop .confirm-card{
+      position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;
+      transform:none!important;display:flex!important;flex-direction:column!important;
+      isolation:isolate!important;overflow:hidden!important;box-sizing:border-box!important;
+      width:min(100%,560px)!important;max-width:560px!important;
+      height:90%!important;max-height:90%!important;min-height:0!important;
+      margin:0!important;padding:0!important;border:1px solid #c9d9e1!important;
+      border-bottom:0!important;border-radius:17px 17px 0 0!important;
+      background:#fff!important;box-shadow:0 6px 34px rgba(20,42,55,.17)!important;
+    }
+    html body #confirmBackdrop .confirm-card #rxdeCheckoutReturn208{
+      display:flex!important;flex:0 0 auto!important;align-items:center!important;
+      justify-content:space-between!important;width:100%!important;min-height:59px!important;
+      gap:8px!important;margin:0!important;padding:10px 16px!important;
+      border:0!important;border-bottom:1px solid #d8e4e9!important;border-radius:0!important;
+      background:#eef6fa!important;color:#28536a!important;text-align:left!important;
+      font:600 15px system-ui,sans-serif!important;cursor:pointer!important;
+    }
+    #rxdeCheckoutReturn208 small{display:block;color:#587987;font:400 12px system-ui,sans-serif;margin-top:3px}
+    html body #confirmBackdrop .confirm-card #confirmTitle{
+      display:block!important;flex:0 0 auto!important;font-size:20px!important;
+      font-weight:700!important;line-height:1.25!important;color:#254a5b!important;
+      border:0!important;margin:0!important;padding:14px 17px 9px!important;
+    }
+    html body #confirmBackdrop .confirm-card #miniReceipt,
+    html body #confirmBackdrop .confirm-card #closeConfirm,
+    html body #confirmBackdrop .confirm-card #rxdeExitConfirm{display:none!important}
+    html body #confirmBackdrop .confirm-card #rxdeContactDetails{
+      display:block!important;flex:1 1 auto!important;min-height:0!important;
+      max-height:none!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+      box-sizing:border-box!important;width:100%!important;
+      margin:0!important;padding:0 17px 12px!important;background:white!important;
+      border:0!important;box-shadow:none!important;border-radius:0!important;
+    }
+    html body #confirmBackdrop .confirm-card #rxdeContactDetails>summary,
+    html body #confirmBackdrop .confirm-card .rxde-contact-tip{display:none!important}
+    html body #confirmBackdrop .confirm-card .rxde-contact-body.rxde-compact-grid{
+      display:flex!important;flex-direction:column!important;gap:9px!important;
+      padding:4px 0 8px!important;box-sizing:border-box!important;
+    }
+    html body #confirmBackdrop .confirm-card .rxde-contact-row{
+      display:grid!important;grid-template-columns:105px minmax(0,1fr)!important;
+      gap:8px!important;align-items:center!important;width:100%!important;
+      min-height:43px!important;margin:0!important;padding:0!important;
+    }
+    html body #confirmBackdrop .confirm-card .rxde-check-label{font-size:13px!important;font-weight:600!important}
+    html body #confirmBackdrop .confirm-card .rxde-contact-row input:not([type=checkbox]){
+      min-width:0!important;width:100%!important;height:42px!important;min-height:42px!important;
+      box-sizing:border-box!important;font-size:16px!important;padding:7px 9px!important;
+    }
+    html body #confirmBackdrop .confirm-card #rxdeCheckoutActions208{
+      display:flex!important;flex:0 0 auto!important;flex-direction:column!important;
+      width:100%!important;box-sizing:border-box!important;
+      margin:0!important;padding:10px 16px max(10px,env(safe-area-inset-bottom))!important;
+      border-top:1px solid #dbe5eb!important;background:#fff!important;
+    }
+    html body #confirmBackdrop .confirm-card #rxdeCheckoutActions208 #confirmSubmit{
+      display:block!important;position:static!important;flex:0 0 auto!important;
+      width:100%!important;min-height:47px!important;padding:9px!important;
+      margin:0!important;font-size:16px!important;
+    }
+    html body #confirmBackdrop .confirm-card .rxde-mail-fallback{display:none!important}
+    @media(min-width:761px){
+      html body #confirmBackdrop.confirm-backdrop:not([hidden]){align-items:center!important}
+      html body #confirmBackdrop .confirm-card{
+        height:min(90%,630px)!important;max-height:min(90%,630px)!important;
+        border-radius:16px!important;border-bottom:1px solid #c9d9e1!important
+      }
+    }
+    @media(max-height:480px){
+      html body #confirmBackdrop .confirm-card #rxdeCheckoutReturn208{min-height:45px!important;padding:6px 12px!important}
+      html body #confirmBackdrop .confirm-card #confirmTitle{font-size:17px!important;padding:6px 12px!important}
+      html body #confirmBackdrop .confirm-card #rxdeCheckoutActions208{padding:5px 12px!important}
+    }
+  `;
+  document.head.appendChild(css);
+  function init(){
+    const layer=document.getElementById('confirmBackdrop');
+    const card=layer?.querySelector('.confirm-card');
+    const send=document.getElementById('confirmSubmit');
+    const close=document.getElementById('closeConfirm');
+    const details=document.getElementById('rxdeContactDetails');
+    if(!layer||!card||!send||!close||!details)return;
+    let back=document.getElementById('rxdeCheckoutReturn208');
+    if(!back){
+      back=document.createElement('button');back.type='button';back.id='rxdeCheckoutReturn208';
+      back.innerHTML='<span>← Проверить состав заказа<small id="rxdeCheckoutMeta208"></small></span><span aria-hidden="true">⌃</span>';
+      card.insertBefore(back,card.firstChild);
+    }
+    back.addEventListener('click',()=>{if(send.dataset.busy==='1')return;document.activeElement?.blur?.();close.click()});
+    let actions=document.getElementById('rxdeCheckoutActions208');
+    if(!actions){actions=document.createElement('div');actions.id='rxdeCheckoutActions208';card.appendChild(actions)}
+    actions.appendChild(send);
+    function sync(){
+      const shown=!layer.hidden;
+      document.body.classList.toggle('rxde-checkout-active',shown);
+      if(!shown)return;
+      const vv=window.visualViewport;
+      layer.style.setProperty('--rxde-visual-height',Math.round(vv?.height||innerHeight)+'px');
+      layer.style.setProperty('--rxde-visual-top',Math.max(0,Math.round(vv?.offsetTop||0))+'px');
+      const meta=document.getElementById('rxdeCheckoutMeta208');
+      if(meta)meta.textContent=[document.getElementById('orderPositions')?.textContent?.trim(),document.getElementById('orderTotalRub')?.textContent?.trim()].filter(Boolean).join(' · ');
+      const title=document.getElementById('confirmTitle');if(title)title.textContent='Оформление заказа';
+      details.open=true;
+    }
+    new MutationObserver(sync).observe(layer,{attributes:true,attributeFilter:['hidden']});
+    window.visualViewport?.addEventListener('resize',sync,{passive:true});
+    window.visualViewport?.addEventListener('scroll',sync,{passive:true});
+    window.addEventListener('resize',sync,{passive:true});
+    sync();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
