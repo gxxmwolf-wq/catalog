@@ -503,7 +503,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     set(pzn,value){if(value&&((value.mode==='months'&&Number(value.months)>0)||(value.mode==='date'&&/^\d{4}-(0[1-9]|1[0-2])$/.test(value.date))||String(value.comment||'').trim()))data[String(pzn)]=value;else delete data[String(pzn)];store()},
     remove(pzn){delete data[String(pzn)];store()},
     prune(cart){const keep=new Set(cart.map(x=>String(x.pzn)));for(const k of Object.keys(data))if(!keep.has(k))delete data[k];store()},
-    line(pzn){const x=data[String(pzn)];if(!x)return '';const expiry=x.months>0?(x.mode==='date'?'!! срок годности не ранее '+x.date.slice(5,7)+'/'+x.date.slice(0,4):'!! срок годности '+x.months+' мес. ('+expiryMonthLabel(x.months)+')'):'';return [expiry,x.comment?'Пожелание по упаковке: '+x.comment:''].filter(Boolean).join('\n')}
+    line(pzn){const x=data[String(pzn)];if(!x)return '';const expiry=x.months>0?(x.mode==='date'?'!! срок годности не ранее '+x.date.slice(5,7)+'/'+x.date.slice(0,4):'!! срок годности от '+x.months+' мес. ('+expiryMonthLabel(x.months)+')'):'';return [expiry,x.comment?'Пожелание по упаковке: '+x.comment:''].filter(Boolean).join('\n')}
   };
 })(window.RXDE);
 
@@ -743,6 +743,23 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
 
   function suggestionRow(p){return SearchView.suggestionRow(p,{U,S,Cart})}
 
+  function openMissingProductQuestion(){
+    const query=String(el.searchInput?.value||S.get().query||'').trim();
+    const field=el.questionText||document.getElementById('questionText');
+    if(field && !field.value.trim() && query)field.value=`Здравствуйте! Не нашёл в каталоге: ${query}. Можно заказать?`;
+    hideSuggestions();
+    blurSearch();
+    if(!el.questionBackdrop)return;
+    el.questionBackdrop.hidden=false;
+    if(isMobile())setMobileMode('question');
+    setTimeout(()=>field?.focus({preventScroll:true}),60);
+  }
+  document.addEventListener('click',e=>{
+    if(!e.target.closest?.('[data-rxde-no-results-contact]'))return;
+    e.preventDefault();e.stopImmediatePropagation();
+    openMissingProductQuestion();
+  },true);
+
   function renderSuggestions(){
     if(!el.searchSuggest)return;
     const q=el.searchInput.value.trim();
@@ -750,7 +767,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
 
     const all=Q.global(q);
     if(!all.length){
-      el.searchSuggest.innerHTML=`<div class="suggest-empty">Ничего не найдено</div>`;
+      el.searchSuggest.innerHTML=`<div class="suggest-empty rxde-empty-search">Ничего не найдено в каталоге.<button type="button" class="rxde-empty-contact" data-rxde-no-results-contact>Напишите нам →</button></div>`;
       el.searchSuggest.hidden=false;
       return;
     }
@@ -2084,7 +2101,7 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     const autoExpandForms=activeFormFilters.size>=3;
     const visible=autoExpandForms?filtered:filtered.slice(0,st.limit);
     el.productList.classList.toggle('search-grid-mode',hasQuery);
-    el.productList.innerHTML=visible.map(row).join('')||'<div class="search-group-empty standalone">Ничего не найдено.</div>';
+    el.productList.innerHTML=visible.map(row).join('')||(hasQuery?'<div class="search-group-empty standalone rxde-empty-search">Ничего не найдено в каталоге.<button type="button" class="rxde-empty-contact" data-rxde-no-results-contact>Напишите нам →</button></div>':'<div class="search-group-empty standalone">В этой категории пока нет товаров.</div>');
     el.loadMore.hidden=autoExpandForms||filtered.length<=visible.length;
     renderCatalogHero(filtered.length);
     if(el.catalogCount&&activeFormFilters.size){const total=filterableItems.length;el.catalogCount.textContent=`${filtered.length} из ${total} ${U.pluralProducts?U.pluralProducts(total):'товаров'}`;}
@@ -4130,25 +4147,28 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       const b=e.target.closest('[data-mobile-recent-index]');if(!b)return;const visits=recentLoad(),x=visits[Number(b.dataset.mobileRecentIndex)];if(!x)return;navGo(x,false);
     };
     if(el.flowHistoryMenu)el.flowHistoryMenu.onclick=e=>{const b=e.target.closest('[data-recent-index]');if(!b)return;const visits=recentLoad(),x=visits[Number(b.dataset.recentIndex)];if(!x)return;el.flowHistoryMenu.hidden=true;navGo(x,false)};
-    if(el.orderFlowBack)el.orderFlowBack.onclick=e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      // Both exits use the same verified catalog-return action.
-      el.addOrderProduct?.click();
-    };
-    el.addOrderProduct.onclick=e=>{
+    function returnToCatalogFromOrder(e){
       e?.preventDefault?.();
       e?.stopPropagation?.();
+      const hadBridge=Boolean(navBridge.fromOrder && navBridge.searchSnapshot);
       closeOrder();
-      // Returning to the catalog must work even after deleting the final item.
-      // Keep the user's current search when available; otherwise show all products.
-      if(!S.get().query && !S.get().category && !S.get().subcategory){
-        S.set({home:false,query:'',category:'',subcategory:'',limit:R.Constants.PAGE_SIZE,expanded:new Set()});
-      }
-      renderProducts();
+      // When the cart contained the last item, always restore the catalog surface.
+      S.set({orderOpen:false,home:false,mobileMode:'search'});
+      if(!hadBridge)renderProducts();
       if(el.searchInput)el.searchInput.blur();
-      requestAnimationFrame(scrollResultsTop);
-    };if(el.clearOrder)el.clearOrder.onclick=clearWholeOrder;
+      if(el.orderBackdrop)el.orderBackdrop.hidden=true;
+      document.body.style.overflow='';
+    }
+    // Capture the prominent navigation button before any legacy order handlers.
+    // This also survives a replaced/re-rendered navigation element.
+    document.addEventListener('click',e=>{
+      if(!e.target.closest?.('#orderFlowBack'))return;
+      e.preventDefault();e.stopImmediatePropagation();
+      returnToCatalogFromOrder(e);
+    },true);
+    if(el.orderFlowBack)el.orderFlowBack.onclick=returnToCatalogFromOrder;
+    if(el.addOrderProduct)el.addOrderProduct.onclick=returnToCatalogFromOrder;
+    if(el.clearOrder)el.clearOrder.onclick=clearWholeOrder;
     const restoreOrderBtn=document.getElementById('restoreOrder');if(restoreOrderBtn)restoreOrderBtn.onclick=restoreClearedReceipt;
     // Read-only receipt preview: only shown by explicit click, never uploaded.
     const receiptPreview=document.getElementById('rxdeReceiptPreview');
@@ -5759,8 +5779,8 @@ document.addEventListener('click',async e=>{
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 10.11.2026-03';
-  const DETAILS='Тихое обновление курса · возврат в каталог · мобильная плавность · кнопки каталога · размер упаковки';
+  const BUILD='v2 · 11.11.2026-01';
+  const DETAILS='Срок годности от · запрос отсутствующего товара · возврат в каталог · предыдущие исправления';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
   style.id='rxde-v2-20261110-mobile-header';
@@ -5827,4 +5847,17 @@ document.addEventListener('click',async e=>{
     if(foot)new MutationObserver(stamp).observe(foot,{characterData:true,childList:true,subtree:true});
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
+
+/* RXDE v2 11.11.2026-01 — empty search contact action */
+(()=>{
+  const style=document.createElement('style');
+  style.id='rxde-empty-search-contact-style';
+  style.textContent=`
+    .rxde-empty-search{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:16px!important}
+    .rxde-empty-contact{appearance:none;border:1px solid #bfd7df;background:#f5fafc;color:#285b71;
+      border-radius:13px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;min-height:42px}
+    .rxde-empty-contact:hover,.rxde-empty-contact:focus-visible{background:#e9f4f8;border-color:#83b9cb}
+  `;
+  document.head.appendChild(style);
 })();
