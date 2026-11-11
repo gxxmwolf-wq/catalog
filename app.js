@@ -4161,11 +4161,14 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       // Keep the original + button action available internally (hidden in UI).
       // No automatic keyboard opening on mobile.
     };
+    // Both real buttons in index.html, not the nonexistent orderFlowBack.
     if(el.addOrderProduct)el.addOrderProduct.onclick=returnToCatalogFromOrder;
+    const returnButton=document.getElementById('rxdeReturnCatalog');
+    if(returnButton)returnButton.onclick=returnToCatalogFromOrder;
     if(el.orderFlowBack)el.orderFlowBack.onclick=returnToCatalogFromOrder;
-    // Capture clicks from the header even if an older listener is still bound.
+    // Delegation covers header re-renders; hidden + is NOT needed.
     document.addEventListener('click',e=>{
-      const btn=e.target.closest?.('#orderFlowBack');
+      const btn=e.target.closest?.('#rxdeReturnCatalog');
       if(!btn)return;
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -5805,7 +5808,7 @@ document.addEventListener('click',async e=>{
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 11.11.2026-06';
+  const BUILD='v2 · 11.11.2026-07';
   const DETAILS='Компактное окно срока годности · доступные кнопки при клавиатуре · предыдущие исправления';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
@@ -6019,165 +6022,142 @@ document.addEventListener('click',async e=>{
 (function(){
   const style=document.createElement('style');
   style.id='rxde-hide-duplicate-add-order';
-  style.textContent='#addOrderProduct{display:none!important}';
+  style.textContent='#addOrderProduct{display:inline-flex!important}';
   document.head.appendChild(style);
 })();
 
 
-/* RXDE v2 · 11.11.2026-05 — single checkout step, full messenger choices.
-   Existing contact inputs, validators, submission and order confirmation unchanged. */
+/* RXDE v2 · 11.11.2026-07 — real buttons, force full checkout over legacy styles. */
 (()=>{
  'use strict';
- const style=document.createElement('style');
- style.id='rxde-checkout-v205';
+ const id='rxde-checkout-v207';
+ const style=document.createElement('style');style.id=id;
  style.textContent=`
-   html body #confirmBackdrop.confirm-backdrop:not([hidden]){
-     position:fixed!important;inset:0!important;display:flex!important;
-     align-items:center!important;justify-content:center!important;
-     box-sizing:border-box!important;margin:0!important;padding:12px!important;
-     width:100%!important;height:var(--rxde-checkout-vh,100dvh)!important;
-     background:rgba(30,55,65,.12)!important;z-index:2147483000!important;
-     overflow:hidden!important;overscroll-behavior:contain!important;
-   }
    html body #confirmBackdrop.confirm-backdrop[hidden]{display:none!important}
-   html body #confirmBackdrop .confirm-card{
+   html body #confirmBackdrop.confirm-backdrop:not([hidden]){
+     position:fixed!important;inset:0!important;z-index:2147483000!important;
+     display:flex!important;justify-content:center!important;align-items:flex-end!important;
+     height:var(--rxde-checkout-height,100dvh)!important;width:100vw!important;
+     padding:0!important;margin:0!important;overflow:hidden!important;
+     background:rgba(27,46,58,.28)!important;box-sizing:border-box!important;
+   }
+   html body #confirmBackdrop.confirm-backdrop .confirm-card{
      position:relative!important;inset:auto!important;transform:none!important;
-     display:flex!important;flex-direction:column!important;box-sizing:border-box!important;
-     overflow:hidden!important;width:min(100%,530px)!important;max-width:530px!important;
-     height:90%!important;max-height:90%!important;margin:0!important;padding:0!important;
-     border-radius:17px!important;background:#fff!important;
-     box-shadow:0 14px 42px rgba(25,55,65,.18)!important;
+     display:flex!important;flex-direction:column!important;
+     box-sizing:border-box!important;overflow:hidden!important;
+     width:min(100%,580px)!important;max-width:580px!important;
+     height:90%!important;max-height:90%!important;min-height:0!important;
+     margin:0!important;padding:0!important;border-radius:18px 18px 0 0!important;
+     background:white!important;box-shadow:0 10px 35px rgba(30,50,60,.18)!important;
    }
-   #rxdeCheckoutReturn205{
-     display:flex!important;flex:none!important;align-items:center!important;
-     justify-content:space-between!important;gap:12px!important;width:100%!important;
-     box-sizing:border-box!important;padding:12px 17px!important;margin:0!important;
-     border:0!important;border-bottom:1px solid #d8e6ec!important;
-     border-radius:0!important;background:#eff7fa!important;color:#24576c!important;
-     text-align:left!important;cursor:pointer!important;min-height:66px!important;
+   html body #confirmBackdrop .confirm-card #rxdeCheckoutReturn207{
+     display:flex!important;flex:none!important;justify-content:space-between!important;
+     align-items:center!important;gap:8px!important;
+     min-height:58px!important;width:100%!important;margin:0!important;
+     padding:10px 16px!important;border:0!important;border-bottom:1px solid #dce8ef!important;
+     background:#eef6fa!important;color:#26546b!important;border-radius:0!important;
+     text-align:left!important;cursor:pointer!important;
    }
-   #rxdeCheckoutReturn205 .rxde-back-title{font-size:16px;font-weight:650;line-height:1.25}
-   #rxdeCheckoutReturn205 .rxde-back-meta{display:block;margin-top:3px;font-size:13px;font-weight:400;color:#50717f}
-   #rxdeCheckoutReturn205 .rxde-back-chevron{font-size:18px;flex:none}
-   #confirmBackdrop #confirmTitle{
-     flex:none!important;margin:0!important;padding:16px 20px 6px!important;
-     font-size:23px!important;line-height:1.2!important;font-weight:650!important;
-     color:#294d61!important;
+   #rxdeCheckoutReturn207 span{line-height:1.25}
+   #rxdeCheckoutReturn207 small{display:block;margin-top:4px;font-size:12px;color:#5b7786}
+   html body #confirmBackdrop .confirm-card #confirmTitle{
+     display:block!important;flex:none!important;font-size:20px!important;
+     line-height:1.2!important;padding:11px 18px 6px!important;margin:0!important;
+     border:0!important;color:#284e63!important;
    }
-   #confirmBackdrop #closeConfirm{display:none!important}
-   #confirmBackdrop #miniReceipt{display:none!important}
-   #confirmBackdrop #rxdeContactDetails{
-     display:flex!important;flex:1 1 auto!important;min-height:0!important;
-     overflow-y:auto!important;overscroll-behavior:contain!important;
-     flex-direction:column!important;max-height:none!important;
-     padding:8px 20px 14px!important;margin:0!important;border:0!important;
-     box-shadow:none!important;background:#fff!important;scrollbar-width:thin;
+   html body #confirmBackdrop .confirm-card #closeConfirm,
+   html body #confirmBackdrop .confirm-card #miniReceipt,
+   html body #confirmBackdrop .confirm-card #rxdeExitConfirm{display:none!important}
+   html body #confirmBackdrop .confirm-card #rxdeContactDetails{
+     display:block!important;flex:1 1 auto!important;min-height:0!important;
+     max-height:none!important;overflow:auto!important;
+     margin:0!important;padding:8px 18px 15px!important;
+     border:0!important;box-shadow:none!important;background:white!important;
+     overscroll-behavior:contain!important;
    }
-   #confirmBackdrop #rxdeContactDetails>summary{display:none!important}
-   #confirmBackdrop .rxde-contact-body{
+   html body #confirmBackdrop .confirm-card #rxdeContactDetails>summary{display:none!important}
+   html body #confirmBackdrop .confirm-card .rxde-contact-body.rxde-compact-grid{
      display:flex!important;flex-direction:column!important;gap:8px!important;
-     padding:0!important;margin:0!important;min-height:0!important;
-     grid-template-columns:1fr!important;background:none!important;
+     grid-template-columns:1fr!important;padding:0!important;
    }
-   #confirmBackdrop .rxde-contact-tip{display:none!important}
-   #confirmBackdrop .rxde-contact-row,
-   #confirmBackdrop .rxde-contact-row-main{
-     display:grid!important;grid-template-columns:minmax(112px,38%) minmax(0,1fr)!important;
-     gap:9px!important;align-items:center!important;margin:0!important;
-     padding:0!important;min-height:42px!important;width:100%!important;
+   html body #confirmBackdrop .confirm-card .rxde-contact-tip{display:none!important}
+   html body #confirmBackdrop .confirm-card .rxde-contact-row{
+     display:grid!important;grid-template-columns:minmax(95px,32%) minmax(0,1fr)!important;
+     align-items:center!important;gap:8px!important;min-height:43px!important;
+     width:100%!important;margin:0!important;padding:0!important;
    }
-   #confirmBackdrop .rxde-check-label{margin:0!important;font-size:14px!important;
-     font-weight:500!important;display:flex!important;align-items:center!important;gap:5px!important}
-   #confirmBackdrop .rxde-contact-row input[type=text],
-   #confirmBackdrop .rxde-contact-row input[type=email]{
-     box-sizing:border-box!important;width:100%!important;min-width:0!important;
-     height:43px!important;min-height:43px!important;margin:0!important;
-     padding:7px 10px!important;border-radius:10px!important;font-size:16px!important;
-     box-shadow:none!important;
+   html body #confirmBackdrop .confirm-card .rxde-contact-row input:not([type=checkbox]){
+     width:100%!important;min-width:0!important;box-sizing:border-box!important;
+     height:42px!important;min-height:42px!important;font-size:16px!important;
+     padding:7px 9px!important;
    }
-   #rxdeCheckoutActions205{
-     flex:none!important;display:flex!important;gap:10px!important;
-     padding:11px 20px max(11px,env(safe-area-inset-bottom))!important;
-     background:#fff!important;border-top:1px solid #e5edf0!important;
-     box-shadow:0 -3px 10px rgba(18,60,80,.04)!important;
+   html body #confirmBackdrop .confirm-card #rxdeCheckoutActions207{
+     display:flex!important;flex:none!important;align-items:center!important;
+     padding:10px 16px max(10px,env(safe-area-inset-bottom))!important;
+     border-top:1px solid #e0eaf0!important;background:#fff!important;
+     box-sizing:border-box!important;min-height:65px!important;
    }
-   #rxdeCheckoutActions205 #confirmSubmit{
-     position:static!important;display:block!important;box-sizing:border-box!important;
-     width:100%!important;max-width:none!important;min-height:49px!important;
-     margin:0!important;padding:10px 12px!important;border-radius:11px!important;
-     background:#2e7fad!important;color:white!important;font-size:16px!important;
-     font-weight:650!important;box-shadow:none!important;
+   html body #confirmBackdrop .confirm-card #rxdeCheckoutActions207 #confirmSubmit{
+     position:static!important;display:block!important;flex:1!important;
+     width:100%!important;min-height:48px!important;margin:0!important;
+     padding:8px 12px!important;border-radius:10px!important;
+     font-size:16px!important;
    }
-   #confirmBackdrop .rxde-mail-fallback{margin:8px 0 0!important;text-align:center!important;font-size:12px!important}
-   #confirmBackdrop #rxdeExitConfirm{display:none!important}
-   #confirmBackdrop .confirm-local-status{font-size:13px!important;line-height:1.3!important;
-     margin:6px 16px 0!important;text-align:center!important}
-   @media(max-width:760px){
-     html body #confirmBackdrop.confirm-backdrop:not([hidden]){padding:0!important;background:#fff!important}
-     html body #confirmBackdrop .confirm-card{
-       width:100%!important;max-width:none!important;height:90%!important;
-       max-height:90%!important;border-radius:17px 17px 0 0!important;
-       box-shadow:0 -4px 20px rgba(25,55,65,.12)!important;
-       margin-top:auto!important;margin-bottom:0!important;
-     }
-     #confirmBackdrop #confirmTitle{padding:13px 16px 5px!important;font-size:21px!important}
-     #confirmBackdrop #rxdeContactDetails{padding:8px 16px 12px!important}
-     #rxdeCheckoutActions205{padding:9px 14px max(9px,env(safe-area-inset-bottom))!important}
-     #confirmBackdrop .rxde-contact-row,#confirmBackdrop .rxde-contact-row-main{
-       grid-template-columns:minmax(100px,38%) minmax(0,1fr)!important;
+   html body #confirmBackdrop .confirm-card .rxde-mail-fallback{
+     display:none!important;
+   }
+   @media(min-width:761px){
+     html body #confirmBackdrop.confirm-backdrop .confirm-card{
+       border-radius:17px!important;height:min(90%,640px)!important;max-width:560px!important;
+       margin:auto!important;
      }
    }
-   @media(max-height:560px){
-     #rxdeCheckoutReturn205{min-height:48px!important;padding-top:7px!important;padding-bottom:7px!important}
-     #confirmBackdrop #confirmTitle{font-size:19px!important;padding-top:7px!important}
-     #rxdeCheckoutActions205{padding-top:6px!important;padding-bottom:6px!important}
+   @media(max-height:500px){
+     html body #confirmBackdrop .confirm-card #confirmTitle{padding:6px 14px 4px!important;font-size:17px!important}
+     html body #confirmBackdrop .confirm-card #rxdeCheckoutReturn207{min-height:43px!important;padding:6px 14px!important}
+     html body #confirmBackdrop .confirm-card #rxdeCheckoutActions207{min-height:53px!important;padding:5px 14px!important}
    }
  `;
  document.head.appendChild(style);
  function init(){
    const backdrop=document.getElementById('confirmBackdrop');
    const card=backdrop?.querySelector('.confirm-card');
-   const contact=document.getElementById('rxdeContactDetails');
-   const body=contact?.querySelector('.rxde-contact-body');
    const send=document.getElementById('confirmSubmit');
-   const orderBtn=document.getElementById('submitOrder');
+   const open=document.getElementById('submitOrder');
    const close=document.getElementById('closeConfirm');
-   if(!card||!body||!send||!orderBtn||!close)return;
-   const title=document.getElementById('confirmTitle');
-   const returnBar=document.createElement('button');
-   returnBar.id='rxdeCheckoutReturn205';returnBar.type='button';
-   returnBar.innerHTML='<span><span class="rxde-back-title">← Проверить состав заказа</span><span class="rxde-back-meta" id="rxdeCheckoutMeta205"></span></span><span class="rxde-back-chevron" aria-hidden="true">⌃</span>';
-   card.insertBefore(returnBar,card.firstChild);
-   returnBar.addEventListener('click',()=>{if(send.dataset.busy==='1')return;document.activeElement?.blur?.();close.click();});
-   const actions=document.createElement('div');actions.id='rxdeCheckoutActions205';
-   actions.appendChild(send);card.appendChild(actions);
-   // Original input blocks (including messenger checkboxes, email, unified mode)
-   // are retained in their initial positions. No alternative contact UI.
-   const syncViewport=()=>{
-     const v=window.visualViewport;
-     const h=v?.height||window.innerHeight;
-     backdrop.style.setProperty('--rxde-checkout-vh',Math.max(180,Math.round(h))+'px');
-     backdrop.style.top=v?Math.max(0,Math.round(v.offsetTop))+'px':'0px';
-   };
-   function paint(){
+   const contacts=document.getElementById('rxdeContactDetails');
+   if(!backdrop||!card||!send||!open||!close||!contacts)return;
+   // Avoid attaching twice in a hot reload.
+   let bar=document.getElementById('rxdeCheckoutReturn207');
+   if(!bar){
+     bar=document.createElement('button');bar.type='button';bar.id='rxdeCheckoutReturn207';
+     bar.innerHTML='<span><strong>← Проверить состав заказа</strong><small id="rxdeCheckoutMeta207"></small></span><span aria-hidden="true">⌃</span>';
+     card.insertBefore(bar,card.firstChild);
+   }
+   bar.onclick=()=>{if(send.dataset.busy==='1')return;document.activeElement?.blur?.();close.click()};
+   let actions=document.getElementById('rxdeCheckoutActions207');
+   if(!actions){actions=document.createElement('div');actions.id='rxdeCheckoutActions207';card.appendChild(actions)}
+   actions.appendChild(send);
+   // Leave messenger checkboxes, email, phone validation and send callback unchanged.
+   const sync=()=>{
      if(backdrop.hidden)return;
-     if(title)title.textContent='Оформление заказа';
+     const vv=window.visualViewport;
+     const h=Math.max(180,Math.round(vv?.height||window.innerHeight));
+     backdrop.style.setProperty('--rxde-checkout-height',h+'px');
+     backdrop.style.top=(vv?Math.max(0,Math.round(vv.offsetTop)):0)+'px';
      const count=document.getElementById('orderPositions')?.textContent?.trim()||'';
-     const total=document.getElementById('orderTotalRub')?.textContent?.trim()||'';
-     document.getElementById('rxdeCheckoutMeta205').textContent=[count,total].filter(Boolean).join(' · ');
-     contact.open=true;
-     if(card.contains(document.activeElement)&&document.activeElement?.matches?.('input,textarea'))document.activeElement.blur();
-     syncViewport();
-   }
-   orderBtn.addEventListener('click',()=>requestAnimationFrame(paint));
-   new MutationObserver(()=>{if(!backdrop.hidden)requestAnimationFrame(paint);})
+     const sum=document.getElementById('orderTotalRub')?.textContent?.trim()||'';
+     const meta=document.getElementById('rxdeCheckoutMeta207');
+     if(meta)meta.textContent=[count,sum].filter(Boolean).join(' · ');
+     const title=document.getElementById('confirmTitle');if(title)title.textContent='Оформление заказа';
+     contacts.open=true;
+   };
+   open.addEventListener('click',()=>requestAnimationFrame(sync));
+   new MutationObserver(()=>{if(!backdrop.hidden)requestAnimationFrame(sync)})
      .observe(backdrop,{attributes:true,attributeFilter:['hidden']});
-   if(window.visualViewport){
-     visualViewport.addEventListener('resize',syncViewport,{passive:true});
-     visualViewport.addEventListener('scroll',syncViewport,{passive:true});
-   }
-   window.addEventListener('resize',syncViewport,{passive:true});
-   syncViewport();
+   if(window.visualViewport){visualViewport.addEventListener('resize',sync,{passive:true});visualViewport.addEventListener('scroll',sync,{passive:true})}
+   addEventListener('resize',sync,{passive:true});
+   sync();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
