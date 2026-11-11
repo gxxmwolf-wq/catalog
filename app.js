@@ -4163,15 +4163,24 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       if(el.orderBackdrop)el.orderBackdrop.hidden=true;
       document.body.style.overflow='';
     }
-    // Capture the prominent navigation button before any legacy order handlers.
-    // This also survives a replaced/re-rendered navigation element.
+    // The single visible «В каталог» control executes exactly the same action as
+    // the historically reliable «+ Добавить товар» button.  The latter is kept
+    // in the DOM as an action target, but never displayed to the customer.
+    if(el.addOrderProduct)el.addOrderProduct.onclick=returnToCatalogFromOrder;
+    const useAddProductAction=e=>{
+      e?.preventDefault?.();
+      e?.stopImmediatePropagation?.();
+      const addButton=document.getElementById('addOrderProduct');
+      if(addButton){addButton.click();return;}
+      // Defensive fallback if an older template omitted the add button.
+      returnToCatalogFromOrder(e);
+    };
+    // Capture survives navigation re-renders and overrides older click handlers.
     document.addEventListener('click',e=>{
       if(!e.target.closest?.('#orderFlowBack'))return;
-      e.preventDefault();e.stopImmediatePropagation();
-      returnToCatalogFromOrder(e);
+      useAddProductAction(e);
     },true);
-    if(el.orderFlowBack)el.orderFlowBack.onclick=returnToCatalogFromOrder;
-    if(el.addOrderProduct)el.addOrderProduct.onclick=returnToCatalogFromOrder;
+    if(el.orderFlowBack)el.orderFlowBack.onclick=useAddProductAction;
     if(el.clearOrder)el.clearOrder.onclick=clearWholeOrder;
     const restoreOrderBtn=document.getElementById('restoreOrder');if(restoreOrderBtn)restoreOrderBtn.onclick=restoreClearedReceipt;
     // Read-only receipt preview: only shown by explicit click, never uploaded.
@@ -4397,7 +4406,9 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     function contactDraft(){return [el.phoneInput?.value,document.getElementById('orderContactEmail')?.value,...messengerNames.map(name=>document.getElementById('rxdeContact'+name)?.value)].some(x=>String(x||'').trim())||selectedMessengers().length>0;}
     function exitForm(){
       if(el.confirmSubmit?.dataset.busy==='1')return;
-      if(contactDraft()){exitPrompt.hidden=false;return;}
+      // Checkout is a reversible step; the fields remain in the DOM, so
+      // going back to the cart must not open a second confirmation dialog.
+      if(exitPrompt)exitPrompt.hidden=true;
       el.confirmBackdrop.hidden=true;if(isMobile())setMobileMode('order');
     }
     document.getElementById('rxdeExitStay')?.addEventListener('click',()=>{exitPrompt.hidden=true;});
@@ -5804,7 +5815,7 @@ document.addEventListener('click',async e=>{
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 11.11.2026-02';
+  const BUILD='v2 · 11.11.2026-05';
   const DETAILS='Компактное окно срока годности · доступные кнопки при клавиатуре · предыдущие исправления';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
@@ -6012,4 +6023,171 @@ document.addEventListener('click',async e=>{
     }
   `;
   document.head.appendChild(style);
+})();
+
+/* RXDE v2 11.11.2026-03 — one visible way back to the catalogue. */
+(function(){
+  const style=document.createElement('style');
+  style.id='rxde-hide-duplicate-add-order';
+  style.textContent='#addOrderProduct{display:none!important}';
+  document.head.appendChild(style);
+})();
+
+
+/* RXDE v2 · 11.11.2026-05 — single checkout step, full messenger choices.
+   Existing contact inputs, validators, submission and order confirmation unchanged. */
+(()=>{
+ 'use strict';
+ const style=document.createElement('style');
+ style.id='rxde-checkout-v205';
+ style.textContent=`
+   html body #confirmBackdrop.confirm-backdrop:not([hidden]){
+     position:fixed!important;inset:0!important;display:flex!important;
+     align-items:center!important;justify-content:center!important;
+     box-sizing:border-box!important;margin:0!important;padding:12px!important;
+     width:100%!important;height:var(--rxde-checkout-vh,100dvh)!important;
+     background:rgba(30,55,65,.12)!important;z-index:2147483000!important;
+     overflow:hidden!important;overscroll-behavior:contain!important;
+   }
+   html body #confirmBackdrop.confirm-backdrop[hidden]{display:none!important}
+   html body #confirmBackdrop .confirm-card{
+     position:relative!important;inset:auto!important;transform:none!important;
+     display:flex!important;flex-direction:column!important;box-sizing:border-box!important;
+     overflow:hidden!important;width:min(100%,530px)!important;max-width:530px!important;
+     height:90%!important;max-height:90%!important;margin:0!important;padding:0!important;
+     border-radius:17px!important;background:#fff!important;
+     box-shadow:0 14px 42px rgba(25,55,65,.18)!important;
+   }
+   #rxdeCheckoutReturn205{
+     display:flex!important;flex:none!important;align-items:center!important;
+     justify-content:space-between!important;gap:12px!important;width:100%!important;
+     box-sizing:border-box!important;padding:12px 17px!important;margin:0!important;
+     border:0!important;border-bottom:1px solid #d8e6ec!important;
+     border-radius:0!important;background:#eff7fa!important;color:#24576c!important;
+     text-align:left!important;cursor:pointer!important;min-height:66px!important;
+   }
+   #rxdeCheckoutReturn205 .rxde-back-title{font-size:16px;font-weight:650;line-height:1.25}
+   #rxdeCheckoutReturn205 .rxde-back-meta{display:block;margin-top:3px;font-size:13px;font-weight:400;color:#50717f}
+   #rxdeCheckoutReturn205 .rxde-back-chevron{font-size:18px;flex:none}
+   #confirmBackdrop #confirmTitle{
+     flex:none!important;margin:0!important;padding:16px 20px 6px!important;
+     font-size:23px!important;line-height:1.2!important;font-weight:650!important;
+     color:#294d61!important;
+   }
+   #confirmBackdrop #closeConfirm{display:none!important}
+   #confirmBackdrop #miniReceipt{display:none!important}
+   #confirmBackdrop #rxdeContactDetails{
+     display:flex!important;flex:1 1 auto!important;min-height:0!important;
+     overflow-y:auto!important;overscroll-behavior:contain!important;
+     flex-direction:column!important;max-height:none!important;
+     padding:8px 20px 14px!important;margin:0!important;border:0!important;
+     box-shadow:none!important;background:#fff!important;scrollbar-width:thin;
+   }
+   #confirmBackdrop #rxdeContactDetails>summary{display:none!important}
+   #confirmBackdrop .rxde-contact-body{
+     display:flex!important;flex-direction:column!important;gap:8px!important;
+     padding:0!important;margin:0!important;min-height:0!important;
+     grid-template-columns:1fr!important;background:none!important;
+   }
+   #confirmBackdrop .rxde-contact-tip{display:none!important}
+   #confirmBackdrop .rxde-contact-row,
+   #confirmBackdrop .rxde-contact-row-main{
+     display:grid!important;grid-template-columns:minmax(112px,38%) minmax(0,1fr)!important;
+     gap:9px!important;align-items:center!important;margin:0!important;
+     padding:0!important;min-height:42px!important;width:100%!important;
+   }
+   #confirmBackdrop .rxde-check-label{margin:0!important;font-size:14px!important;
+     font-weight:500!important;display:flex!important;align-items:center!important;gap:5px!important}
+   #confirmBackdrop .rxde-contact-row input[type=text],
+   #confirmBackdrop .rxde-contact-row input[type=email]{
+     box-sizing:border-box!important;width:100%!important;min-width:0!important;
+     height:43px!important;min-height:43px!important;margin:0!important;
+     padding:7px 10px!important;border-radius:10px!important;font-size:16px!important;
+     box-shadow:none!important;
+   }
+   #rxdeCheckoutActions205{
+     flex:none!important;display:flex!important;gap:10px!important;
+     padding:11px 20px max(11px,env(safe-area-inset-bottom))!important;
+     background:#fff!important;border-top:1px solid #e5edf0!important;
+     box-shadow:0 -3px 10px rgba(18,60,80,.04)!important;
+   }
+   #rxdeCheckoutActions205 #confirmSubmit{
+     position:static!important;display:block!important;box-sizing:border-box!important;
+     width:100%!important;max-width:none!important;min-height:49px!important;
+     margin:0!important;padding:10px 12px!important;border-radius:11px!important;
+     background:#2e7fad!important;color:white!important;font-size:16px!important;
+     font-weight:650!important;box-shadow:none!important;
+   }
+   #confirmBackdrop .rxde-mail-fallback{margin:8px 0 0!important;text-align:center!important;font-size:12px!important}
+   #confirmBackdrop #rxdeExitConfirm{display:none!important}
+   #confirmBackdrop .confirm-local-status{font-size:13px!important;line-height:1.3!important;
+     margin:6px 16px 0!important;text-align:center!important}
+   @media(max-width:760px){
+     html body #confirmBackdrop.confirm-backdrop:not([hidden]){padding:0!important;background:#fff!important}
+     html body #confirmBackdrop .confirm-card{
+       width:100%!important;max-width:none!important;height:90%!important;
+       max-height:90%!important;border-radius:17px 17px 0 0!important;
+       box-shadow:0 -4px 20px rgba(25,55,65,.12)!important;
+       margin-top:auto!important;margin-bottom:0!important;
+     }
+     #confirmBackdrop #confirmTitle{padding:13px 16px 5px!important;font-size:21px!important}
+     #confirmBackdrop #rxdeContactDetails{padding:8px 16px 12px!important}
+     #rxdeCheckoutActions205{padding:9px 14px max(9px,env(safe-area-inset-bottom))!important}
+     #confirmBackdrop .rxde-contact-row,#confirmBackdrop .rxde-contact-row-main{
+       grid-template-columns:minmax(100px,38%) minmax(0,1fr)!important;
+     }
+   }
+   @media(max-height:560px){
+     #rxdeCheckoutReturn205{min-height:48px!important;padding-top:7px!important;padding-bottom:7px!important}
+     #confirmBackdrop #confirmTitle{font-size:19px!important;padding-top:7px!important}
+     #rxdeCheckoutActions205{padding-top:6px!important;padding-bottom:6px!important}
+   }
+ `;
+ document.head.appendChild(style);
+ function init(){
+   const backdrop=document.getElementById('confirmBackdrop');
+   const card=backdrop?.querySelector('.confirm-card');
+   const contact=document.getElementById('rxdeContactDetails');
+   const body=contact?.querySelector('.rxde-contact-body');
+   const send=document.getElementById('confirmSubmit');
+   const orderBtn=document.getElementById('submitOrder');
+   const close=document.getElementById('closeConfirm');
+   if(!card||!body||!send||!orderBtn||!close)return;
+   const title=document.getElementById('confirmTitle');
+   const returnBar=document.createElement('button');
+   returnBar.id='rxdeCheckoutReturn205';returnBar.type='button';
+   returnBar.innerHTML='<span><span class="rxde-back-title">← Проверить состав заказа</span><span class="rxde-back-meta" id="rxdeCheckoutMeta205"></span></span><span class="rxde-back-chevron" aria-hidden="true">⌃</span>';
+   card.insertBefore(returnBar,card.firstChild);
+   returnBar.addEventListener('click',()=>{if(send.dataset.busy==='1')return;document.activeElement?.blur?.();close.click();});
+   const actions=document.createElement('div');actions.id='rxdeCheckoutActions205';
+   actions.appendChild(send);card.appendChild(actions);
+   // Original input blocks (including messenger checkboxes, email, unified mode)
+   // are retained in their initial positions. No alternative contact UI.
+   const syncViewport=()=>{
+     const v=window.visualViewport;
+     const h=v?.height||window.innerHeight;
+     backdrop.style.setProperty('--rxde-checkout-vh',Math.max(180,Math.round(h))+'px');
+     backdrop.style.top=v?Math.max(0,Math.round(v.offsetTop))+'px':'0px';
+   };
+   function paint(){
+     if(backdrop.hidden)return;
+     if(title)title.textContent='Оформление заказа';
+     const count=document.getElementById('orderPositions')?.textContent?.trim()||'';
+     const total=document.getElementById('orderTotalRub')?.textContent?.trim()||'';
+     document.getElementById('rxdeCheckoutMeta205').textContent=[count,total].filter(Boolean).join(' · ');
+     contact.open=true;
+     if(card.contains(document.activeElement)&&document.activeElement?.matches?.('input,textarea'))document.activeElement.blur();
+     syncViewport();
+   }
+   orderBtn.addEventListener('click',()=>requestAnimationFrame(paint));
+   new MutationObserver(()=>{if(!backdrop.hidden)requestAnimationFrame(paint);})
+     .observe(backdrop,{attributes:true,attributeFilter:['hidden']});
+   if(window.visualViewport){
+     visualViewport.addEventListener('resize',syncViewport,{passive:true});
+     visualViewport.addEventListener('scroll',syncViewport,{passive:true});
+   }
+   window.addEventListener('resize',syncViewport,{passive:true});
+   syncViewport();
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
