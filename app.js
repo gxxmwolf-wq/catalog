@@ -527,15 +527,19 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       <div class="order-product-info copyable-card-info">
         <div class="order-title-line"><button type="button" class="order-expand-title selectable-title order-title-open" data-order-title-open="${p.pzn}">${U.escape(cartDisplayName)}${(p.rx||/^\s*\[(?:rx|рх)\]/i.test(p.name))?'<span class="rxde-cart-rx-text" title="Рецептурный препарат"> [Rx]</span>':''}</button><button class="order-family-search ${familyActive?'family-return':''}" type="button" data-order-family-search="${p.pzn}" aria-label="${familyActive?'Вернуться к предыдущему экрану':`Найти другие варианты ${U.escape(p.name)}`}" title="${familyActive?'Нажмите ещё раз — вернуться назад':'Найти варианты по названию'}"><svg class="system-search-icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><circle cx="8.5" cy="8.5" r="5.25"></circle><path d="M12.4 12.4L17 17"></path></svg></button></div>
         ${R.UIFormat.copyableCore(p,U,{compact:true})}
-        <div class="rxde-expiry-tools"><button type="button" class="rxde-expiry-toggle" title="Хочу инициировать поиск партии со сроком годности БОЛЬШЕ СТАНДАРТНЫХ 6-12 месяцев. Осознаю, что это может потребовать больше времени, чем 7–10 дней на закупку." data-expiry-toggle="${p.pzn}">Пожелание по сроку / упаковке</button>${R.OrderExpiry?.get(p.pzn)?`<span class="rxde-expiry-pill">${U.escape(R.OrderExpiry.line(p.pzn))}</span>`:''}</div>
+        <div class="rxde-expiry-tools"><button type="button" class="rxde-expiry-toggle" title="Запросить партию с увеличенным сроком годности" data-expiry-toggle="${p.pzn}">Пожелание по сроку / упаковке</button>${R.OrderExpiry?.get(p.pzn)?`<span class="rxde-expiry-pill">${U.escape(R.OrderExpiry.line(p.pzn))}</span>`:''}</div>
         <div class="rxde-expiry-editor" data-expiry-editor="${p.pzn}" hidden>
-          <p class="rxde-expiry-heading">Запрос увеличенного срока годности для этой позиции</p><p class="rxde-expiry-explainer">Хочу инициировать поиск партии со сроком годности БОЛЬШЕ СТАНДАРТНЫХ 6-12 месяцев. Осознаю, что это может потребовать больше времени, чем 7–10 дней на закупку.</p>
-          <label>Не менее
-            <input type="number" data-expiry-months min="1" max="120" value="${R.OrderExpiry?.get(p.pzn)?.months||12}" aria-label="Месяцев"> мес.
-          </label>
-          <label class="rxde-item-comment-label">Дополнительное пожелание (необязательно)<textarea data-expiry-comment maxlength="160" rows="2" placeholder="Например: только упаковка с синей полосой">${U.escape(R.OrderExpiry?.get(p.pzn)?.comment||'')}</textarea></label>
-          <div class="rxde-expiry-date-preview">Срок годности не менее <strong data-expiry-preview>${R.expiryMonthLabel(R.OrderExpiry?.get(p.pzn)?.months||12)}</strong></div>
-          <div><button type="button" data-expiry-save="${p.pzn}">Сохранить</button><button type="button" data-expiry-clear="${p.pzn}">Убрать требование</button></div>
+          <div class="rxde-expiry-sheet-head"><h2 class="rxde-expiry-heading">Срок годности</h2></div>
+          <div class="rxde-expiry-sheet-content">
+            <p class="rxde-expiry-explainer">Ищем партию с увеличенным сроком годности. Обычно 6–12 мес.; поиск может занять больше времени.</p>
+            <label class="rxde-expiry-months-row" for="rxde-expiry-months-${p.pzn}"><span>Не менее</span>
+              <input id="rxde-expiry-months-${p.pzn}" type="number" inputmode="numeric" data-expiry-months min="1" max="120" value="${R.OrderExpiry?.get(p.pzn)?.months||12}" aria-label="Минимальный срок годности в месяцах"> <span>мес.</span>
+            </label>
+            <p class="rxde-expiry-date-preview">Ориентир: от <strong data-expiry-preview>${R.expiryMonthLabel(R.OrderExpiry?.get(p.pzn)?.months||12)}</strong></p>
+            <label class="rxde-item-comment-label">Комментарий <small>(необязательно)</small><textarea data-expiry-comment maxlength="160" rows="2" placeholder="Например: упаковка с синей полосой">${U.escape(R.OrderExpiry?.get(p.pzn)?.comment||'')}</textarea></label>
+          </div>
+          <div class="rxde-expiry-sheet-actions"><button type="button" data-expiry-cancel>Отмена</button><button type="button" data-expiry-save="${p.pzn}">Сохранить</button></div>
+          ${R.OrderExpiry?.get(p.pzn)?`<button type="button" class="rxde-expiry-remove" data-expiry-clear="${p.pzn}">Убрать требование</button>`:''}
         </div>
       </div>
       <div class="order-unit-price"><small>за упаковку</small><strong>${U.money(unitR)} ₽</strong><span>${U.money(p.eur)} €</span></div>
@@ -4219,8 +4223,10 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
     });
     // V3.13.123: one modal per order; independent of item row geometry and clipping.
     let expiryModal=null;
+    let expiryViewportCleanup=null;
     function closeRxExpiryDialog(){
       if(!expiryModal)return;
+      if(expiryViewportCleanup){expiryViewportCleanup();expiryViewportCleanup=null;}
       const m=expiryModal;expiryModal=null;m.remove();document.body.classList.remove('rxde-expiry-dialog-open');
     }
     function openRxExpiryDialog(trigger){
@@ -4238,18 +4244,37 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       panel.innerHTML='<button class="rxde-expiry-modal-close" type="button" aria-label="Закрыть">×</button>' + base.innerHTML;
       overlay.appendChild(panel);document.body.appendChild(overlay);expiryModal=overlay;
       document.body.classList.add('rxde-expiry-dialog-open');
+      // Android keyboards may overlay the layout viewport. Position the dialog
+      // within the real visible viewport so its action buttons remain reachable.
+      const vv=window.visualViewport;
+      const syncVisibleViewport=()=>{
+        if(!expiryModal||expiryModal!==overlay)return;
+        if(vv){
+          overlay.style.setProperty('--rxde-vv-top',vv.offsetTop+'px');
+          overlay.style.setProperty('--rxde-vv-height',vv.height+'px');
+          overlay.style.setProperty('--rxde-vv-left',vv.offsetLeft+'px');
+          overlay.style.setProperty('--rxde-vv-width',vv.width+'px');
+        }
+      };
+      syncVisibleViewport();
+      vv?.addEventListener('resize',syncVisibleViewport);
+      vv?.addEventListener('scroll',syncVisibleViewport);
+      expiryViewportCleanup=()=>{
+        vv?.removeEventListener('resize',syncVisibleViewport);
+        vv?.removeEventListener('scroll',syncVisibleViewport);
+      };
       const input=panel.querySelector('[data-expiry-months]');
       const refresh=()=>{const n=Math.max(1,Math.min(120,Number(input?.value)||12));const preview=panel.querySelector('[data-expiry-preview]');if(preview)preview.textContent=R.expiryMonthLabel(n)};
       input?.addEventListener('input',refresh);
       overlay.addEventListener('click',e=>{
-        if(e.target===overlay||e.target.closest('.rxde-expiry-modal-close')){closeRxExpiryDialog();return}
+        if(e.target===overlay||e.target.closest('.rxde-expiry-modal-close')||e.target.closest('[data-expiry-cancel]')){closeRxExpiryDialog();return}
         if(e.target.closest('[data-expiry-save]')){
           const n=Math.max(1,Math.min(120,parseInt(input?.value,10)||12));
           R.OrderExpiry.set(pzn,{mode:'months',months:n,comment:String(panel.querySelector('[data-expiry-comment]')?.value||'').trim().slice(0,160)});closeRxExpiryDialog();renderOrder();return;
         }
         if(e.target.closest('[data-expiry-clear]')){R.OrderExpiry.remove(pzn);closeRxExpiryDialog();renderOrder();return}
       });
-      input?.focus({preventScroll:true});
+      // Deliberately no input autofocus: do not open mobile keyboard on dialog open.
     }
     document.addEventListener('keydown',e=>{if(e.key==='Escape'&&expiryModal)closeRxExpiryDialog()});
     el.orderLines.onclick=e=>{
@@ -5779,8 +5804,8 @@ document.addEventListener('click',async e=>{
    original document slot; only GPU-composited transform/opacity are animated. */
 (()=>{
   'use strict';
-  const BUILD='v2 · 11.11.2026-01';
-  const DETAILS='Срок годности от · запрос отсутствующего товара · возврат в каталог · предыдущие исправления';
+  const BUILD='v2 · 11.11.2026-02';
+  const DETAILS='Компактное окно срока годности · доступные кнопки при клавиатуре · предыдущие исправления';
   window.RXDE_CLIENT_BUILD=BUILD;
   const style=document.createElement('style');
   style.id='rxde-v2-20261110-mobile-header';
@@ -5858,6 +5883,133 @@ document.addEventListener('click',async e=>{
     .rxde-empty-contact{appearance:none;border:1px solid #bfd7df;background:#f5fafc;color:#285b71;
       border-radius:13px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;min-height:42px}
     .rxde-empty-contact:hover,.rxde-empty-contact:focus-visible{background:#e9f4f8;border-color:#83b9cb}
+  `;
+  document.head.appendChild(style);
+})();
+
+/* RXDE v2 11.11.2026-02 — compact responsive expiry dialog. */
+(()=>{
+  'use strict';
+  if(document.getElementById('rxde-expiry-sheet-v2'))return;
+  const style=document.createElement('style');
+  style.id='rxde-expiry-sheet-v2';
+  style.textContent=`
+    .rxde-expiry-modal-backdrop{
+      position:fixed!important;z-index:2147483100!important;
+      top:var(--rxde-vv-top,0px)!important;left:var(--rxde-vv-left,0px)!important;
+      width:var(--rxde-vv-width,100%)!important;height:var(--rxde-vv-height,100dvh)!important;
+      box-sizing:border-box!important;display:flex!important;align-items:center!important;
+      justify-content:center!important;padding:12px!important;
+      background:rgba(19,35,43,.52)!important;overflow:hidden!important;
+    }
+    .rxde-expiry-modal-panel{
+      position:relative!important;box-sizing:border-box!important;
+      width:min(100%,440px)!important;max-width:100%!important;
+      max-height:100%!important;margin:0 auto!important;
+      border-radius:20px!important;padding:18px 18px 14px!important;
+      background:#fff!important;color:#29465a!important;
+      box-shadow:0 16px 48px rgba(0,0,0,.25)!important;
+      display:flex!important;flex-direction:column!important;gap:0!important;
+      overflow:hidden!important;transform:none!important;
+      font-family:inherit!important;
+    }
+    .rxde-expiry-modal-close{
+      position:absolute!important;top:9px!important;right:10px!important;
+      width:40px!important;height:40px!important;min-width:40px!important;
+      display:grid!important;place-items:center!important;
+      background:transparent!important;color:#66818f!important;
+      border:0!important;border-radius:12px!important;cursor:pointer!important;
+      font-size:28px!important;line-height:1!important;z-index:2!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-editor{
+      display:flex!important;flex-direction:column!important;min-height:0!important;
+      overflow:hidden!important;padding:0!important;margin:0!important;
+      border:0!important;background:none!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-sheet-head{flex:0 0 auto!important;padding-right:38px!important;}
+    .rxde-expiry-modal-panel .rxde-expiry-heading{
+      margin:0 0 10px!important;padding:0!important;
+      font-weight:700!important;font-size:22px!important;line-height:1.2!important;
+      color:#28526a!important;text-align:left!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-sheet-content{
+      flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;
+      overscroll-behavior:contain!important;padding:0 2px 4px 0!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-explainer{
+      margin:0 0 14px!important;font-size:14px!important;line-height:1.42!important;
+      font-weight:400!important;color:#536771!important;text-align:left!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-months-row{
+      display:flex!important;align-items:center!important;justify-content:center!important;
+      gap:10px!important;margin:0!important;padding:0!important;
+      font-size:16px!important;font-weight:500!important;white-space:nowrap!important;
+    }
+    .rxde-expiry-modal-panel input[data-expiry-months]{
+      display:block!important;box-sizing:border-box!important;width:82px!important;height:48px!important;
+      min-width:0!important;max-width:82px!important;margin:0!important;padding:7px!important;
+      border:1px solid #a5bfca!important;border-radius:12px!important;
+      background:#fff!important;color:#254c62!important;text-align:center!important;
+      font:inherit!important;font-size:20px!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-date-preview{
+      margin:10px 0 15px!important;padding:0!important;
+      font-size:14px!important;line-height:1.4!important;text-align:center!important;
+      color:#49697a!important;font-weight:400!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-date-preview strong{font-weight:700!important;}
+    .rxde-expiry-modal-panel .rxde-item-comment-label{
+      display:block!important;margin:0!important;padding:0!important;
+      font-size:14px!important;font-weight:650!important;line-height:1.4!important;
+      color:#34566a!important;text-align:left!important;
+    }
+    .rxde-expiry-modal-panel .rxde-item-comment-label small{font-size:12px!important;font-weight:400!important;color:#72848b!important;}
+    .rxde-expiry-modal-panel textarea[data-expiry-comment]{
+      display:block!important;box-sizing:border-box!important;width:100%!important;
+      min-height:62px!important;height:62px!important;max-height:100px!important;
+      margin:6px 0 0!important;padding:10px 12px!important;
+      border:1px solid #bfced5!important;border-radius:12px!important;
+      resize:vertical!important;background:white!important;color:#294b5d!important;
+      font:inherit!important;font-size:14px!important;line-height:1.4!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-sheet-actions{
+      display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;
+      flex:0 0 auto!important;margin:12px 0 0!important;padding:0!important;
+      background:#fff!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-sheet-actions button{
+      box-sizing:border-box!important;min-height:46px!important;margin:0!important;
+      border:1px solid #b5cbd5!important;border-radius:11px!important;
+      padding:9px 10px!important;background:#fff!important;color:#2e566b!important;
+      font:inherit!important;font-size:15px!important;font-weight:650!important;
+      cursor:pointer!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-sheet-actions [data-expiry-save]{
+      background:#327a9b!important;border-color:#327a9b!important;color:#fff!important;
+    }
+    .rxde-expiry-modal-panel .rxde-expiry-remove{
+      display:block!important;flex:0 0 auto!important;margin:8px auto 0!important;
+      padding:5px 10px!important;min-height:24px!important;
+      border:0!important;background:transparent!important;color:#697e86!important;
+      font:inherit!important;font-size:12px!important;text-decoration:underline!important;
+      cursor:pointer!important;
+    }
+    @media(max-width:760px){
+      .rxde-expiry-modal-backdrop{padding:10px!important;}
+      .rxde-expiry-modal-panel{width:min(100%,400px)!important;border-radius:17px!important;padding:16px 15px 12px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-heading{font-size:20px!important;margin-bottom:8px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-explainer{font-size:13px!important;margin-bottom:10px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-date-preview{margin:8px 0 12px!important;}
+      .rxde-expiry-modal-panel textarea[data-expiry-comment]{height:56px!important;min-height:56px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-sheet-actions{margin-top:10px!important;}
+    }
+    @media(max-height:470px){
+      .rxde-expiry-modal-panel{padding-top:9px!important;padding-bottom:8px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-heading{font-size:18px!important;margin-bottom:4px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-explainer{margin-bottom:5px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-date-preview{margin:4px 0 6px!important;}
+      .rxde-expiry-modal-panel .rxde-expiry-sheet-actions{margin-top:6px!important;}
+    }
   `;
   document.head.appendChild(style);
 })();
