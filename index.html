@@ -17,6 +17,8 @@ document.documentElement.classList.add("rxde-fast-start");
   }catch(e){}
 })();
 </script>
+  <!-- Retired checkout is never presented; current checkout35.js owns the only contact flow. -->
+  <style id="rxde-retired-checkout">#confirmBackdrop{display:none!important}</style>
 <link rel="stylesheet" href="styles.css?v=20261109-r1">
   <style>
   /* Fast start: image-heavy decoration waits until the catalog can accept input. */
@@ -226,7 +228,7 @@ document.documentElement.classList.add("rxde-fast-start");
     </div>
   </div>
 
-  <div class="confirm-backdrop" id="confirmBackdrop" hidden>
+  <div class="confirm-backdrop" id="confirmBackdrop" hidden aria-hidden="true">
     <section class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
       <button class="confirm-close" id="closeConfirm" type="button" aria-label="Закрыть">×</button>
       <h2 id="confirmTitle">Отправить заявку</h2>

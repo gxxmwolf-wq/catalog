@@ -4453,16 +4453,15 @@ try{if('scrollRestoration' in history)history.scrollRestoration='manual'}catch(_
       }
       finishAcceptedOrder();
     };
-    el.submitOrder.onclick=async()=>{
+    // Legacy checkout is retired. checkout35.js replaces this fallback when ready.
+    // Never open confirmBackdrop: it contains obsolete independent messenger inputs.
+    if(el.confirmBackdrop){
+      el.confirmBackdrop.hidden=true;
+      el.confirmBackdrop.setAttribute('aria-hidden','true');
+    }
+    el.submitOrder.onclick=()=>{
       if(!S.get().cart.length){U.toast?.('Сначала добавьте товар в корзину');return;}
-      await R.RateGuard?.refresh({reason:'submit',force:true,notifyError:true});
-      el.miniReceipt.innerHTML=miniReceipt();
-      const details=document.getElementById('rxdeContactDetails');if(details)details.open=true;
-      const ct=document.getElementById('confirmTitle');if(ct)ct.textContent='Ваш заказ';
-      if(el.confirmSubmit){el.confirmSubmit.textContent='Отправить заказ';el.confirmSubmit.disabled=false;el.confirmSubmit.dataset.busy='0';}
-      el.confirmBackdrop.querySelector('.confirm-local-status')?.remove();
-      if(exitPrompt)exitPrompt.hidden=true;
-      el.confirmBackdrop.hidden=false;updateConfirmSubmitState();U.beep(true);
+      U.toast?.('Форма оформления не загрузилась. Обновите страницу.');
     };
     el.closeConfirm.onclick=exitForm;
     el.confirmBackdrop.onclick=e=>{if(e.target===el.confirmBackdrop){/* Backdrop taps do not discard the draft. */}};

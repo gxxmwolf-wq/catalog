@@ -5,13 +5,14 @@ function boot(){
  const R=window.RXDE, sheet=document.getElementById('orderSheet'), btn=document.getElementById('submitOrder');
  if(!R?.Cart||!sheet||!btn)return;
  const foot=sheet.querySelector('.sheet-footer');
+ const buildLabel=document.getElementById('rxdeFooterVersion');
+ if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-12';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
   <div class="rxde-inline-pair rxde-phone-main"><label for="rxdePrimaryValue">Телефон или ник</label><input id="rxdePrimaryValue" type="text" autocomplete="off" inputmode="text" placeholder="+7 999 123-45-67 или @username" maxlength="50" aria-label="Телефон или ник, для ника поддерживается Telegram"></div>
-  <div class="rxde-inline-separator">и/или</div>
-  <div class="rxde-inline-pair rxde-email-main" id="rxdeExtraFields"><label for="rxdeExtraValue">Email для счёта</label><input id="rxdeExtraValue" type="email" autocomplete="email" placeholder="name@example.com" maxlength="180" aria-label="Email для счёта"></div>
-  <div class="rxde-phone-apps"><span>Мессенджеры:</span><label><input type="checkbox" value="Telegram">Telegram</label><label><input type="checkbox" value="WhatsApp">WhatsApp</label><label><input type="checkbox" value="MAX">MAX</label></div>
+  <div class="rxde-phone-apps"><span>Где вам написать?</span><label><input type="checkbox" value="Telegram">Telegram</label><label><input type="checkbox" value="WhatsApp">WhatsApp</label><label><input type="checkbox" value="MAX">MAX</label></div>
+  <div class="rxde-inline-pair rxde-email-main" id="rxdeExtraFields"><label for="rxdeExtraValue">Email для счёта и связи</label><input id="rxdeExtraValue" type="email" autocomplete="email" placeholder="name@example.com" maxlength="180" aria-label="Email для счёта и связи"></div>
   <p id="rxdeInlineError" class="rxde-inline-error" role="status" hidden></p>
  </div><p class="rxde-contact-help">Для связи укажите номер телефона, Telegram @username и/или email. Для доставки адрес и телефон уточним отдельно.</p>`;
  // Two real mutually exclusive steps: cart -> contact sheet. Existing fields
@@ -45,10 +46,20 @@ function boot(){
  html body #rxdeCheckoutFlow10 .rxde-phone-apps{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px 16px!important;width:100%!important;margin:0!important;padding:3px 0!important}
  html body #rxdeCheckoutFlow10 .rxde-phone-apps>span{flex-basis:100%!important;font-size:14px!important}
  html body #rxdeCheckoutFlow10 .rxde-phone-apps label{display:inline-flex!important;align-items:center!important;gap:5px!important;font-size:14px!important}
- html body #rxdeCheckoutFlow10 .rxde-inline-separator{margin:0!important;font-size:12px!important;text-align:center!important}
+ html body #rxdeCheckoutFlow10 .rxde-inline-separator{display:none!important}
  html body #rxdeCheckoutFlow10 .rxde-contact-help{font-size:12px!important;line-height:1.4!important;margin:8px 0!important}
  html body #rxdeCheckoutFlow10 .rxde-checkout-actions10{flex:0 0 auto!important;box-sizing:border-box!important;padding:10px 16px max(10px,env(safe-area-inset-bottom))!important;border-top:1px solid #d5e3ea!important;background:#fff!important}
  html body #rxdeCheckoutFlow10 #submitOrder{display:flex!important;position:static!important;box-sizing:border-box!important;width:100%!important;max-width:none!important;height:50px!important;min-height:50px!important;margin:0!important;padding:8px 14px!important;justify-content:center!important;visibility:visible!important}
+ /* While an on-screen keyboard is active, make the WHOLE form scroll normally.
+    CTA must follow messenger choices and email, never cover the next field. */
+ @media(max-width:760px){
+   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-card10{overflow-y:auto!important;overscroll-behavior:contain!important}
+   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-back10{position:sticky!important;top:0!important;z-index:3!important}
+   html body #rxdeCheckoutFlow10.rxde-editing11 h2{flex:0 0 auto!important}
+   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-content10{flex:0 0 auto!important;min-height:auto!important;overflow:visible!important}
+   html body #rxdeCheckoutFlow10.rxde-editing11 .rxde-checkout-actions10{flex:0 0 auto!important;position:static!important;margin-top:6px!important}
+ }
+
  html body #rxdeContactConfirm:not([hidden]){z-index:2147483450!important}
  html body #rxdeSendingOverlay:not([hidden]){z-index:2147483500!important}
  html body #orderSheet #rxdeMobileContactsToggle{display:flex!important;align-items:center!important;justify-content:center!important;min-height:48px!important;width:100%!important;padding:8px 12px!important}
@@ -68,10 +79,12 @@ function boot(){
      flow.querySelector('#rxdeCheckoutSummary10').textContent=t.positions+' поз. · '+t.packs+' уп. · '+R.Utils.money(t.rub)+' ₽';
      syncCheckoutViewport();
      flow.hidden=false;
+     flow.classList.remove('rxde-editing11');
      contactToggle.setAttribute('aria-expanded','true');
      sheet.classList.remove('rxde-mobile-contacts-open');
    }else{
      flow.hidden=true;
+     flow.classList.remove('rxde-editing11');
      contactToggle.setAttribute('aria-expanded','false');
      document.activeElement?.blur?.();
    }
@@ -83,6 +96,19 @@ function boot(){
  window.visualViewport?.addEventListener('scroll',()=>{if(isCheckoutOpen())syncCheckoutViewport()},{passive:true});
  // Expose only a close method for successful receipt/other navigation.
  window.RXDE_CHECKOUT_FLOW10={close:()=>setMobileContacts(false)};
+ // Focus rather than viewport heuristics also works with Samsung/Android keyboard modes.
+ let focusRelease11=0;
+ flow.addEventListener('focusin',event=>{
+   if(!event.target.matches('input,textarea'))return;
+   clearTimeout(focusRelease11);
+   if(window.matchMedia('(max-width:760px)').matches)flow.classList.add('rxde-editing11');
+ });
+ flow.addEventListener('focusout',()=>{
+   clearTimeout(focusRelease11);
+   focusRelease11=setTimeout(()=>{
+     if(!flow.contains(document.activeElement)||!document.activeElement.matches('input,textarea'))flow.classList.remove('rxde-editing11');
+   },220);
+ });
 
  const $=id=>document.getElementById(id);
  const primary=$('rxdePrimaryValue'), method={value:'phone'}, additional=$('rxdeExtraValue'), extraMethod={value:'email'};
@@ -175,7 +201,7 @@ function boot(){
  additional.addEventListener('input',()=>{error.hidden=true;pendingPayload=null;contactSummary()});
 
  updateHint(additional,extraMethod);syncAppChecks();contactSummary();
- btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Отправить менеджеру</span>';btn.classList.add('rxde-inline-submit');btn.disabled=false;btn.setAttribute('aria-disabled','true');
+ btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Проверить контакты →</span>';btn.classList.add('rxde-inline-submit');btn.disabled=false;btn.setAttribute('aria-disabled','true');
  document.getElementById('rxdeSendingClose').addEventListener('click',closeSending);
  const direct=document.createElement('a');direct.className='rxde-inline-direct';direct.href='mailto:med.zakaz.de@gmail.com';direct.textContent='Задать вопрос по email';direct.title='Вопрос или обращение без оформления заявки';foot.appendChild(direct);
  btn.onclick=async()=>{
@@ -226,7 +252,7 @@ function boot(){
     $('orderBackdrop').hidden=true;R.Store.set({orderOpen:false});document.body.style.overflow='';done.hidden=false;
     error.hidden=true;closeSending();
   }catch(err){prepareFallback();sending.dataset.status='error';sendingStatus.textContent='Отправка не удалась';sendingDetail.textContent='Напишите нам напрямую — обязательно свяжемся с вами.';document.getElementById('rxdeSendingClose').hidden=false;error.classList.remove('neutral');error.textContent='Напишите нам напрямую по ссылке.';error.hidden=false;}
-  finally{busy=false;btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Отправить менеджеру</span>';contactSummary();}
+  finally{busy=false;btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Проверить контакты →</span>';contactSummary();}
  };
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
