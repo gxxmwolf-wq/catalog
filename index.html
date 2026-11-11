@@ -20,7 +20,7 @@ document.documentElement.classList.add("rxde-fast-start");
   <!-- Retired checkout is never presented; current checkout35.js owns the only contact flow. -->
   <style id="rxde-checkout-before-boot">#orderSheet .sheet-footer > #submitOrder{display:none!important}</style>
   <style id="rxde-retired-checkout">#confirmBackdrop{display:none!important}</style>
-<link rel="stylesheet" href="styles.css?v=20261109-r1">
+<link rel="stylesheet" href="styles.css?v=20261111-20">
   <style>
   /* Fast start: image-heavy decoration waits until the catalog can accept input. */
   html.rxde-fast-start .notebook-index-tab,
@@ -160,7 +160,7 @@ document.documentElement.classList.add("rxde-fast-start");
           <div class="footer-actions">
             <button class="footer-question" id="footerQuestion" type="button">Задать вопрос →</button>
             <a class="footer-direct-mail" href="mailto:med.zakaz.de@gmail.com" aria-label="Написать RXDE напрямую на электронную почту">✉ Написать напрямую на email</a>
-            <small class="footer-build">Сборка <b id="rxdeFooterVersion">v2 · 11.11.2026-18</b> · база <b id="rxdeFooterDatabase">b260905</b></small>
+            <small class="footer-build">Сборка <b id="rxdeFooterVersion">v2 · 11.11.2026-20</b> · база <b id="rxdeFooterDatabase">b260905</b></small>
           </div>
         </footer>
   </div>
@@ -212,8 +212,8 @@ document.documentElement.classList.add("rxde-fast-start");
 
       <footer class="sheet-footer">
         <div class="order-summary">
-          <span id="orderPositions">0 поз.</span>
-          <span class="rxde-total-actions"><button type="button" id="viewOrderReceipt" class="rxde-receipt-preview-trigger" title="Нажать для копирования чека" aria-label="Нажать для копирования чека"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h9l4 4V21.5H6zM15 2.5v4h4M9 11h7M9 15h7M9 19h5"/></svg></button><strong id="orderTotalRub">0 ₽</strong></span>
+          <span class="rxde-order-count-actions"><span id="orderPositions">0 поз.</span><button type="button" id="viewOrderReceipt" class="rxde-receipt-preview-trigger" title="Скопировать текст заказа" aria-label="Скопировать текст заказа"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2.5h9l4 4V21.5H6zM15 2.5v4h4M9 11h7M9 15h7M9 19h5"/></svg></button></span>
+          <strong id="orderTotalRub">0 ₽</strong>
           <small id="orderTotalEur" hidden></small><em class="order-footer-note">включая обязательную логистику DHL</em>
         </div>
         <button class="rxde-mobile-contacts-toggle" id="rxdeMobileContactsToggle" type="button" aria-expanded="false" style="display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:48px!important;background:#2788c2!important;background-image:none!important;color:#fff!important;border:1px solid #2179ae!important;border-radius:12px!important;font:650 16px system-ui,sans-serif!important;cursor:pointer!important">Оформить заказ →</button>
@@ -434,7 +434,7 @@ document.documentElement.classList.add("rxde-fast-start");
 
   <div class="toast" id="toast" hidden></div>
 
-  <script src="db-live.js?v=20261111-18"></script>
+  <script src="db-live.js?v=20261111-20"></script>
 <div id="rxdeSendingOverlay" class="rxde-sending-overlay" data-status="pending" hidden role="dialog" aria-modal="true" aria-labelledby="rxdeSendingStatus">
  <div class="rxde-sending-card">
   <div class="rxde-sending-graphic" aria-hidden="true">
@@ -585,7 +585,7 @@ document.documentElement.classList.add("rxde-fast-start");
   })();
   </script>
   <script>
-    document.getElementById('rxdeFooterVersion').textContent = 'v2 · 11.11.2026-18';
+    document.getElementById('rxdeFooterVersion').textContent = 'v2 · 11.11.2026-20';
     document.getElementById('rxdeFooterDatabase').textContent = window.RXDE_CONFIG?.dbVersion || '—';
   </script>
 

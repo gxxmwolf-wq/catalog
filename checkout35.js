@@ -6,13 +6,13 @@ function boot(){
  if(!R?.Cart||!sheet||!btn)return;
  const foot=sheet.querySelector('.sheet-footer');
  const buildLabel=document.getElementById('rxdeFooterVersion');
- if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-18';
+ if(buildLabel)buildLabel.textContent='v2 · 11.11.2026-20';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
   <div class="rxde-inline-pair rxde-phone-main"><label for="rxdePrimaryValue">Телефон или ник</label><input id="rxdePrimaryValue" type="text" autocomplete="off" inputmode="text" placeholder="+7 999 123-45-67 или @username" maxlength="50" aria-label="Телефон или ник, для ника поддерживается Telegram"></div>
   <div class="rxde-phone-apps"><span>Где вам написать?</span><label><input type="checkbox" value="Telegram">Telegram</label><label><input type="checkbox" value="WhatsApp">WhatsApp</label><label><input type="checkbox" value="MAX">MAX</label></div>
-  <div class="rxde-inline-pair rxde-email-main" id="rxdeExtraFields"><label for="rxdeExtraValue">Email для счёта и связи</label><input id="rxdeExtraValue" type="email" autocomplete="email" placeholder="name@example.com" maxlength="180" aria-label="Email для счёта и связи"></div>
+  <div class="rxde-inline-pair rxde-email-main" id="rxdeExtraFields"><label for="rxdeExtraValue">Email (необязательно)</label><input id="rxdeExtraValue" type="email" autocomplete="email" placeholder="name@example.com" maxlength="180" aria-label="Email — необязательно"><small class="rxde-email-hint19">Для счёта и как запасной канал связи.</small></div>
   <p id="rxdeInlineError" class="rxde-inline-error" role="status" hidden></p>
  </div><p class="rxde-contact-help">Для связи укажите номер телефона, Telegram @username и/или email. Для доставки адрес и телефон уточним отдельно.</p>`;
  // Two real mutually exclusive steps: cart -> contact sheet. Existing fields
@@ -33,6 +33,21 @@ function boot(){
  mailLink.id='rxdeCheckoutMail13';mailLink.className='rxde-checkout-mail13';mailLink.href='mailto:med.zakaz.de@gmail.com';
  mailLink.textContent='Напишу письмо сам — без заполнения контактов';
  flow.querySelector('#rxdeCheckoutActions10').appendChild(mailLink);
+
+ // Reassurance belongs after all order actions. It never blocks checkout or keyboard input.
+ const trust=document.createElement('aside');
+ trust.id='rxdeOrderTrust20';
+ trust.className='rxde-order-trust20';
+ trust.setAttribute('aria-label','О работе RXDE');
+ trust.innerHTML=`<h3>Почему нам доверяют</h3>
+ <div class="rxde-trust-grid20">
+  <div class="rxde-trust-item20"><span class="rxde-trust-icon20" aria-hidden="true">10+</span><span><strong>Более 10 лет опыта</strong><small>Закупка и отправка товаров из Европы</small></span></div>
+  <div class="rxde-trust-item20"><span class="rxde-trust-icon20" aria-hidden="true">✓</span><span><strong>Оригинальные товары</strong><small>Закупка у проверенных поставщиков</small></span></div>
+  <div class="rxde-trust-item20"><span class="rxde-trust-icon20" aria-hidden="true">↗</span><span><strong>Отслеживание отправления</strong><small>Трек-номер после отправки</small></span></div>
+  <div class="rxde-trust-item20"><span class="rxde-trust-icon20" aria-hidden="true">◷</span><span><strong>Увеличенный срок годности</strong><small>Можно запросить подбор партии; срок не гарантируется</small></span></div>
+ </div>`;
+ flow.querySelector('.rxde-checkout-card10').appendChild(trust);
+
  const flowCss=document.createElement('style');flowCss.id='rxdeCheckoutStyles10';
  flowCss.textContent=`
  /* Single checkout surface; never show an unrelated catalog behind the editor. */
@@ -92,6 +107,21 @@ function boot(){
    html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 .rxde-checkout-actions10{padding:10px 17px 13px!important;gap:8px!important}
    html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 #submitOrder{min-height:40px!important;height:40px!important}
  }
+
+ /* Nonintrusive trust footer, secondary to the contact fields and send actions. */
+ html body #rxdeCheckoutFlow10 #rxdeOrderTrust20{display:block!important;box-sizing:border-box!important;flex:0 0 auto!important;width:calc(100% - 26px)!important;margin:16px 13px 20px!important;padding:12px 14px 14px!important;background:#f4f9fb!important;border:1px solid #dbe9ef!important;border-radius:13px!important;color:#315565!important;box-shadow:none!important}
+ html body #rxdeCheckoutFlow10 #rxdeOrderTrust20 h3{margin:0 0 12px!important;padding:0!important;font:650 15px/1.3 system-ui,sans-serif!important;color:#2d586e!important;text-align:left!important}
+ html body #rxdeCheckoutFlow10 .rxde-trust-grid20{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px 12px!important}
+ html body #rxdeCheckoutFlow10 .rxde-trust-item20{display:flex!important;align-items:flex-start!important;gap:9px!important;min-width:0!important}
+ html body #rxdeCheckoutFlow10 .rxde-trust-item20>span:last-child{display:flex!important;flex-direction:column!important;gap:3px!important;min-width:0!important}
+ html body #rxdeCheckoutFlow10 .rxde-trust-icon20{display:grid!important;place-items:center!important;flex:0 0 32px!important;width:32px!important;height:32px!important;border:1px solid #d2e3eb!important;border-radius:10px!important;background:#fff!important;color:#39718e!important;font:700 12px/1 system-ui,sans-serif!important}
+ html body #rxdeCheckoutFlow10 .rxde-trust-item20 strong{display:block!important;font:630 12px/1.3 system-ui,sans-serif!important;color:#2e5264!important}
+ html body #rxdeCheckoutFlow10 .rxde-trust-item20 small{display:block!important;font:400 11px/1.35 system-ui,sans-serif!important;color:#607b88!important}
+ @media(max-width:390px){html body #rxdeCheckoutFlow10 .rxde-trust-grid20{gap:12px 8px!important}html body #rxdeCheckoutFlow10 .rxde-trust-icon20{flex-basis:27px!important;width:27px!important;height:27px!important;font-size:10px!important}html body #rxdeCheckoutFlow10 .rxde-trust-item20{gap:6px!important}}
+ @media(max-width:760px){html body #rxdeCheckoutFlow10 #rxdeOrderTrust20{width:calc(100% - 40px)!important;margin:18px 20px 24px!important}}
+ /* While typing, make the content available below the fields without forcing it into the keyboard viewport. */
+ html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 #rxdeOrderTrust20{margin-top:12px!important}
+
  /* Keyboard-visible area can be short: no fixed footer, scroll the single outer surface. */
  html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 h2{font-size:17px!important;padding-top:6px!important;padding-bottom:1px!important}
  html body #rxdeCheckoutFlow10.rxde-keyboard-compact14 .rxde-checkout-back10{min-height:34px!important;padding:5px 10px!important}
