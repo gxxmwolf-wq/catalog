@@ -53,7 +53,7 @@ function primaryCategory(r){
  return 'Другие препараты';
 }
 function loadScript(file){return new Promise((yes,no)=>{
- let script=document.createElement('script');script.src=file+'?v=20261112-24';
+ let script=document.createElement('script');script.src=file+'?v=20261112-26';
  script.onload=()=>yes();script.onerror=()=>no(new Error('Cannot load '+file));document.body.appendChild(script);
 })}
 async function start(){
@@ -67,7 +67,14 @@ async function start(){
   window.RXDE_LOCAL_DB=rows;
   await loadScript('product-pages.js');
   if(isGeneric) await loadScript('product-generic.js');
-  else for(const file of ['delivery.js','app.js','checkout35.js'])await loadScript(file);
+  else {
+    await loadScript('delivery.js');
+    await loadScript('app.js');
+    // Checkout code was fetched by the deferred script in index.html in parallel with the CSV.
+    // Activate immediately after the cart has initialized, no additional network request.
+    if(typeof window.__rxdeCheckoutBoot==='function')window.__rxdeCheckoutBoot();
+    else await loadScript('checkout35.js'); // compatibility fallback
+  }
   console.info('[RXDE] db.csv loaded',rows.length,'products');
  }catch(e){error(e.message||String(e))}
 }

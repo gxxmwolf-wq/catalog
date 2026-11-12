@@ -1,12 +1,15 @@
 /* RXDE V3.13.35 — integrated, one-window checkout. Does not alter product cards or admin copy. */
 (function(){
 'use strict';
+let checkoutBooted=false;
 function boot(){
+ if(checkoutBooted)return;
  const R=window.RXDE, sheet=document.getElementById('orderSheet'), btn=document.getElementById('submitOrder');
  if(!R?.Cart||!sheet||!btn)return;
+ checkoutBooted=true;
  const foot=sheet.querySelector('.sheet-footer');
  const buildLabel=document.getElementById('rxdeFooterVersion');
- if(buildLabel)buildLabel.textContent='v2 · 12.11.2026-24';
+ if(buildLabel)buildLabel.textContent='v2 · 12.11.2026-26';
  const area=document.createElement('section');area.id='rxdeInlineCheckout';area.className='rxde-inline-checkout';
  area.innerHTML=`<div class="rxde-contact-head">Контакты для заказа</div>
  <div id="rxdeInlineFields" class="rxde-inline-fields">
@@ -305,5 +308,8 @@ function boot(){
   finally{busy=false;btn.innerHTML='<span class="rxde-parcel-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 10.5 16 5l11 5.5v12L16 28 5 22.5z"/><path d="M5 10.5 16 16l11-5.5M16 16v12M11 7.5l11 5.5"/><path d="M20 19h3m-1.5-1.5v3"/></svg></span><span>Отправить</span>';contactSummary();}
  };
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,0),{once:true});else setTimeout(boot,0);
+// Deferred preloading removes the post-click script download and the 2s waiting label.
+// db-live.js calls this immediately after app.js initializes the cart.
+window.__rxdeCheckoutBoot=boot;
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
