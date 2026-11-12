@@ -1,5 +1,6 @@
 # RXDE: one-time/static alphabetic product navigation; stdlib only.
 # Run from repo root, or pass repository root as first argument.
+# Bilingual alphabet: one item can appear in two letter pages, but only one product exists.
 from pathlib import Path
 from urllib.parse import urlparse
 from collections import defaultdict
@@ -30,16 +31,28 @@ for url in urls:
     de=re.sub(r'\s*(?:·\s*PZN.*|\|\s*RXDE.*)$','',de,flags=re.I)
     ru=re.search(r'<p\b[^>]*\bid=["\']titleRu["\'][^>]*>(.*?)</p>',s,re.I|re.S)
     ru=html.unescape(re.sub('<[^>]+>',' ',ru.group(1))).strip() if ru else ''
-    name=ru or de
-    first=re.search('[А-ЯЁA-Z0-9]',name.upper())
-    letter=first.group() if first else '#'
-    products.append((letter,name,de,pzn))
+    # One unique card per PZN. List it under both the German/Latin and
+    # Russian/Cyrillic initial, using the matching name as link text.
+    products.append((ru, de, pzn))
 if not products: sys.exit('ОШИБКА: нет карточек из sitemap.xml. Ничего не записано.')
 if missing and len(missing) > max(5,int((len(products)+len(missing))*.02)):
     sys.exit(f'ОШИБКА: не найдены {len(missing)} страниц из sitemap.xml, например {missing[:6]}; публикация остановлена.')
-products.sort(key=lambda r:(r[0],r[1].casefold(),r[3]))
+# Letter pages may contain the same PZN twice across DIFFERENT groups.
+# The total product count remains the number of unique individual cards.
+unique_by_pzn={pzn:(ru,de,pzn) for ru,de,pzn in products}
+products=list(unique_by_pzn.values())
 groups=defaultdict(list)
-for row in products: groups[row[0]].append(row)
+for ru,de,pzn in products:
+    letters_for_pzn=set()
+    for name,other in ((ru,de),(de,ru)):
+        if not name: continue
+        match=re.search('[А-ЯЁA-Z0-9]',name.upper())
+        letter=match.group() if match else '#'
+        if letter in letters_for_pzn: continue
+        letters_for_pzn.add(letter)
+        groups[letter].append((letter,name,other,pzn))
+for items in groups.values():
+    items.sort(key=lambda r:(r[1].casefold(),r[3]))
 css='''*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#f4f8fa;color:#243c46}a{color:#216e94}a:hover{text-decoration:underline}.wrap{max-width:1100px;margin:auto;padding:24px 18px 70px}.head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}.brand{font-size:22px;font-weight:750;text-decoration:none;color:#244657}.brand b{border:1px solid #c6474c;border-radius:6px;padding:5px;color:#c6474c;margin-right:4px}.card{background:#fff;border:1px solid #d9e7ec;border-radius:15px;padding:20px;margin:15px 0}.nav{display:flex;flex-wrap:wrap;gap:7px}.nav a{display:inline-block;background:#eaf4f9;border:1px solid #cbdfe9;border-radius:8px;padding:5px 11px;text-decoration:none}.nav a:hover{background:#d9edf7}h1{font-size:clamp(23px,4vw,34px);line-height:1.2;margin:25px 0 10px}h2{font-size:21px}ul{list-style:none;padding:0;margin:0}li{padding:10px 0;border-bottom:1px solid #eef1f3}li:last-child{border:0}.meta{font-size:13px;color:#637b86;margin-left:7px}.muted{color:#637b86;font-size:14px}.count{color:#668; font-size:13px}'''
 def page(title,body,canonical):
     return ('<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -52,15 +65,15 @@ def write_if_changed(path,content):
     if not path.exists() or path.read_text('utf-8') != content:
         path.write_text(content,'utf-8')
 out=root/'p'; out.mkdir(exist_ok=True)
-links=[]; count=0; created=[]
+links=[]; alphabet_entries=0; created=[]
 for letter,items in sorted(groups.items(),key=lambda x:x[0]):
     chunks=[items[i:i+250] for i in range(0,len(items),250)]
     for num,chunk in enumerate(chunks,1):
         slug= 'other' if letter=='#' else ('num' if letter.isdigit() else ('ru-'+str(ord(letter)) if 'А'<=letter<='Я' or letter=='Ё' else 'en-'+letter.lower()))
         name=slug+('-'+str(num) if num>1 else '')+'.html'
         body='<h1>Товары на букву '+html.escape(letter)+'</h1><p class="muted">'+str(len(items))+' позиций в группе. Выберите товар для просмотра описания и актуальной цены.</p><nav class="nav" aria-label="Буквы"><a href="index.html">Все буквы</a></nav><div class="card"><ul>'
-        for _,ru,de,pzn in chunk:
-            label=html.escape(ru); sub=(f'<span class="meta">{html.escape(de)}</span>' if ru.casefold()!=de.casefold() else '')
+        for _,display_name,other,pzn in chunk:
+            label=html.escape(display_name); sub=(f'<span class="meta">{html.escape(other)}</span>' if other and display_name.casefold()!=other.casefold() else '')
             body+=f'<li><a href="{pzn}/index.html">{label}</a> {sub} <span class="meta">PZN {pzn}</span></li>'
         body+='</ul></div>'
         if len(chunks)>1:
@@ -71,9 +84,9 @@ for letter,items in sorted(groups.items(),key=lambda x:x[0]):
             body+='</nav>'
         write_if_changed(out/name,page('RXDE — товары на букву '+letter,body,'https://rxde.online/p/'+name))
         created.append(name)
-        count+=len(chunk)
+        alphabet_entries+=len(chunk)
         if num==1: links.append((letter,name,len(items)))
-body='<h1>Алфавитный указатель товаров RXDE</h1><p class="muted">'+str(count)+' позиций. Выберите первую букву названия. Информация о цене обновляется в индивидуальных карточках товаров.</p>'
+body='<h1>Алфавитный указатель товаров RXDE</h1><p class="muted">'+str(len(products))+' уникальных позиций. Выберите первую букву названия. Информация о цене обновляется в индивидуальных карточках товаров.</p>'
 body+='<nav class="card nav" aria-label="Алфавит">'
 for letter,name,n in links: body+=f'<a href="{name}">{html.escape(letter)} <span class="count">{n}</span></a>'
 body+='</nav><p>Не нашли препарат? <a href="../index.html">Воспользуйтесь поиском в основном каталоге RXDE</a>.</p>'
@@ -103,5 +116,5 @@ import io
 buffer=io.BytesIO(); tree.write(buffer,encoding='utf-8',xml_declaration=True)
 new_xml=buffer.getvalue()
 if sitemap.read_bytes()!=new_xml: sitemap.write_bytes(new_xml)
-print(f'ГОТОВО: {count} товаров, {len(created)} алфавитных страниц, p/index.html, sitemap.xml обновлён.')
+print(f'ГОТОВО: {len(products)} уникальных товаров, {alphabet_entries} ссылок по двум алфавитам, {len(created)} алфавитных страниц, p/index.html, sitemap.xml обновлён.')
 if missing: print('Предупреждение: пропущено карточек:',', '.join(missing[:20]))
