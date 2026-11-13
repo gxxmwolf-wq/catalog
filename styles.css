@@ -40622,3 +40622,140 @@ html body #orderLines .order-static-card .order-title-line .rxde-cart-rx-text{
  html body #orderSheet .sheet-header .rxde-return-catalog{order:2!important;margin-left:auto!important;flex:0 0 auto!important;}
  html body #orderSheet .sheet-header .sheet-close{order:3!important;min-width:36px!important;width:36px!important;min-height:44px!important;height:44px!important;}
 }
+
+
+/* RXDE v2 11.11.2026-19: compact, two-row checkout summary.
+   One document structure for desktop and mobile. The receipt-copy control
+   belongs to the item count, not to the amount. */
+html body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer,
+html.rxde-mobile-ui body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto auto!important;
+  align-content:end!important;
+  align-items:center!important;
+  row-gap:8px!important;
+  column-gap:0!important;
+  max-height:none!important;
+  min-height:0!important;
+  padding:9px 14px calc(10px + env(safe-area-inset-bottom, 0px))!important;
+}
+html body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer .order-summary,
+html.rxde-mobile-ui body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer .order-summary {
+  display:grid!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  grid-template-columns:minmax(0,1fr) max-content!important;
+  column-gap:8px!important;
+  align-items:center!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:36px!important;
+  margin:0!important;
+  padding:0!important;
+}
+html body #orderSheet .sheet-footer .rxde-order-count-actions {
+  display:inline-flex!important;
+  grid-column:1!important;
+  grid-row:1!important;
+  align-items:center!important;
+  justify-self:start!important;
+  gap:9px!important;
+  width:auto!important;
+  min-width:0!important;
+  margin:0!important;
+}
+html body #orderSheet .sheet-footer .rxde-order-count-actions #orderPositions {
+  display:inline-block!important;
+  position:static!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  width:auto!important;
+  white-space:nowrap!important;
+  font-size:clamp(12px,3vw,17px)!important;
+  line-height:1.2!important;
+}
+html body #orderSheet .sheet-footer .rxde-order-count-actions #viewOrderReceipt {
+  display:inline-grid!important;
+  place-items:center!important;
+  flex:0 0 auto!important;
+  position:static!important;
+  grid-column:auto!important;
+  grid-row:auto!important;
+  width:34px!important;
+  min-width:34px!important;
+  max-width:34px!important;
+  height:34px!important;
+  min-height:34px!important;
+  padding:5px!important;
+  margin:0!important;
+  border-radius:9px!important;
+}
+html body #orderSheet .sheet-footer .order-summary > #orderTotalRub {
+  display:block!important;
+  position:static!important;
+  grid-column:2!important;
+  grid-row:1!important;
+  justify-self:end!important;
+  margin:0!important;
+  padding:0!important;
+  min-width:0!important;
+  width:auto!important;
+  max-width:none!important;
+  font-size:clamp(20px,5vw,30px)!important;
+  line-height:1.1!important;
+  font-variant-numeric:tabular-nums!important;
+  white-space:nowrap!important;
+  text-align:right!important;
+}
+html body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer #rxdeMobileContactsToggle,
+html.rxde-mobile-ui body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer #rxdeMobileContactsToggle {
+  display:flex!important;
+  grid-column:1!important;
+  grid-row:2!important;
+  justify-self:stretch!important;
+  align-self:stretch!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:none!important;
+  height:50px!important;
+  min-height:50px!important;
+  margin:0!important;
+  padding:7px 12px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  font-size:clamp(15px,3.5vw,18px)!important;
+  background:#2788c2!important;
+  background-image:none!important;
+  border:1px solid #2179ae!important;
+  color:#fff!important;
+  border-radius:12px!important;
+}
+/* The manual email choice remains available in the checkout contact screen. */
+html body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer > a.rxde-inline-direct {
+  display:none!important;
+}
+html body #rxdeCheckoutFlow10 .rxde-email-hint19 {
+  display:block!important;
+  font-size:12px!important;
+  line-height:1.3!important;
+  font-weight:400!important;
+  color:#62747d!important;
+  margin:4px 0 0!important;
+  padding:0!important;
+}
+@media(max-width:760px){
+  html body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer,
+  html.rxde-mobile-ui body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer {
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px))!important;
+    row-gap:7px!important;
+  }
+  html body #orderSheet .sheet-footer .rxde-order-count-actions{gap:7px!important}
+  html body #orderSheet .sheet-footer .order-summary > #orderTotalRub {
+    font-size:clamp(19px,5vw,27px)!important;
+  }
+  html body #orderSheet:not(.rxde-mobile-contacts-open) .sheet-footer #rxdeMobileContactsToggle {
+    height:48px!important;min-height:48px!important;
+  }
+}
