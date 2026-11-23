@@ -17,7 +17,21 @@ import subprocess
 import sys
 
 SITE = 'https://rxde.online'
-ID_PATTERN = re.compile(r'[0-9]{8}\Z')
+# Supported URL identities: German 8-digit PZN, A/B/I + 7 digits, valid EAN-13.
+ID_PATTERN = re.compile(r'(?:[0-9]{8}|[ABI][0-9]{7}|[0-9]{13})\Z')
+
+def valid_product_id(raw: str) -> bool:
+    raw = (raw or '').strip().upper()
+    if not ID_PATTERN.fullmatch(raw):
+        return False
+    if len(raw) != 13:
+        return True
+    digits = [int(ch) for ch in raw]
+    check = (10 - (sum(digits[:12:2]) + 3 * sum(digits[1:12:2])) % 10) % 10
+    return digits[-1] == check
+
+def identity_label(raw: str) -> str:
+    return 'EAN' if len(raw) == 13 and raw.isdigit() else ('Код' if raw[:1] in 'ABI' else 'PZN')
 
 
 def replace_once(text: str, pattern: str, replacement: str, purpose: str, flags=re.I | re.S) -> str:
@@ -36,9 +50,9 @@ def make_card(template: str, r: dict[str, str], root: Path) -> str:
     name = r['Name_DE'].strip()
     russian = r.get('Name_RU', '').strip()
     category = (r.get('Category') or '').strip() or 'Другое'
-    title = f'{name} · PZN {pid} | RXDE'
+    title = f'{name} · {identity_label(pid)} {pid} | RXDE'
     desc = ' '.join(x for x in [name + '.', russian + '.' if russian else '',
-                               f'PZN {pid}.', category + '.',
+                               f'{identity_label(pid)} {pid}.', category + '.',
                                r.get('Size', '').strip() + '.' if r.get('Size', '').strip() else '',
                                'Информация о товаре RXDE.'] if x)
     url = f'{SITE}/p/{pid}/'
@@ -63,7 +77,7 @@ def make_card(template: str, r: dict[str, str], root: Path) -> str:
     s = replace_once(s, r'<head\b[^>]*>', '<head>' + seo_head, 'head opening tag')
     s = replace_once(s, r'<body\b[^>]*>', f'<body data-pzn="{pid}" data-rxde-seo-managed="1">', 'body PZN')
     s = replace_once(s, r'(<span\s+id="headSubtitle"[^>]*>).*?(</span>)',
-                     rf'\g<1>PZN {pid}\g<2>', 'head subtitle')
+                     rf'\g<1>{identity_label(pid)} {pid}\g<2>', 'head subtitle')
     s = replace_once(s, r'(<h1\s+id="title"[^>]*>).*?(</h1>)',
                      rf'\g<1>{esc(name)}\g<2>', 'product title')
     s = replace_once(s, r'(<p\s+id="titleRu"[^>]*>).*?(</p>)',
@@ -75,7 +89,7 @@ def make_card(template: str, r: dict[str, str], root: Path) -> str:
         ('Упаковка', r.get('Size')),
         ('Производитель', r.get('Hersteller')),
         ('Категория', category),
-        ('PZN', pid),
+        (identity_label(pid), pid),
     ]
     facts_html = ''.join(f'<div class="generic-fact"><span>{esc(label)}</span><b>{esc(value)}</b></div>'
                          for label, value in facts if str(value or '').strip())
@@ -86,7 +100,7 @@ def make_card(template: str, r: dict[str, str], root: Path) -> str:
     crumbs = ('<nav aria-label="Навигация" class="rxde-generated-crumbs" '
               'style="font-size:13px;color:#667982;margin:0 0 12px">'
               '<a href="index.html">Каталог RXDE</a> / '
-              f'{esc(category)} / PZN {pid}</nav>\n')
+              f'{esc(category)} / {identity_label(pid)} {pid}</nav>\n')
     s = replace_once(s, r'(<div class="generic-back-row">.*?</div>)',
                      rf'\g<1>\n{crumbs}', 'breadcrumbs')
     # Include only a short truthful note; no invented composition or PDF.
@@ -116,9 +130,9 @@ def update_generated_page(contents: str, r: dict[str, str]) -> str | None:
     russian = (r.get('Name_RU') or '').strip()
     category = (r.get('Category') or '').strip() or 'Другое'
     size = (r.get('Size') or '').strip()
-    title = f'{name} · PZN {pid} | RXDE'
+    title = f'{name} · {identity_label(pid)} {pid} | RXDE'
     desc = ' '.join(x for x in [name + '.', russian + '.' if russian else '',
-        f'PZN {pid}.', category + '.', size + '.' if size else '',
+        f'{identity_label(pid)} {pid}.', category + '.', size + '.' if size else '',
         'Информация о товаре RXDE.'] if x)
     facts = [
         ('Действующее вещество', r.get('Substance_DE') or r.get('Substance_RU')),
@@ -127,7 +141,7 @@ def update_generated_page(contents: str, r: dict[str, str]) -> str | None:
         ('Упаковка', r.get('Size')),
         ('Производитель', r.get('Hersteller')),
         ('Категория', category),
-        ('PZN', pid),
+        (identity_label(pid), pid),
     ]
     facts_html = ''.join(f'<div class="generic-fact"><span>{esc(label)}</span><b>{esc(value)}</b></div>'
                          for label, value in facts if str(value or '').strip())
@@ -138,7 +152,7 @@ def update_generated_page(contents: str, r: dict[str, str]) -> str | None:
         (r'(<p\s+id="titleRu"[^>]*>).*?(</p>)',
             lambda m: m.group(1)+esc(russian)+m.group(2), 'Russian name'),
         (r'(<span\s+id="headSubtitle"[^>]*>).*?(</span>)',
-            lambda m: m.group(1)+'PZN '+pid+m.group(2), 'subtitle'),
+            lambda m: m.group(1)+identity_label(pid)+' '+pid+m.group(2), 'subtitle'),
         (r'<div\s+class="generic-facts"\s+id="facts">.*?</div>(?=\s*(?:<|$))', None, ''),
     ]
     # The facts section contains nested div elements; never use a regex that stops at
@@ -148,7 +162,7 @@ def update_generated_page(contents: str, r: dict[str, str]) -> str | None:
                      r'(?:<div class="generic-fact"><span>.*?</span><b>.*?</b></div>)*</div>')
     replacements.extend([
         (facts_pattern, '<div class="generic-facts" id="facts">'+facts_html+'</div>', 'facts'),
-        (r'(<nav aria-label="Навигация" class="rxde-generated-crumbs"[^>]*>\s*<a[^>]*>Каталог RXDE</a> / )(.*?)( / PZN '+re.escape(pid)+r'</nav>)',
+        (r'(<nav aria-label="Навигация" class="rxde-generated-crumbs"[^>]*>\s*<a[^>]*>Каталог RXDE</a> / )(.*?)( / (?:PZN|EAN|Код) '+re.escape(pid)+r'</nav>)',
             lambda m: m.group(1)+esc(category)+m.group(3), 'breadcrumbs'),
         (r'<meta name="description" content="[^"]*">',
             '<meta name="description" content="'+esc(desc)+'">', 'description'),
@@ -202,8 +216,8 @@ def main() -> int:
         if not raw: skipped.append(('EMPTY', 'no PZN'));continue
         if raw in encountered: duplicates.append(raw);continue
         encountered.add(raw)
-        if not ID_PATTERN.fullmatch(raw):
-            skipped.append((raw, 'non-standard PZN: needs separate URL policy'));continue
+        if not valid_product_id(raw):
+            skipped.append((raw, 'unsupported code or invalid EAN-13 checksum'));continue
         if not (row.get('Name_DE') or '').strip():
             skipped.append((raw, 'missing Name_DE'));continue
         target = root / 'p' / raw / 'index.html'

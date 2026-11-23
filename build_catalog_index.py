@@ -6,6 +6,20 @@ from urllib.parse import urlparse
 from collections import defaultdict
 import re, sys, html, xml.etree.ElementTree as ET
 from datetime import date
+# Use the same identifier rules as sync_seo_products.py without importing the
+# publisher (this script must remain independently executable).
+PRODUCT_ID_RE = r'(?:[0-9]{8}|[ABI][0-9]{7}|[0-9]{13})'
+
+def valid_product_id(raw):
+    if not re.fullmatch(PRODUCT_ID_RE, raw):
+        return False
+    if len(raw) != 13:
+        return True
+    digits = [int(ch) for ch in raw]
+    return digits[-1] == (10 - (sum(digits[:12:2]) + 3 * sum(digits[1:12:2])) % 10) % 10
+
+def id_label(raw):
+    return 'EAN' if len(raw) == 13 else ('Код' if raw[:1] in 'ABI' else 'PZN')
 
 root = Path(sys.argv[1]).resolve() if len(sys.argv)>1 else Path(__file__).resolve().parent
 sitemap = root/'sitemap.xml'
@@ -14,13 +28,13 @@ tree=ET.parse(sitemap); sr=tree.getroot(); ns='{http://www.sitemaps.org/schemas/
 urls=[(e.findtext(ns+'loc') or '').strip() for e in sr.findall(ns+'url')]
 # New product files must be discoverable even before their URLs are added to sitemap.
 # This is a static build step: never invoked by visitors or price changes.
-known_products={url for url in urls if re.fullmatch(r'https://rxde\.online/p/\d{8}/',url)}
-folder_products={'https://rxde.online/p/'+d.name+'/' for d in (root/'p').iterdir() if d.is_dir() and re.fullmatch(r'\d{8}',d.name) and (d/'index.html').is_file()} if (root/'p').is_dir() else set()
+known_products={url for url in urls if (m := re.fullmatch(r'https://rxde\.online/p/('+PRODUCT_ID_RE+r')/',url)) and valid_product_id(m.group(1))}
+folder_products={'https://rxde.online/p/'+d.name+'/' for d in (root/'p').iterdir() if d.is_dir() and valid_product_id(d.name) and (d/'index.html').is_file()} if (root/'p').is_dir() else set()
 for u in sorted(folder_products-known_products): urls.append(u)
 products=[]; missing=[]
 for url in urls:
-    m=re.fullmatch(r'https://rxde\.online/p/(\d{8})/',url)
-    if not m: continue
+    m=re.fullmatch(r'https://rxde\.online/p/('+PRODUCT_ID_RE+r')/',url)
+    if not m or not valid_product_id(m.group(1)): continue
     pzn=m.group(1); path=root/'p'/pzn/'index.html'
     if not path.is_file(): missing.append(pzn); continue
     s=path.read_text('utf-8',errors='replace')
@@ -74,7 +88,7 @@ for letter,items in sorted(groups.items(),key=lambda x:x[0]):
         body='<h1>Товары на букву '+html.escape(letter)+'</h1><p class="muted">'+str(len(items))+' позиций в группе. Выберите товар для просмотра описания и актуальной цены.</p><nav class="nav" aria-label="Буквы"><a href="index.html">Все буквы</a></nav><div class="card"><ul>'
         for _,display_name,other,pzn in chunk:
             label=html.escape(display_name); sub=(f'<span class="meta">{html.escape(other)}</span>' if other and display_name.casefold()!=other.casefold() else '')
-            body+=f'<li><a href="{pzn}/index.html">{label}</a> {sub} <span class="meta">PZN {pzn}</span></li>'
+            body+=f'<li><a href="{pzn}/index.html">{label}</a> {sub} <span class="meta">{id_label(pzn)} {pzn}</span></li>'
         body+='</ul></div>'
         if len(chunks)>1:
             body+='<nav class="nav" aria-label="Страницы группы">'
@@ -101,9 +115,9 @@ for stale in out.glob('*.html'):
 # Do not touch other entries or metadata.
 for node in list(sr.findall(ns+'url')):
     loc=(node.findtext(ns+'loc') or '').strip()
-    match_product=re.fullmatch(r'https://rxde\.online/p/(\d{8})/',loc)
+    match_product=re.fullmatch(r'https://rxde\.online/p/('+PRODUCT_ID_RE+r')/',loc)
     match_letters=re.fullmatch(r'https://rxde\.online/p/((?:ru-\d+|en-[a-z]|num|other)(?:-\d+)?\.html)',loc)
-    if (match_product and loc not in folder_products) or (match_letters and match_letters.group(1) not in created):
+    if (match_product and valid_product_id(match_product.group(1)) and loc not in folder_products) or (match_letters and match_letters.group(1) not in created):
         sr.remove(node)
 existing={(node.findtext(ns+'loc') or '').strip() for node in sr.findall(ns+'url')}
 extra=sorted(folder_products)+['https://rxde.online/p/']+['https://rxde.online/p/'+n for n in created]
